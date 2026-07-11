@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@source "../../../packages/shared/src";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+
+  --color-cinza-escuro: #262626;
+  --color-cinza-medio: #404040;
+  --color-cinza-claro: #e6e6e6;
+  --color-marca-escura: #8d0e0c;
+  --color-marca: #f15a55;
+  --color-marca-clara: #fbd1d0;
+
+  /*
+   * Tipografia fluida (clamp): tamanho acompanha a largura da janela em vez
+   * de saltar em breakpoints fixos. Único salto discreto mantido é o de
+   * mobile→desktop (em `lg`, 1024px) nos textos que já tinham essa distinção
+   * (`5xl`→`8xl`, `3xl`→`4xl`); mobile escala 360-1024px, desktop 1024-1920px
+   * (1920px = largura máxima do container, `max-w-[1920px]`). Textos sem
+   * distinção mobile/desktop (`2xl`, `sm`, `tag`) escalam num único intervalo
+   * contínuo de 360-1920px, sem salto. `tag` não cresce além do valor
+   * original (10px): as 3 badges "MODELO TAG" quebram linha dentro do card
+   * se crescerem, então o clamp só encolhe em telas pequenas.
+   */
+  --text-5xl: clamp(3rem, 2.5934rem + 1.8072vw, 3.75rem);
+  --text-8xl: clamp(4.8rem, 3.4286rem + 2.1429vw, 6rem);
+  --text-3xl: clamp(1.875rem, 1.6209rem + 1.1295vw, 2.3438rem);
+  --text-4xl: clamp(1.8rem, 1.2857rem + 0.8036vw, 2.25rem);
+  --text-2xl: clamp(1.275rem, 1.1712rem + 0.4615vw, 1.725rem);
+  --text-sm: clamp(0.7438rem, 0.6832rem + 0.2692vw, 1.0063rem);
+  --text-tag: clamp(0.5313rem, 0.5096rem + 0.0962vw, 0.625rem);
+}

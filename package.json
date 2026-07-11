@@ -1,0 +1,9 @@
+{
+  "name": "abrigo-da-marcia-web",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter public dev",
+    "build": "pnpm -r build"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
