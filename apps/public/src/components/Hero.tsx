@@ -1,12 +1,9 @@
-import { useRef } from 'react'
-import { BlobImage } from '@abrigo/shared'
+import { FeatureSection } from '@abrigo/shared'
 import heroImage from '../assets/landing_abertura.jpg'
 
 export function Hero() {
-  const sectionRef = useRef<HTMLElement>(null)
-
-  const scrollToNext = () => {
-    const next = sectionRef.current?.nextElementSibling
+  const scrollToNext = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const next = event.currentTarget.closest('section')?.nextElementSibling
     if (next) {
       next.scrollIntoView({ behavior: 'smooth', block: 'start' })
     } else {
@@ -15,44 +12,32 @@ export function Hero() {
   }
 
   return (
-    <section ref={sectionRef} className="bg-marca">
-      <div className="mx-auto grid max-w-[1920px] gap-8 px-6 py-12 lg:grid-cols-2 lg:items-center lg:gap-x-12 lg:py-24">
-        <div className="lg:flex lg:flex-col lg:gap-4">
-          <h1 className="text-5xl leading-tight font-medium text-marca-escura dark:text-marca-clara lg:text-8xl">
-            Fazer o bem é
-            <br />
-            bom pra cachorro!
-          </h1>
+    <FeatureSection
+      image={{ src: heroImage, alt: 'Mão fazendo carinho em um cachorro' }}
+      contentClassName="lg:flex lg:flex-col lg:gap-4"
+      heading={
+        <h1 className="text-5xl leading-tight font-medium text-marca-escura dark:text-marca-clara lg:text-8xl">
+          Fazer o bem é
+          <br />
+          bom pra cachorro!
+        </h1>
+      }
+    >
+      <p className="max-w-4xl text-2xl">
+        No Abrigo da Márcia, nos dedicamos a cuidar e alimentar cães em
+        situação de vulnerabilidade, oferecendo a eles um lar temporário
+        seguro e cheio de amor.
+      </p>
 
-          <BlobImage
-            src={heroImage}
-            alt="Mão fazendo carinho em um cachorro"
-            className="mx-auto my-8 w-full max-w-md lg:hidden"
-          />
-
-          <p className="max-w-4xl text-2xl text-marca-escura dark:text-marca-clara">
-            No Abrigo da Márcia, nos dedicamos a cuidar e alimentar cães em
-            situação de vulnerabilidade, oferecendo a eles um lar temporário
-            seguro e cheio de amor.
-          </p>
-        </div>
-
-        <BlobImage
-          src={heroImage}
-          alt="Mão fazendo carinho em um cachorro"
-          className="hidden w-full lg:ml-auto lg:block"
-        />
-
-        <button
-          type="button"
-          onClick={scrollToNext}
-          aria-label="Rolar para a próxima seção"
-          className="flex justify-center text-marca-escura dark:text-marca-clara lg:hidden"
-        >
-          <ChevronDownIcon />
-        </button>
-      </div>
-    </section>
+      <button
+        type="button"
+        onClick={scrollToNext}
+        aria-label="Rolar para a próxima seção"
+        className="mt-8 flex w-full justify-center text-marca-escura dark:text-marca-clara lg:hidden"
+      >
+        <ChevronDownIcon />
+      </button>
+    </FeatureSection>
   )
 }
 

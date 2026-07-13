@@ -16,7 +16,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 
 - **RLS primeiro:** toda tabela nova nasce com RLS habilitado + policies explícitas. Público lê apenas via views filtradas (`*_public`). Nunca `USING (true)` para anon. Registrar toda policy em `DATA_MODEL.md`.
 - **Nunca** commitar `service_role key` ou `.env`. Apenas `anon key` no client.
-- Componentes de UI compartilhados entre público/admin vivem em `packages/shared` — variações via props/variants, não cópias.
+- Componentes de UI compartilhados entre público/admin vivem em `packages/shared` — variações via props/variants, não cópias. **Antes de criar qualquer componente, consultar os existentes** em `packages/shared/src/components` e nos apps (catálogo de primitivos em `ROADMAP.md`); só criar novo se nenhum for compatível ou generalizável (ver AGENTS.md, prioridade 3).
 - Strings longas de classes Tailwind: componentizar. Inline apenas para layout pontual (2-4 classes).
 - Design system: fidelidade aos mockups Photoshop. Tokens (cores, fontes, radius, spacing) só via `tailwind.config` — nunca valores hardcoded em componente.
 - Fotos: comprimir no client antes do upload (preservar cota do Storage free tier).

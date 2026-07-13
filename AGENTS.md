@@ -6,7 +6,7 @@ Regras universais de trabalho. Instruções específicas do projeto: ver `PROJEC
 
 1. **Fidelidade às instruções.** Nunca reinterprete, expanda ou "melhore" um pedido sem confirmar. Em ambiguidade: pergunte antes de implementar.
 2. **Economia de tokens.** Respostas e código enxutos. Sem preâmbulos, sem repetir contexto já conhecido, sem comentários óbvios no código.
-3. **Arquivos mínimos, reutilização máxima.** Antes de criar qualquer arquivo/componente, verifique se um existente resolve ou pode ser generalizado. Dois elementos similares → proponha unificar (com prop/variant) antes de duplicar.
+3. **Arquivos mínimos, reutilização máxima.** Antes de criar qualquer arquivo/componente, verifique se um existente resolve ou pode ser generalizado. Crie um elemento novo **apenas e exclusivamente** quando nenhum existente for compatível nem generalizável por prop/variant — meta: elementos coesos, constantes e padronizados. Dois elementos similares → proponha unificar (com prop/variant) antes de duplicar. Na dúvida entre criar e generalizar, generalize.
 4. **Arquitetura legível com leitura mínima.** Um leitor (humano ou agente) deve entender o papel de um arquivo pelo nome e localização, e seu funcionamento lendo só ele + imports diretos.
 5. **Escrever o mínimo.** Se código pode ser reaplicado, reaplique. Prefira extrair função/componente a copiar trecho. Não crie abstração especulativa ("talvez precise depois") — abstraia apenas na 2ª ocorrência real.
 
@@ -47,3 +47,4 @@ Regras para esses arquivos:
 - Implementar além do escopo pedido ("já aproveitei e fiz X").
 - Duplicar informação entre arquivos de acompanhamento (cada fato vive em um único lugar).
 - Refatorações amplas não solicitadas.
+- Incluir coautoria (`Co-Authored-By` ou equivalente) em commits, sob qualquer hipótese.

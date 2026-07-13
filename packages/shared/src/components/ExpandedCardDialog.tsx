@@ -1,0 +1,167 @@
+import { useEffect, useId, useRef } from 'react'
+import type { ReactNode } from 'react'
+import { Action } from './Action'
+
+type ExpandedCardDialogAction = {
+  label: string
+  href: string
+}
+
+type ExpandedCardDialogProps = {
+  title: string
+  description: string
+  images: string[]
+  tags?: ReactNode
+  primaryAction?: ExpandedCardDialogAction
+  onClose: () => void
+}
+
+const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled])'
+
+export function ExpandedCardDialog({
+  title,
+  description,
+  images,
+  tags,
+  primaryAction,
+  onClose,
+}: ExpandedCardDialogProps) {
+  const dragStart = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    const focusables = dialogRef.current
+      ? Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+      : []
+    focusables[0]?.focus()
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose()
+        return
+      }
+
+      if (event.key !== 'Tab' || focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+      previouslyFocused?.focus()
+    }
+  }, [onClose])
+
+  // overflow-auto só recebe drag nativo em touch/trackpad; mouse precisa desse handler manual
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse') return
+    const container = event.currentTarget
+    dragStart.current = {
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: container.scrollLeft,
+      scrollTop: container.scrollTop,
+    }
+    container.setPointerCapture(event.pointerId)
+  }
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragStart.current) return
+    const container = event.currentTarget
+    container.scrollLeft = dragStart.current.scrollLeft - (event.clientX - dragStart.current.x)
+    container.scrollTop = dragStart.current.scrollTop - (event.clientY - dragStart.current.y)
+  }
+
+  const handlePointerUp = () => {
+    dragStart.current = null
+  }
+
+  const isCarousel = images.length > 1
+
+  return (
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-cinza-escuro/80"
+      onClick={onClose}
+    >
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white lg:max-h-none lg:flex-row"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div
+            className={`flex h-[min(54vh,400px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-cinza-escuro select-none lg:h-auto lg:max-h-[90vh] lg:w-2/5 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto ${isCarousel ? 'cursor-grab active:cursor-grabbing' : ''}`}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
+            {images.map((src, index) => (
+              <img
+                key={index}
+                src={src}
+                alt={`${title} - foto ${index + 1}`}
+                draggable={false}
+                className="h-full w-full flex-shrink-0 snap-center object-contain lg:object-cover"
+              />
+            ))}
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6 pb-0 lg:p-10 lg:pb-0">
+              {tags && <div className="flex flex-wrap gap-2">{tags}</div>}
+
+              <h3 id={titleId} className="text-3xl font-medium text-marca lg:text-4xl">
+                {title}
+              </h3>
+
+              <p className="indent-8 text-justify text-cinza-escuro">{description}</p>
+            </div>
+
+            <div
+              className={`flex-shrink-0 p-6 pt-4 lg:p-10 lg:pt-4 ${
+                primaryAction
+                  ? 'grid grid-cols-[minmax(0,1fr)_minmax(0,2.5fr)] gap-4'
+                  : 'flex flex-wrap gap-4'
+              }`}
+            >
+              <Action
+                onClick={onClose}
+                variant="secondary"
+              >
+                Fechar
+              </Action>
+
+              {primaryAction && (
+                <Action
+                  href={primaryAction.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {primaryAction.label}
+                </Action>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

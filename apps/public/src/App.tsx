@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Header, ThemeProvider } from '@abrigo/shared'
 import { Landing } from './pages/Landing'
+import { Footer } from './components/Footer'
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
         </Routes>
+        <Footer />
       </BrowserRouter>
     </ThemeProvider>
   )
