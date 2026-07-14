@@ -11,6 +11,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - **Backend:** Supabase — Postgres (RLS rígido), Auth (MFA TOTP p/ admin), Storage (fotos), `pg_cron` (expiração de reservas).
 - **Dados no client:** TanStack Query; client Supabase único e tipado (`database.types.ts` gerado) em `packages/shared`.
 - **Monorepo:** pnpm workspaces — `apps/public`, `apps/admin`, `packages/shared`.
+- **Dev local do banco:** `supabase start` (requer Docker) sobe o stack; `supabase db reset` aplica `supabase/migrations/` + `supabase/seed.sql`. Studio em `localhost:54323`.
 
 ## Regras específicas
 

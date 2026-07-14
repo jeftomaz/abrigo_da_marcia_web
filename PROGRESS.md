@@ -1,5 +1,7 @@
 # PROGRESS.md
 
+- Banco materializado e validado no Supabase local: `supabase init` + migration `init_schema.sql` (enums, `caes`, `social_links`, views `*_public`, RLS, trigger `updated_at`) + `seed.sql`. Validado via PostgREST/anon: `caes_public` traz só `disponivel` (4 de 6; `adotado`/`falecido` ocultos) e não expõe `status`; tabelas base negam anon; CHECK de `birth_year` e trigger conferidos. Rodar: `supabase start` (Docker) + `supabase db reset`. Ainda sem policies admin, tipos, client e projeto hospedado.
+- Modelo `caes` aprovado em `DATA_MODEL.md`: enums `cae_genero`/`cae_porte`/`cae_status`, `description` único (card trunca), idade via `birth_year`, `photos text[]` ([0]=capa). View `caes_public` filtra `disponivel` e é fonte única do catálogo de Adoção e do preview da landing. Migration, tipos e client Supabase seguem pendentes; upload de fotos e CRUD ficam para a fase admin.
 - Filtros da Adoção ganharam controles de 40px, rótulos menores, limpeza secundária desabilitada sem seleção, chips ativos e contador de resultados.
 - Tipografia do card expandido alinhada ao catálogo de referência: título mantém escala 28→36px, tags passam a 16px com padding proporcional e descrição a 18px/1.5. O botão usa área estendida acessível, permitindo abrir pelo card inteiro.
 - Proporção do card expandido ajustada a partir do catálogo publicado: galeria usa `min(54vh, 400px)` no mobile e divide o modal em 1:1 com o conteúdo no desktop.
