@@ -1,5 +1,11 @@
 # PROGRESS.md
 
+- Filtros da Adoção ganharam controles de 40px, rótulos menores, limpeza secundária desabilitada sem seleção, chips ativos e contador de resultados.
+- Tipografia do card expandido alinhada ao catálogo de referência: título mantém escala 28→36px, tags passam a 16px com padding proporcional e descrição a 18px/1.5. O botão usa área estendida acessível, permitindo abrir pelo card inteiro.
+- Proporção do card expandido ajustada a partir do catálogo publicado: galeria usa `min(54vh, 400px)` no mobile e divide o modal em 1:1 com o conteúdo no desktop.
+- Ações do card expandido foram compactadas: botão Fechar com largura estável, CTA flexível apenas no mobile e largura fixa a partir de `sm`, eliminando sobreposição.
+- Regra de superfícies aplicada: branco puro no tema claro corresponde a preto puro no escuro em filtros, `CompactCard` e modal expandido.
+- Página pública de Adoção implementada com temas claro/escuro, filtros, ordenação, cards expansíveis e CTA para o formulário. Dados seguem locais até a etapa Supabase; Header destaca a rota ativa.
 - Fluxo Git definido: uma branch por tela; ao concluir, publicar e integrar à `main` antes de iniciar a próxima.
 - Footer mobile reorganizado: logo/redes no topo, contato em largura total e créditos abaixo de um divisor; desktop preserva as duas colunas. Tipografia segue fluida e legível, sem overflow do e-mail.
 - Conteúdo das `FeatureSection` ganhou margem lateral de 40px abaixo de `lg`, conforme os mockups mobile. Em `Nossos cuidados`, tokens fluidos ampliam a tipografia intermediária e encontram os tamanhos desktop sem salto no breakpoint.

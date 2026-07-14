@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 
 type CompactCardOrientation = 'horizontal' | 'vertical'
-type CompactCardSurface = 'dark' | 'medium'
 
 type CompactCardProps = {
   action?: ReactNode
@@ -12,7 +11,6 @@ type CompactCardProps = {
     src: string
   }
   orientation?: CompactCardOrientation
-  surface?: CompactCardSurface
   tags?: ReactNode
   title: string
 }
@@ -27,24 +25,18 @@ const IMAGE_CLASSES: Record<CompactCardOrientation, string> = {
   vertical: 'aspect-square w-full object-cover',
 }
 
-const SURFACE_CLASSES: Record<CompactCardSurface, string> = {
-  dark: 'bg-cinza-escuro dark:bg-white',
-  medium: 'bg-cinza-medio dark:bg-white',
-}
-
 export function CompactCard({
   action,
   className = '',
   description,
   image,
   orientation = 'vertical',
-  surface = 'medium',
   tags,
   title,
 }: CompactCardProps) {
   return (
     <article
-      className={`flex overflow-hidden rounded-2xl transition-transform duration-200 ease-out motion-safe:hover:-translate-y-1 ${ORIENTATION_CLASSES[orientation]} ${SURFACE_CLASSES[surface]} ${className}`}
+      className={`flex overflow-hidden rounded-2xl bg-black transition-transform duration-200 ease-out motion-safe:hover:-translate-y-1 dark:bg-white ${ORIENTATION_CLASSES[orientation]} ${className}`}
     >
       <img src={image.src} alt={image.alt} className={IMAGE_CLASSES[orientation]} />
 

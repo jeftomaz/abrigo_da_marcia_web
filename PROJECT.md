@@ -19,6 +19,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - Componentes de UI compartilhados entre público/admin vivem em `packages/shared` — variações via props/variants, não cópias. **Antes de criar qualquer componente, consultar os existentes** em `packages/shared/src/components` e nos apps (catálogo de primitivos em `ROADMAP.md`); só criar novo se nenhum for compatível ou generalizável (ver AGENTS.md, prioridade 3).
 - Strings longas de classes Tailwind: componentizar. Inline apenas para layout pontual (2-4 classes).
 - Design system: fidelidade aos mockups Photoshop. Tokens (cores, fontes, radius, spacing) só via `tailwind.config` — nunca valores hardcoded em componente.
+- Superfícies 100% brancas no modo claro são sempre 100% pretas no modo escuro; cores de estado e ilustrações não entram nessa correspondência.
 - **Fluxo Git:** cada tela é desenvolvida em branch própria criada a partir da `main` atualizada. Ao finalizar, validar, publicar a branch, integrá-la à `main` e publicar a `main` antes de iniciar a próxima tela.
 - Fotos: comprimir no client antes do upload (preservar cota do Storage free tier).
 

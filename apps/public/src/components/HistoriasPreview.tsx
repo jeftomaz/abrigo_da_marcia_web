@@ -69,7 +69,6 @@ export function HistoriasPreview() {
             image={{ src: historiasPhoto, alt: story.name }}
             title={story.name}
             description={story.description}
-            surface="dark"
             action={
               <Action onClick={() => setSelectedStory(index)} size="compact">
                 Conheça essa história

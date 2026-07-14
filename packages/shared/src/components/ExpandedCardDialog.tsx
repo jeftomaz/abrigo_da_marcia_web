@@ -14,9 +14,36 @@ type ExpandedCardDialogProps = {
   tags?: ReactNode
   primaryAction?: ExpandedCardDialogAction
   onClose: () => void
+  variant?: 'adoption' | 'default'
 }
 
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled])'
+
+const DIALOG_CLASSES = {
+  adoption:
+    'flex max-h-[90vh] w-5/6 max-w-3xl flex-col overflow-hidden rounded-3xl bg-black text-cinza-claro dark:bg-white dark:text-cinza-escuro lg:h-[70vh] lg:w-full lg:flex-row',
+  default:
+    'flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-black text-cinza-claro dark:bg-white dark:text-cinza-escuro lg:max-h-none lg:flex-row',
+}
+
+const GALLERY_CLASSES = {
+  adoption:
+    'flex h-[min(54vh,400px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-black pt-6 select-none dark:bg-white lg:h-full lg:w-1/2 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto lg:pt-0',
+  default:
+    'flex h-[min(54vh,400px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-cinza-escuro select-none lg:h-auto lg:max-h-[90vh] lg:w-2/5 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto',
+}
+
+const IMAGE_CLASSES = {
+  adoption:
+    'h-full w-5/12 flex-shrink-0 snap-center object-cover lg:h-1/2 lg:w-full',
+  default:
+    'h-full w-full flex-shrink-0 snap-center object-contain lg:object-cover',
+}
+
+const DESCRIPTION_CLASSES = {
+  adoption: 'text-justify text-lg leading-normal text-cinza-claro dark:text-cinza-escuro',
+  default: 'indent-8 text-justify text-cinza-claro dark:text-cinza-escuro',
+}
 
 export function ExpandedCardDialog({
   title,
@@ -25,6 +52,7 @@ export function ExpandedCardDialog({
   tags,
   primaryAction,
   onClose,
+  variant = 'default',
 }: ExpandedCardDialogProps) {
   const dragStart = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -103,11 +131,11 @@ export function ExpandedCardDialog({
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
-          className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white lg:max-h-none lg:flex-row"
+          className={DIALOG_CLASSES[variant]}
           onClick={(event) => event.stopPropagation()}
         >
           <div
-            className={`flex h-[min(54vh,400px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-cinza-escuro select-none lg:h-auto lg:max-h-[90vh] lg:w-2/5 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto ${isCarousel ? 'cursor-grab active:cursor-grabbing' : ''}`}
+            className={`${GALLERY_CLASSES[variant]} ${isCarousel ? 'cursor-grab active:cursor-grabbing' : ''}`}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -119,7 +147,7 @@ export function ExpandedCardDialog({
                 src={src}
                 alt={`${title} - foto ${index + 1}`}
                 draggable={false}
-                className="h-full w-full flex-shrink-0 snap-center object-contain lg:object-cover"
+                className={IMAGE_CLASSES[variant]}
               />
             ))}
           </div>
@@ -132,19 +160,21 @@ export function ExpandedCardDialog({
                 {title}
               </h3>
 
-              <p className="indent-8 text-justify text-cinza-escuro">{description}</p>
+              <p className={DESCRIPTION_CLASSES[variant]}>{description}</p>
             </div>
 
             <div
               className={`flex-shrink-0 p-6 pt-4 lg:p-10 lg:pt-4 ${
                 primaryAction
-                  ? 'grid grid-cols-[minmax(0,1fr)_minmax(0,2.5fr)] gap-4'
+                  ? 'flex items-center justify-between gap-4'
                   : 'flex flex-wrap gap-4'
               }`}
             >
               <Action
                 onClick={onClose}
-                variant="secondary"
+                size={primaryAction ? 'small' : 'default'}
+                variant="secondary-adaptive"
+                className={primaryAction ? 'w-20 shrink-0' : ''}
               >
                 Fechar
               </Action>
@@ -154,6 +184,8 @@ export function ExpandedCardDialog({
                   href={primaryAction.href}
                   target="_blank"
                   rel="noopener noreferrer"
+                  size="small"
+                  className="min-w-0 flex-1 sm:w-40 sm:flex-none"
                 >
                   {primaryAction.label}
                 </Action>

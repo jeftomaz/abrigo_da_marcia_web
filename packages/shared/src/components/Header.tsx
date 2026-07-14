@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Logo } from './Logo'
 import { Icon } from './Icon'
 import { Action } from './Action'
@@ -13,15 +13,16 @@ type NavItem =
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Adoção', kind: 'route', to: '/adocao' },
-  { label: 'Doação', kind: 'anchor', href: '#doacao' },
+  { label: 'Doação', kind: 'anchor', href: '/#doacao' },
   { label: 'Histórias', kind: 'route', to: '/historias' },
   { label: 'Recãopensa', kind: 'route', to: '/eventos' },
-  { label: 'Sobre nós', kind: 'anchor', href: '#sobre-nos' },
-  { label: 'Voluntários', kind: 'anchor', href: '#voluntarios' },
+  { label: 'Sobre nós', kind: 'anchor', href: '/#sobre-nos' },
+  { label: 'Voluntários', kind: 'anchor', href: '/#voluntarios' },
 ]
 
 export function Header() {
   const { theme, toggleTheme } = useTheme()
+  const { pathname } = useLocation()
   const [isVisible, setIsVisible] = useState(true)
   const lastScrollY = useRef(0)
 
@@ -57,17 +58,22 @@ export function Header() {
         </Link>
 
         <nav className="order-2 flex min-w-0 basis-full gap-10 overflow-x-auto lg:basis-auto lg:flex-1 lg:justify-center">
-          {NAV_ITEMS.map((item) =>
-            item.kind === 'route' ? (
-              <Action key={item.label} to={item.to} variant="secondary" className="shrink-0 text-sm">
+          {NAV_ITEMS.map((item) => {
+            const isActive = item.kind === 'route' && pathname === item.to
+            const variant = isActive
+              ? theme === 'dark' ? 'secondary-inverted' : 'secondary'
+              : theme === 'dark' ? 'secondary' : 'secondary-inverted'
+
+            return item.kind === 'route' ? (
+              <Action key={item.label} to={item.to} variant={variant} className="shrink-0 text-sm">
                 {item.label}
               </Action>
             ) : (
-              <Action key={item.label} href={item.href} variant="secondary" className="shrink-0 text-sm">
+              <Action key={item.label} href={item.href} variant={variant} className="shrink-0 text-sm">
                 {item.label}
               </Action>
-            ),
-          )}
+            )
+          })}
         </nav>
 
         <button

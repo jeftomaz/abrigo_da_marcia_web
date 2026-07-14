@@ -1,15 +1,21 @@
 import type {
   AnchorHTMLAttributes,
   ButtonHTMLAttributes,
+  ReactNode,
 } from 'react'
 import { Link, type LinkProps } from 'react-router-dom'
 import { Icon } from './Icon'
 
-type ActionVariant = 'primary' | 'primary-inverted' | 'secondary' | 'secondary-inverted'
-type ActionSize = 'compact' | 'default'
+type ActionVariant =
+  | 'primary'
+  | 'primary-inverted'
+  | 'secondary'
+  | 'secondary-adaptive'
+  | 'secondary-inverted'
+type ActionSize = 'compact' | 'default' | 'small'
 
 type CommonActionProps = {
-  children: string
+  children: ReactNode
   className?: string
   icon?: string
   iconPosition?: 'start' | 'end'
@@ -55,6 +61,8 @@ const VARIANT_CLASSES: Record<ActionVariant, string> = {
     'bg-marca-clara text-marca hover:bg-marca hover:text-marca-clara active:bg-marca-escura active:text-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   secondary:
     'bg-marca-clara text-marca hover:bg-marca-escura hover:text-marca-clara active:bg-marca active:text-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40',
+  'secondary-adaptive':
+    'bg-marca-escura text-marca-clara hover:bg-marca active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara dark:bg-marca-clara dark:text-marca dark:hover:bg-marca-escura dark:hover:text-marca-clara dark:active:bg-marca dark:active:text-marca-clara disabled:pointer-events-none disabled:opacity-40',
   'secondary-inverted':
     'bg-marca-escura text-marca-clara hover:bg-marca hover:text-marca-clara active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
 }
@@ -62,6 +70,7 @@ const VARIANT_CLASSES: Record<ActionVariant, string> = {
 const SIZE_CLASSES: Record<ActionSize, string> = {
   compact: 'px-10 py-1 text-base',
   default: 'px-16 py-2',
+  small: 'px-3 py-1 text-sm',
 }
 
 export function Action(props: ActionProps) {
