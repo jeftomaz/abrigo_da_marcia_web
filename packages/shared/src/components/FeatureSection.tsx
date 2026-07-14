@@ -35,7 +35,7 @@ const LAYOUT_CLASSES: Record<
 > = {
   default: {
     container:
-      'gap-8 px-6 py-12 lg:gap-x-12 lg:py-24',
+      'gap-8 px-10 py-12 lg:gap-x-12 lg:px-6 lg:py-24',
     desktopImage: 'hidden w-11/12 justify-self-end lg:block',
     mobileImage: 'mx-auto my-8 w-full max-w-md lg:hidden',
   },
@@ -43,7 +43,7 @@ const LAYOUT_CLASSES: Record<
     container:
       'gap-0 px-10 py-4 lg:gap-x-12 lg:px-6 lg:py-12',
     desktopImage: 'hidden w-11/12 justify-self-end lg:block',
-    mobileImage: 'mx-auto mt-6 mb-4 w-full lg:hidden',
+    mobileImage: 'mx-auto mt-6 mb-4 w-full max-w-md lg:hidden',
   },
 }
 

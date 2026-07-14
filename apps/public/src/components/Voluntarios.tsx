@@ -10,7 +10,7 @@ export function Voluntarios() {
       image={{
         src: voluntariosPhoto,
         alt: 'Voluntários reunidos no Abrigo da Márcia',
-        className: 'max-w-xs lg:max-w-none lg:justify-self-start',
+        className: 'lg:max-w-none lg:justify-self-start',
       }}
       contentClassName="text-center lg:text-right"
       heading={

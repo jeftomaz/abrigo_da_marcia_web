@@ -32,10 +32,10 @@ export function NossosCuidados() {
     <section className="bg-marca text-cinza-claro dark:text-cinza-escuro">
       <div className="mx-auto max-w-[1920px] px-6 py-12 lg:py-24">
         <div className="text-center">
-          <h2 className="text-5xl leading-tight font-medium lg:text-8xl">
+          <h2 className="text-care-heading whitespace-nowrap leading-tight font-medium lg:text-8xl">
             Nossos cuidados
           </h2>
-          <p className="mt-2 text-2xl">
+          <p className="mt-2 text-care-copy lg:text-2xl">
             Cuidar da saúde de nosso cães é prioridade.
           </p>
         </div>
@@ -62,10 +62,10 @@ export function NossosCuidados() {
               </div>
 
               <div className="min-w-0 flex-1 lg:mx-auto lg:max-w-xs">
-                <h3 className="text-2xl leading-tight font-medium lg:text-3xl">
+                <h3 className="text-care-title leading-tight font-medium lg:text-3xl">
                   {title}
                 </h3>
-                <p className="mt-2 text-base italic lg:text-lg lg:not-italic">
+                <p className="mt-2 text-care-copy italic lg:text-2xl lg:not-italic">
                   {description}
                 </p>
               </div>
