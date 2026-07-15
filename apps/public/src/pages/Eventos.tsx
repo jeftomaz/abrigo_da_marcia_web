@@ -3,19 +3,25 @@ import { Action, CompactCard } from '@abrigo/shared'
 import camisetaPhoto from '../assets/evento_camiseta.jpg'
 import rifaPhoto from '../assets/evento_rifa.jpg'
 import { ProductReservationFlow } from '../components/ProductReservationFlow'
+import { RaffleReservationFlow } from '../components/RaffleReservationFlow'
 
 type FundraisingEvent = {
   actionLabel: string
   description: string
   id: number
   image: string
+  reservationKind?: 'product' | 'raffle'
+  prize?: string
   title: string
+  winner?: string
 }
 
 const DESCRIPTION =
   'Aqui vem o início de um texto descrevendo um cão ou um produto, depende do contexto. Pode ser possível encaixar mais, devido ao formato horizontal.'
 const FULL_DESCRIPTION =
   'Aqui vem o texto mais completo, descrevendo um produto ou qualquer outro objeto. Esta versão aproveita melhor o espaço da tela e apresenta as informações necessárias para a reserva. Escolha as características desejadas e adicione o produto antes de finalizar.'
+const FULL_RAFFLE_DESCRIPTION =
+  'Aqui vem o texto mais completo, descrevendo a rifa e o prêmio. Escolha entre os números disponíveis para montar sua reserva. Os números marcados como reservados não podem ser selecionados e voltam a ficar disponíveis caso o pagamento não seja confirmado dentro do prazo.'
 
 const ACTIVE_EVENT: FundraisingEvent = {
   id: 1,
@@ -23,6 +29,7 @@ const ACTIVE_EVENT: FundraisingEvent = {
   description: DESCRIPTION,
   image: camisetaPhoto,
   actionLabel: 'Reserve a sua',
+  reservationKind: 'product',
 }
 
 const PAST_EVENTS: FundraisingEvent[] = [
@@ -32,6 +39,9 @@ const PAST_EVENTS: FundraisingEvent[] = [
     description: DESCRIPTION,
     image: rifaPhoto,
     actionLabel: 'Conheça o evento',
+    reservationKind: 'raffle',
+    prize: 'Cesta de Páscoa',
+    winner: 'a ser anunciado',
   },
   {
     id: 3,
@@ -74,7 +84,7 @@ function EventCard({
 }
 
 export function Eventos() {
-  const [selectedProduct, setSelectedProduct] = useState<FundraisingEvent | null>(null)
+  const [selectedEvent, setSelectedEvent] = useState<FundraisingEvent | null>(null)
 
   return (
     <main className="min-h-screen bg-cinza-claro px-10 pt-10 pb-20 text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro lg:px-6 lg:pt-4">
@@ -93,7 +103,7 @@ export function Eventos() {
             Evento Ativo
           </h2>
           <div className="mx-auto mt-6 w-4/5 lg:w-full">
-            <EventCard event={ACTIVE_EVENT} active onOpen={() => setSelectedProduct(ACTIVE_EVENT)} />
+            <EventCard event={ACTIVE_EVENT} active onOpen={() => setSelectedEvent(ACTIVE_EVENT)} />
           </div>
         </section>
 
@@ -103,18 +113,33 @@ export function Eventos() {
           </h2>
           <div className="mx-auto mt-6 w-4/5 space-y-12 lg:w-full">
             {PAST_EVENTS.map((event) => (
-              <EventCard key={event.id} event={event} />
+              <EventCard
+                key={event.id}
+                event={event}
+                onOpen={event.reservationKind ? () => setSelectedEvent(event) : undefined}
+              />
             ))}
           </div>
         </section>
       </div>
 
-      {selectedProduct && (
+      {selectedEvent?.reservationKind === 'product' && (
         <ProductReservationFlow
-          title={selectedProduct.title}
+          title={selectedEvent.title}
           description={FULL_DESCRIPTION}
-          image={selectedProduct.image}
-          onClose={() => setSelectedProduct(null)}
+          image={selectedEvent.image}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
+
+      {selectedEvent?.reservationKind === 'raffle' && (
+        <RaffleReservationFlow
+          title={selectedEvent.title}
+          description={FULL_RAFFLE_DESCRIPTION}
+          image={selectedEvent.image}
+          prize={selectedEvent.prize ?? ''}
+          winner={selectedEvent.winner ?? ''}
+          onClose={() => setSelectedEvent(null)}
         />
       )}
     </main>

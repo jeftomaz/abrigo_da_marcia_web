@@ -28,7 +28,7 @@
 
 ## Fase — Eventos
 
-1. Listagem pública e fluxo responsivo de produto (card, carrinho, medidas, checkout e confirmação) — `done` (dados temporários; Pix demonstrativo)
+1. Listagem pública e fluxos responsivos de produto e rifa (cards, seleções, checkout e confirmação) — `done` (dados temporários; Pix demonstrativo)
 2. Schema, views públicas, RLS e verificação de dados reais — `todo`
 3. Persistência da reserva com Pix real e expiração automática — `todo`
 4. CRUD admin — `todo`

@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Fluxo público da rifa concluído: card responsivo, números disponíveis/reservados/selecionados, resumo, checkout e confirmação; produto e rifa reutilizam o mesmo card Pix demonstrativo.
 - Checkout de produtos omite a linha de desconto quando o cálculo resulta em zero; a regra definitiva de desconto segue pendente.
 - Fluxo público de produtos em Eventos concluído no cliente: card responsivo, variantes, carrinho editável, desconto de volume, medidas, checkout validado, ações primária/secundária e confirmação com Pix demonstrativo nos dois temas. Persistência, expiração e chave Pix oficial seguem pendentes do schema Supabase.
 - Modal compartilhado generalizado em `Dialog`; `ExpandedCardDialog` e as etapas de reserva reutilizam o mesmo foco inicial, trap de Tab, Esc, clique externo e retorno de foco.
