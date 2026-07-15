@@ -26,6 +26,17 @@ export function Header() {
   const isLanding = pathname === '/'
   const [isVisible, setIsVisible] = useState(true)
   const lastScrollY = useRef(0)
+  const navRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    if (window.innerWidth >= 1024) return
+
+    const nav = navRef.current
+    const activeItem = nav?.querySelector<HTMLElement>('[aria-current="page"]')
+    if (!nav || !activeItem) return
+
+    nav.scrollLeft = activeItem.offsetLeft - (nav.clientWidth - activeItem.offsetWidth) / 2
+  }, [pathname])
 
   useEffect(() => {
     lastScrollY.current = window.scrollY
@@ -58,7 +69,7 @@ export function Header() {
           <Logo className="h-12 w-auto" />
         </Link>
 
-        <nav className="order-2 flex min-w-0 basis-full gap-10 overflow-x-auto lg:basis-auto lg:flex-1 lg:justify-center">
+        <nav ref={navRef} className="order-2 flex min-w-0 basis-full gap-10 overflow-x-auto lg:basis-auto lg:flex-1 lg:justify-center">
           {NAV_ITEMS.map((item) => {
             const isActive = item.kind === 'route' && pathname === item.to
             const usesPrimaryVariant = isLanding

@@ -3,8 +3,8 @@
 1. Fundação — `doing` (scaffold pronto; Supabase/RLS/auth admin entram com Adoção)
 2. Landing + Header — `done`
 3. Adoção (público + admin) — `doing`
-4. Histórias (público + admin) — `doing` **← atual**
-5. Eventos/arrecadação (público + admin + reservas com expiração) — `todo`
+4. Histórias (público + admin) — `doing`
+5. Eventos/arrecadação (público + admin + reservas com expiração) — `doing` **← atual**
 6. Passada final de design system — `todo`
 
 ## Landing concluída
@@ -24,6 +24,13 @@
 1. Listagem pública responsiva e detalhe expandido — `done` (dados temporários)
 2. Schema, view pública e RLS — `done`
 3. Integração Supabase no frontend — `todo`
+4. CRUD admin — `todo`
+
+## Fase — Eventos
+
+1. Listagem pública responsiva — `done` (dados temporários)
+2. Schema, views públicas, RLS e verificação de dados reais — `todo`
+3. Reserva com Pix e expiração automática — `todo`
 4. CRUD admin — `todo`
 
 ## Requisito — Eventos

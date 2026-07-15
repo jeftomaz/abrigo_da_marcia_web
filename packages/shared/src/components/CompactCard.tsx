@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-type CompactCardOrientation = 'horizontal' | 'vertical'
+type CompactCardOrientation = 'horizontal' | 'responsive' | 'vertical'
 type CompactCardImageAspect = 'landscape' | 'square'
 
 type CompactCardProps = {
@@ -20,12 +20,20 @@ type CompactCardProps = {
 
 const ORIENTATION_CLASSES: Record<CompactCardOrientation, string> = {
   horizontal: 'h-44 flex-row lg:h-56',
+  responsive: 'flex-col lg:h-56 lg:flex-row',
   vertical: 'flex-col',
 }
 
 const IMAGE_ORIENTATION_CLASSES: Record<CompactCardOrientation, string> = {
   horizontal: 'h-full w-2/5 flex-shrink-0 object-cover',
+  responsive: 'w-full flex-shrink-0 object-cover lg:h-full lg:w-2/5',
   vertical: 'w-full object-cover',
+}
+
+const ACTION_ORIENTATION_CLASSES: Record<CompactCardOrientation, string> = {
+  horizontal: 'self-end',
+  responsive: '[&>*]:w-full lg:self-end lg:[&>*]:w-auto',
+  vertical: '[&>*]:w-full',
 }
 
 const IMAGE_ASPECT_CLASSES: Record<CompactCardImageAspect, string> = {
@@ -51,7 +59,7 @@ export function CompactCard({
       <img
         src={image.src}
         alt={image.alt}
-        className={`${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation === 'vertical' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''}`}
+        className={`${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
       />
 
       <div className="flex flex-1 flex-col gap-2 p-3">
@@ -65,7 +73,7 @@ export function CompactCard({
 
         {action && (
           <div
-            className={`mt-auto ${orientation === 'horizontal' ? 'self-end' : '[&>*]:w-full'} ${actionArea === 'card' ? "[&>*]:after:absolute [&>*]:after:inset-0 [&>*]:after:content-['']" : ''}`}
+            className={`mt-auto ${ACTION_ORIENTATION_CLASSES[orientation]} ${actionArea === 'card' ? "[&>*]:after:absolute [&>*]:after:inset-0 [&>*]:after:content-['']" : ''}`}
           >
             {action}
           </div>
