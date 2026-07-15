@@ -16,7 +16,7 @@ export function Hero() {
       image={{ src: heroImage, alt: 'Mão fazendo carinho em um cachorro' }}
       contentClassName="lg:flex lg:flex-col lg:gap-4"
       heading={
-        <h1 className="text-5xl leading-tight font-medium text-marca-escura dark:text-marca-clara lg:text-8xl">
+        <h1 className="text-5xl leading-tight font-medium lg:text-8xl">
           Fazer o bem é
           <br />
           bom pra cachorro!
@@ -33,7 +33,7 @@ export function Hero() {
         type="button"
         onClick={scrollToNext}
         aria-label="Rolar para a próxima seção"
-        className="mt-8 flex w-full justify-center text-marca-escura dark:text-marca-clara lg:hidden"
+        className="mt-8 flex w-full justify-center lg:hidden"
       >
         <ChevronDownIcon />
       </button>

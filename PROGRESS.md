@@ -1,12 +1,19 @@
 # PROGRESS.md
 
+- Semântica dos temas padronizada: base corresponde ao mockup claro e `.dark` ao escuro; Header, superfícies, textos sobre coral e página de Adoção agora mudam no mesmo sentido.
+- Modal de Histórias alinhado aos mockups: galeria horizontal no mobile e vertical no desktop, múltiplas fotos por história e botão “Fechar essa história” centralizado no rodapé do conteúdo.
+- Superfícies elevadas centralizadas nos tokens `surface-raised`/`on-surface-raised`: cards, modal e filtros agora são brancos com texto escuro no tema claro e pretos com texto claro no escuro.
+- Página pública de Histórias implementada com grid responsivo, temas claro/escuro e detalhe expandido; preview e listagem compartilham os dados temporários até a integração Supabase.
+- Card expandido de Adoção ampliado de 768px para 896px apenas no desktop, melhorando o espaço do texto sem alterar o mobile.
+- Esquema de `Nossos cuidados` corrigido: texto e fundos dos ícones agora respeitam as cores previstas nos temas claro/escuro.
+- Abas do Header reutilizam os estados do `Action` sobre fundo coral: na landing todas usam a variante padrão; nas páginas internas, a rota ativa é padrão e as demais são secundárias. O estado ativo expõe `aria-current`.
 - Banco materializado e validado no Supabase local: `supabase init` + migration `init_schema.sql` (enums, `caes`, `social_links`, views `*_public`, RLS, trigger `updated_at`) + `seed.sql`. Validado via PostgREST/anon: `caes_public` traz só `disponivel` (4 de 6; `adotado`/`falecido` ocultos) e não expõe `status`; tabelas base negam anon; CHECK de `birth_year` e trigger conferidos. Rodar: `supabase start` (Docker) + `supabase db reset`. Ainda sem policies admin, tipos, client e projeto hospedado.
+- `CompactCard` permite estender a ação ao card inteiro; aplicado aos cards expansíveis de Adoção e Histórias. O card horizontal de evento mantém apenas o botão clicável enquanto não houver expansão.
 - Modelo `caes` aprovado em `DATA_MODEL.md`: enums `cae_genero`/`cae_porte`/`cae_status`, `description` único (card trunca), idade via `birth_year`, `photos text[]` ([0]=capa). View `caes_public` filtra `disponivel` e é fonte única do catálogo de Adoção e do preview da landing. Migration, tipos e client Supabase seguem pendentes; upload de fotos e CRUD ficam para a fase admin.
 - Filtros da Adoção ganharam controles de 40px, rótulos menores, limpeza secundária desabilitada sem seleção, chips ativos e contador de resultados.
 - Tipografia do card expandido alinhada ao catálogo de referência: título mantém escala 28→36px, tags passam a 16px com padding proporcional e descrição a 18px/1.5. O botão usa área estendida acessível, permitindo abrir pelo card inteiro.
 - Proporção do card expandido ajustada a partir do catálogo publicado: galeria usa `min(54vh, 400px)` no mobile e divide o modal em 1:1 com o conteúdo no desktop.
 - Ações do card expandido foram compactadas: botão Fechar com largura estável, CTA flexível apenas no mobile e largura fixa a partir de `sm`, eliminando sobreposição.
-- Regra de superfícies aplicada: branco puro no tema claro corresponde a preto puro no escuro em filtros, `CompactCard` e modal expandido.
 - Página pública de Adoção implementada com temas claro/escuro, filtros, ordenação, cards expansíveis e CTA para o formulário. Dados seguem locais até a etapa Supabase; Header destaca a rota ativa.
 - Fluxo Git definido: uma branch por tela; ao concluir, publicar e integrar à `main` antes de iniciar a próxima.
 - Footer mobile reorganizado: logo/redes no topo, contato em largura total e créditos abaixo de um divisor; desktop preserva as duas colunas. Tipografia segue fluida e legível, sem overflow do e-mail.

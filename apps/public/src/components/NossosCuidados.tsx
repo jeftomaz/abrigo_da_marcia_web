@@ -29,7 +29,7 @@ const CARES: Care[] = [
 
 export function NossosCuidados() {
   return (
-    <section className="bg-marca text-cinza-claro dark:text-cinza-escuro">
+    <section className="bg-marca text-on-brand">
       <div className="mx-auto max-w-[1920px] px-6 py-12 lg:py-24">
         <div className="text-center">
           <h2 className="text-care-heading whitespace-nowrap leading-tight font-medium lg:text-8xl">

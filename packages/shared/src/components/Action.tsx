@@ -9,9 +9,11 @@ import { Icon } from './Icon'
 type ActionVariant =
   | 'primary'
   | 'primary-inverted'
+  | 'primary-on-brand'
   | 'secondary'
   | 'secondary-adaptive'
   | 'secondary-inverted'
+  | 'secondary-on-brand'
 type ActionSize = 'compact' | 'default' | 'small'
 
 type CommonActionProps = {
@@ -51,20 +53,25 @@ const BASE_CLASSES =
 // os 6 tokens da paleta. Como um botão CSS não detecta o fundo, o consumidor escolhe
 // pela superfície IMEDIATA (contraste):
 //   `primary`   (Padrão)     = coral cheio (marca)       → ação principal em fundo claro/neutro (branco, cinza-claro).
-//   `secondary` (Secundário) = pill pálido (marca-clara) → ação secundária em fundo claro, OU qualquer ação sobre fundo coral/marca (onde o coral sumiria).
-//   `*-inverted`             = só em fundos escuros-neutros (cinza-medio, cinza-escuro, preto).
+//   `secondary` (Secundário) = pill pálido (marca-clara) → ação secundária em fundo claro.
+//   `*-on-brand`             = fundo coral/marca.
+//   `*-inverted`             = fundos escuros-neutros (cinza-medio, cinza-escuro, preto).
 // Desativado (opacity-40) só atinge <button>; CTAs <Link>/<a> não desabilitam.
 const VARIANT_CLASSES: Record<ActionVariant, string> = {
   primary:
     'bg-marca text-marca-clara hover:bg-marca-escura hover:text-marca-clara active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40',
   'primary-inverted':
     'bg-marca-clara text-marca hover:bg-marca hover:text-marca-clara active:bg-marca-escura active:text-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
+  'primary-on-brand':
+    'bg-marca-clara text-marca hover:bg-cinza-escuro hover:text-marca active:bg-marca-escura active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   secondary:
     'bg-marca-clara text-marca hover:bg-marca-escura hover:text-marca-clara active:bg-marca active:text-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40',
   'secondary-adaptive':
     'bg-marca-escura text-marca-clara hover:bg-marca active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara dark:bg-marca-clara dark:text-marca dark:hover:bg-marca-escura dark:hover:text-marca-clara dark:active:bg-marca dark:active:text-marca-clara disabled:pointer-events-none disabled:opacity-40',
   'secondary-inverted':
     'bg-marca-escura text-marca-clara hover:bg-marca hover:text-marca-clara active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
+  'secondary-on-brand':
+    'bg-marca-escura text-marca hover:bg-cinza-escuro active:bg-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
 }
 
 const SIZE_CLASSES: Record<ActionSize, string> = {

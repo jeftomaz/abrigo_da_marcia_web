@@ -1,45 +1,15 @@
 import { useState } from 'react'
 import { Action, CompactCard, ExpandedCardDialog, FeatureSection } from '@abrigo/shared'
-import historiasPhoto from '../assets/landing_historias.jpg'
-
-type StoryPreview = {
-  name: string
-  description: string
-  fullDescription: string
-}
-
-const FULL_DESCRIPTION =
-  'Aqui vem o texto completo, contando a história desde o resgate até a adoção — até que o conteúdo real de cada história esteja cadastrado.'
-
-const STORIES: StoryPreview[] = [
-  {
-    name: 'Maia',
-    description:
-      'Aqui vem o início de um texto descrevendo um cão ou um produto, depende do contexto',
-    fullDescription: FULL_DESCRIPTION,
-  },
-  {
-    name: 'Clarinha',
-    description:
-      'Aqui vem o início de um texto descrevendo um cão ou um produto, depende do contexto',
-    fullDescription: FULL_DESCRIPTION,
-  },
-  {
-    name: 'Maia',
-    description:
-      'Aqui vem o início de um texto descrevendo um cão ou um produto, depende do contexto',
-    fullDescription: FULL_DESCRIPTION,
-  },
-]
+import { STORIES } from '../data/stories'
 
 export function HistoriasPreview() {
   const [selectedStory, setSelectedStory] = useState<number | null>(null)
 
   return (
     <FeatureSection
-      image={{ src: historiasPhoto, alt: 'Cão adotado recebendo carinho' }}
+      image={{ src: STORIES[0].photos[0], alt: 'Cão adotado recebendo carinho' }}
       heading={
-        <h2 className="text-5xl leading-tight font-medium text-marca-escura dark:text-marca-clara lg:text-8xl">
+        <h2 className="text-5xl leading-tight font-medium lg:text-8xl">
           O final feliz que
           <br />
           todos merecem
@@ -50,8 +20,9 @@ export function HistoriasPreview() {
           <ExpandedCardDialog
             title={STORIES[selectedStory].name}
             description={STORIES[selectedStory].fullDescription}
-            images={[historiasPhoto]}
+            images={STORIES[selectedStory].photos}
             onClose={() => setSelectedStory(null)}
+            variant="story"
           />
         )
       }
@@ -63,10 +34,11 @@ export function HistoriasPreview() {
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
-        {STORIES.map((story, index) => (
+        {STORIES.slice(0, 3).map((story, index) => (
           <CompactCard
-            key={index}
-            image={{ src: historiasPhoto, alt: story.name }}
+            key={story.id}
+            actionArea="card"
+            image={{ src: story.photos[0], alt: story.name }}
             title={story.name}
             description={story.description}
             action={

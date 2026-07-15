@@ -23,6 +23,7 @@ const NAV_ITEMS: NavItem[] = [
 export function Header() {
   const { theme, toggleTheme } = useTheme()
   const { pathname } = useLocation()
+  const isLanding = pathname === '/'
   const [isVisible, setIsVisible] = useState(true)
   const lastScrollY = useRef(0)
 
@@ -53,19 +54,26 @@ export function Header() {
       }`}
     >
       <div className="mx-auto flex max-w-[1920px] flex-wrap items-center justify-between gap-10 px-6 py-4 lg:flex-nowrap lg:gap-6">
-        <Link to="/" className="shrink-0 text-marca-escura dark:text-marca-clara">
+        <Link to="/" className="shrink-0 text-on-brand">
           <Logo className="h-12 w-auto" />
         </Link>
 
         <nav className="order-2 flex min-w-0 basis-full gap-10 overflow-x-auto lg:basis-auto lg:flex-1 lg:justify-center">
           {NAV_ITEMS.map((item) => {
             const isActive = item.kind === 'route' && pathname === item.to
-            const variant = isActive
-              ? theme === 'dark' ? 'secondary-inverted' : 'secondary'
-              : theme === 'dark' ? 'secondary' : 'secondary-inverted'
+            const usesPrimaryVariant = isLanding
+              ? theme === 'light'
+              : isActive === (theme === 'dark')
+            const variant = usesPrimaryVariant ? 'primary-on-brand' : 'secondary-on-brand'
 
             return item.kind === 'route' ? (
-              <Action key={item.label} to={item.to} variant={variant} className="shrink-0 text-sm">
+              <Action
+                key={item.label}
+                to={item.to}
+                variant={variant}
+                aria-current={isActive ? 'page' : undefined}
+                className="shrink-0 text-sm"
+              >
                 {item.label}
               </Action>
             ) : (
@@ -80,9 +88,9 @@ export function Header() {
           type="button"
           onClick={toggleTheme}
           aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
-          className="order-1 shrink-0 lg:order-3"
+          className="order-1 shrink-0 text-on-brand lg:order-3"
         >
-          <Icon name={theme === 'dark' ? 'sun-light' : 'half-moon'} className="h-8 w-8" />
+          <Icon name={theme === 'dark' ? 'half-moon' : 'sun-light'} className="h-8 w-8" />
         </button>
       </div>
     </header>

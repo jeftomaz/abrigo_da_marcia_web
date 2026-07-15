@@ -14,23 +14,27 @@ type ExpandedCardDialogProps = {
   tags?: ReactNode
   primaryAction?: ExpandedCardDialogAction
   onClose: () => void
-  variant?: 'adoption' | 'default'
+  variant?: 'adoption' | 'default' | 'story'
 }
 
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled])'
 
 const DIALOG_CLASSES = {
   adoption:
-    'flex max-h-[90vh] w-5/6 max-w-3xl flex-col overflow-hidden rounded-3xl bg-black text-cinza-claro dark:bg-white dark:text-cinza-escuro lg:h-[70vh] lg:w-full lg:flex-row',
+    'flex max-h-[90vh] w-5/6 max-w-3xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised lg:h-[70vh] lg:w-full lg:max-w-4xl lg:flex-row',
   default:
-    'flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-black text-cinza-claro dark:bg-white dark:text-cinza-escuro lg:max-h-none lg:flex-row',
+    'flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised lg:max-h-none lg:flex-row',
+  story:
+    'flex max-h-[90vh] w-5/6 max-w-3xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised lg:h-[60vh] lg:w-full lg:flex-row',
 }
 
 const GALLERY_CLASSES = {
   adoption:
-    'flex h-[min(54vh,400px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-black pt-6 select-none dark:bg-white lg:h-full lg:w-1/2 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto lg:pt-0',
+    'flex h-[min(54vh,400px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-surface-raised pt-6 select-none lg:h-full lg:w-1/2 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto lg:pt-0',
   default:
     'flex h-[min(54vh,400px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-cinza-escuro select-none lg:h-auto lg:max-h-[90vh] lg:w-2/5 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto',
+  story:
+    'flex h-[min(40vh,320px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-surface-raised pt-6 select-none lg:h-full lg:w-1/3 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto lg:pt-0',
 }
 
 const IMAGE_CLASSES = {
@@ -38,11 +42,14 @@ const IMAGE_CLASSES = {
     'h-full w-5/12 flex-shrink-0 snap-center object-cover lg:h-1/2 lg:w-full',
   default:
     'h-full w-full flex-shrink-0 snap-center object-contain lg:object-cover',
+  story:
+    'h-full w-5/12 flex-shrink-0 snap-center object-cover lg:h-1/2 lg:w-full',
 }
 
 const DESCRIPTION_CLASSES = {
-  adoption: 'text-justify text-lg leading-normal text-cinza-claro dark:text-cinza-escuro',
-  default: 'indent-8 text-justify text-cinza-claro dark:text-cinza-escuro',
+  adoption: 'text-justify text-lg leading-normal',
+  default: 'indent-8 text-justify',
+  story: 'text-justify text-base leading-normal',
 }
 
 export function ExpandedCardDialog({
@@ -167,16 +174,24 @@ export function ExpandedCardDialog({
               className={`flex-shrink-0 p-6 pt-4 lg:p-10 lg:pt-4 ${
                 primaryAction
                   ? 'flex items-center justify-between gap-4'
-                  : 'flex flex-wrap gap-4'
+                  : variant === 'story'
+                    ? 'flex justify-center'
+                    : 'flex flex-wrap gap-4'
               }`}
             >
               <Action
                 onClick={onClose}
-                size={primaryAction ? 'small' : 'default'}
-                variant="secondary-adaptive"
-                className={primaryAction ? 'w-20 shrink-0' : ''}
+                size={primaryAction || variant === 'story' ? 'small' : 'default'}
+                variant={variant === 'story' ? 'primary' : 'secondary-adaptive'}
+                className={
+                  primaryAction
+                    ? 'w-20 shrink-0'
+                    : variant === 'story'
+                      ? 'w-40'
+                      : ''
+                }
               >
-                Fechar
+                {variant === 'story' ? 'Fechar essa história' : 'Fechar'}
               </Action>
 
               {primaryAction && (

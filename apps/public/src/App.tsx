@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Header, ThemeProvider } from '@abrigo/shared'
 import { Landing } from './pages/Landing'
 import { Adocao } from './pages/Adocao'
+import { Historias } from './pages/Historias'
 import { Footer } from './components/Footer'
 
 function ScrollToTop() {
@@ -22,6 +23,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/adocao" element={<Adocao />} />
+          <Route path="/historias" element={<Historias />} />
         </Routes>
         <Footer />
       </BrowserRouter>

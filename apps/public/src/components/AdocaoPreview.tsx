@@ -62,6 +62,7 @@ export function AdocaoPreview() {
             images={[adotePhoto]}
             primaryAction={{ label: 'Adote-me', href: GOOGLE_FORM_URL }}
             onClose={() => setSelectedDog(null)}
+            variant="adoption"
           />
         )
       }
@@ -74,6 +75,7 @@ export function AdocaoPreview() {
         {DOGS.map((dog, index) => (
           <CompactCard
             key={index}
+            actionArea="card"
             image={{ src: adotePhoto, alt: dog.name }}
             title={dog.name}
             description={dog.description}

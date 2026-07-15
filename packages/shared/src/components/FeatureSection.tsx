@@ -5,6 +5,9 @@ type FeatureSectionImagePosition = 'end' | 'start'
 type FeatureSectionLayout = 'compact' | 'default'
 type FeatureSectionTone = 'brand' | 'contrast' | 'neutral'
 
+const NEUTRAL_TONE_CLASSES =
+  'bg-cinza-claro text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro'
+
 type FeatureSectionProps = {
   after?: ReactNode
   children: ReactNode
@@ -22,11 +25,9 @@ type FeatureSectionProps = {
 }
 
 const TONE_CLASSES: Record<FeatureSectionTone, string> = {
-  brand: 'bg-marca text-marca-escura dark:text-marca-clara',
-  contrast:
-    'bg-cinza-escuro text-cinza-claro dark:bg-cinza-claro dark:text-cinza-escuro',
-  neutral:
-    'bg-cinza-claro text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro',
+  brand: 'bg-marca text-on-brand',
+  contrast: NEUTRAL_TONE_CLASSES,
+  neutral: NEUTRAL_TONE_CLASSES,
 }
 
 const LAYOUT_CLASSES: Record<

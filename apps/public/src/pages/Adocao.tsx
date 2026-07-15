@@ -118,7 +118,7 @@ export function Adocao() {
   ].filter((filter): filter is string => filter !== null)
 
   return (
-    <main className="min-h-screen bg-cinza-escuro px-10 pt-10 pb-20 text-cinza-claro dark:bg-cinza-claro dark:text-cinza-escuro lg:px-6 lg:pt-4">
+    <main className="min-h-screen bg-cinza-claro px-10 pt-10 pb-20 text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro lg:px-6 lg:pt-4">
       <div className="mx-auto max-w-2xl">
         <header className="text-center">
           <h1 className="text-5xl leading-tight font-medium text-marca lg:text-8xl">
@@ -131,7 +131,7 @@ export function Adocao() {
 
         <section
           aria-label="Filtros dos cães"
-          className="mt-6 rounded-3xl bg-black p-6 dark:bg-white lg:mt-5 lg:p-4"
+          className="mt-6 rounded-3xl bg-surface-raised p-6 text-on-surface-raised lg:mt-5 lg:p-4"
         >
           <div className="grid gap-4 lg:grid-cols-3 lg:gap-10">
             <FilterSelect id="gender" label="Gênero" value={gender} onChange={setGender}>
@@ -191,7 +191,8 @@ export function Adocao() {
             return (
               <CompactCard
                 key={dog.id}
-                className="relative min-w-0"
+                actionArea="card"
+                className="min-w-0"
                 image={{ src: dogPhoto, alt: dog.name }}
                 title={dog.name}
                 description={dog.description}
@@ -200,7 +201,7 @@ export function Adocao() {
                   <Action
                     onClick={() => setSelectedDog(dog)}
                     size="compact"
-                    className="px-2 after:absolute after:inset-0 after:content-['']"
+                    className="px-2"
                     aria-label={`Conhecer ${dog.name}`}
                   >
                     <span className="lg:hidden">Conhecer cão</span>

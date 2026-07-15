@@ -12,7 +12,7 @@ export function SobreNos() {
       layout="compact"
       contentClassName="lg:-translate-y-16"
       heading={
-        <h2 className="text-5xl leading-tight font-medium text-marca-escura dark:text-marca-clara lg:text-8xl">
+        <h2 className="text-5xl leading-tight font-medium lg:text-8xl">
           Conheça o abrigo
         </h2>
       }

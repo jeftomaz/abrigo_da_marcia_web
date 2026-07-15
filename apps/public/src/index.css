@@ -13,6 +13,9 @@
   --color-marca-escura: #8d0e0c;
   --color-marca: #f15a55;
   --color-marca-clara: #fbd1d0;
+  --color-on-brand: var(--color-marca-clara);
+  --color-surface-raised: #fff;
+  --color-on-surface-raised: var(--color-cinza-escuro);
 
   /*
    * Tipografia fluida (clamp): tamanho acompanha a largura da janela em vez
@@ -38,4 +41,10 @@
   --text-care-heading: clamp(1.6875rem, 7.5vw, 4.8rem);
   --text-care-title: clamp(1.3125rem, 0.753rem + 2.4849vw, 2.3438rem);
   --text-care-copy: clamp(1rem, 0.7471rem + 1.1242vw, 1.4666rem);
+}
+
+.dark {
+  --color-on-brand: var(--color-marca-escura);
+  --color-surface-raised: #000;
+  --color-on-surface-raised: var(--color-cinza-claro);
 }
