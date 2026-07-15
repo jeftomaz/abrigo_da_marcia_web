@@ -2,7 +2,7 @@
 -- Público lê apenas via views *_public; tabelas base ficam sob RLS sem acesso anon.
 -- Policies de CRUD admin não entram aqui: dependem do modelo de Auth/MFA (fase admin).
 
--- updated_at automático, compartilhado pelas duas tabelas
+-- updated_at automático, compartilhado pelas tabelas do domínio
 create function public.set_updated_at()
 returns trigger
 language plpgsql

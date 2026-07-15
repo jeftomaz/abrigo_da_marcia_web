@@ -22,8 +22,9 @@
 ## Próxima fase — Histórias
 
 1. Listagem pública responsiva e detalhe expandido — `done` (dados temporários)
-2. Schema, view pública, RLS e integração Supabase — `todo`
-3. CRUD admin — `todo`
+2. Schema, view pública e RLS — `done`
+3. Integração Supabase no frontend — `todo`
+4. CRUD admin — `todo`
 
 ## Requisito — Eventos
 

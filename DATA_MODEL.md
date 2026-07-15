@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. Materializado em `supabase/migrations/` e validado no stack local (`supabase start` + `db reset`). Ainda sem projeto hospedado.
+Fonte de verdade do banco. Materializado em `supabase/migrations/`; schema base validado no stack local. A migration de Histórias aguarda `supabase db reset` com o Docker ativo. Ainda sem projeto hospedado.
 
 ## DER
 
@@ -20,6 +20,14 @@ erDiagram
     cae_genero gender
     cae_porte size
     cae_status status
+    text photos "text[] ordenado; [0]=capa"
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  HISTORIAS {
+    uuid id PK
+    text name
+    text description
     text photos "text[] ordenado; [0]=capa"
     timestamptz created_at
     timestamptz updated_at
@@ -75,3 +83,23 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 - View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, somente quando `status = 'disponivel'`, ordenada por `created_at` desc. Não expõe `status` (público só vê disponíveis). O preview da landing usa os primeiros N desta mesma view.
 - Admin autenticado pode inserir, consultar, atualizar e excluir; a condição da policy será definida junto ao modelo de Auth/MFA — **ainda não há policies admin nas migrations** (por ora só o service role escreve).
 - Upload e compressão das fotos no Storage fazem parte da fase admin, não deste escopo.
+
+## `historias`
+
+Histórias de adoção exibidas na página dedicada e no preview da landing. São independentes de `caes`: não exigem porte, idade, gênero ou status. O card trunca `description`; o diálogo mostra o texto completo.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `uuid` | PK; default `gen_random_uuid()` |
+| `name` | `text` | not null |
+| `description` | `text` | not null |
+| `photos` | `text[]` | not null; default `'{}'`; caminhos ordenados no Storage, `[0]` = capa |
+| `created_at` | `timestamptz` | not null; default `now()` |
+| `updated_at` | `timestamptz` | not null; atualizado automaticamente |
+
+### Exposição e acesso
+
+- RLS habilitada na tabela; `anon` não acessa a tabela diretamente.
+- View `historias_public`: expõe `id`, `name`, `description` e `photos`, ordenada por `created_at` desc. A página de Histórias e o preview da landing usam essa mesma view.
+- Admin autenticado poderá inserir, consultar, atualizar e excluir; as policies serão definidas com Auth/MFA.
+- Upload, compressão e regra de ao menos uma foto fazem parte da fase admin.

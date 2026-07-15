@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Migration de Histórias criada: tabela `historias` independente de `caes`, com `name`, `description` e `photos`; view `historias_public`, RLS e seed adicionados. Validação local aguarda Docker ativo; integração do frontend e policies admin seguem pendentes.
 - Semântica dos temas padronizada: base corresponde ao mockup claro e `.dark` ao escuro; Header, superfícies, textos sobre coral e página de Adoção agora mudam no mesmo sentido.
 - Modal de Histórias alinhado aos mockups: galeria horizontal no mobile e vertical no desktop, múltiplas fotos por história e botão “Fechar essa história” centralizado no rodapé do conteúdo.
 - Superfícies elevadas centralizadas nos tokens `surface-raised`/`on-surface-raised`: cards, modal e filtros agora são brancos com texto escuro no tema claro e pretos com texto claro no escuro.

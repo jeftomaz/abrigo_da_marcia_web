@@ -14,3 +14,9 @@ insert into public.caes (name, description, birth_year, gender, size, status, ph
   ('Mel',       'Calma e companheira.',               2019, 'femea', 'medio',   'disponivel', '{caes/mel-1.jpg}'),
   ('Bidu',      'Já encontrou um lar.',               2020, 'macho', 'grande',  'adotado',    '{caes/bidu-1.jpg}'),
   ('Fumaça',    'Em memória.',                        2012, 'femea', 'pequeno', 'falecido',   '{caes/fumaca-1.jpg}');
+
+-- Histórias são registros independentes e não exigem os atributos do catálogo.
+insert into public.historias (name, description, photos) values
+  ('Maia',     'Do resgate à chegada em seu novo lar.', '{historias/maia-1.jpg,historias/maia-2.jpg}'),
+  ('Clarinha', 'Uma recuperação cercada de cuidado.',   '{historias/clarinha-1.jpg}'),
+  ('Moleque',  'A história de uma adoção muito feliz.', '{historias/moleque-1.jpg}');
