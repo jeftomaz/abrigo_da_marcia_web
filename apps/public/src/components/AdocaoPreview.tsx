@@ -75,7 +75,6 @@ export function AdocaoPreview() {
         {DOGS.map((dog, index) => (
           <CompactCard
             key={index}
-            actionArea="card"
             image={{ src: adotePhoto, alt: dog.name }}
             title={dog.name}
             description={dog.description}

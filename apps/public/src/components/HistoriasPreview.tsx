@@ -37,7 +37,6 @@ export function HistoriasPreview() {
         {STORIES.slice(0, 3).map((story, index) => (
           <CompactCard
             key={story.id}
-            actionArea="card"
             image={{ src: story.photos[0], alt: story.name }}
             title={story.name}
             description={story.description}

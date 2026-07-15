@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Action, CompactCard } from '@abrigo/shared'
 import camisetaPhoto from '../assets/evento_camiseta.jpg'
 import rifaPhoto from '../assets/evento_rifa.jpg'
+import { ProductReservationFlow } from '../components/ProductReservationFlow'
 
 type FundraisingEvent = {
   actionLabel: string
@@ -12,6 +14,8 @@ type FundraisingEvent = {
 
 const DESCRIPTION =
   'Aqui vem o início de um texto descrevendo um cão ou um produto, depende do contexto. Pode ser possível encaixar mais, devido ao formato horizontal.'
+const FULL_DESCRIPTION =
+  'Aqui vem o texto mais completo, descrevendo um produto ou qualquer outro objeto. Esta versão aproveita melhor o espaço da tela e apresenta as informações necessárias para a reserva. Escolha as características desejadas e adicione o produto antes de finalizar.'
 
 const ACTIVE_EVENT: FundraisingEvent = {
   id: 1,
@@ -38,7 +42,15 @@ const PAST_EVENTS: FundraisingEvent[] = [
   },
 ]
 
-function EventCard({ event, active = false }: { event: FundraisingEvent; active?: boolean }) {
+function EventCard({
+  event,
+  active = false,
+  onOpen,
+}: {
+  event: FundraisingEvent
+  active?: boolean
+  onOpen?: () => void
+}) {
   return (
     <CompactCard
       orientation="responsive"
@@ -48,6 +60,7 @@ function EventCard({ event, active = false }: { event: FundraisingEvent; active?
       description={event.description}
       action={
         <Action
+          onClick={onOpen}
           size="compact"
           variant={active ? 'primary' : 'secondary'}
           className={active ? '' : 'dark:bg-marca-escura dark:text-marca'}
@@ -61,6 +74,8 @@ function EventCard({ event, active = false }: { event: FundraisingEvent; active?
 }
 
 export function Eventos() {
+  const [selectedProduct, setSelectedProduct] = useState<FundraisingEvent | null>(null)
+
   return (
     <main className="min-h-screen bg-cinza-claro px-10 pt-10 pb-20 text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro lg:px-6 lg:pt-4">
       <div className="mx-auto max-w-4xl">
@@ -78,7 +93,7 @@ export function Eventos() {
             Evento Ativo
           </h2>
           <div className="mx-auto mt-6 w-4/5 lg:w-full">
-            <EventCard event={ACTIVE_EVENT} active />
+            <EventCard event={ACTIVE_EVENT} active onOpen={() => setSelectedProduct(ACTIVE_EVENT)} />
           </div>
         </section>
 
@@ -93,6 +108,15 @@ export function Eventos() {
           </div>
         </section>
       </div>
+
+      {selectedProduct && (
+        <ProductReservationFlow
+          title={selectedProduct.title}
+          description={FULL_DESCRIPTION}
+          image={selectedProduct.image}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </main>
   )
 }

@@ -5,7 +5,6 @@ type CompactCardImageAspect = 'landscape' | 'square'
 
 type CompactCardProps = {
   action?: ReactNode
-  actionArea?: 'button' | 'card'
   className?: string
   description: string
   image: {
@@ -43,7 +42,6 @@ const IMAGE_ASPECT_CLASSES: Record<CompactCardImageAspect, string> = {
 
 export function CompactCard({
   action,
-  actionArea = 'button',
   className = '',
   description,
   image,
@@ -54,7 +52,7 @@ export function CompactCard({
 }: CompactCardProps) {
   return (
     <article
-      className={`flex overflow-hidden rounded-2xl bg-surface-raised text-on-surface-raised transition-transform duration-200 ease-out motion-safe:hover:-translate-y-1 ${actionArea === 'card' ? 'relative' : ''} ${ORIENTATION_CLASSES[orientation]} ${className}`}
+      className={`relative flex overflow-hidden rounded-2xl bg-surface-raised text-on-surface-raised transition-transform duration-200 ease-out motion-safe:hover:-translate-y-1 ${ORIENTATION_CLASSES[orientation]} ${className}`}
     >
       <img
         src={image.src}
@@ -73,7 +71,7 @@ export function CompactCard({
 
         {action && (
           <div
-            className={`mt-auto ${ACTION_ORIENTATION_CLASSES[orientation]} ${actionArea === 'card' ? "[&>*]:after:absolute [&>*]:after:inset-0 [&>*]:after:content-['']" : ''}`}
+            className={`mt-auto ${ACTION_ORIENTATION_CLASSES[orientation]} [&>*]:after:absolute [&>*]:after:inset-0 [&>*]:after:content-['']`}
           >
             {action}
           </div>

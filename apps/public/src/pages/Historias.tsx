@@ -24,7 +24,6 @@ export function Historias() {
           {STORIES.map((story) => (
             <CompactCard
               key={story.id}
-              actionArea="card"
               image={{ src: story.photos[0], alt: `Cão adotado: ${story.name}` }}
               imageAspect="landscape"
               title={story.name}

@@ -10,7 +10,7 @@
 ## Landing concluída
 
 - Header, Hero, previews de Adoção/Histórias/Recãopensa, Nossos cuidados, Doação, Sobre nós, Voluntários e Footer.
-- Primitivos compartilhados: `Action`, `BlobImage`, `CompactCard`, `ExpandedCardDialog`, `FeatureSection`, `Icon`, `Logo` e `Switch`.
+- Primitivos compartilhados: `Action`, `BlobImage`, `CompactCard`, `Dialog`, `ExpandedCardDialog`, `FeatureSection`, `Icon`, `Logo`, `SelectField` e `Switch`.
 
 ## Fase — Adoção
 
@@ -28,9 +28,9 @@
 
 ## Fase — Eventos
 
-1. Listagem pública responsiva — `done` (dados temporários)
+1. Listagem pública e fluxo responsivo de produto (card, carrinho, medidas, checkout e confirmação) — `done` (dados temporários; Pix demonstrativo)
 2. Schema, views públicas, RLS e verificação de dados reais — `todo`
-3. Reserva com Pix e expiração automática — `todo`
+3. Persistência da reserva com Pix real e expiração automática — `todo`
 4. CRUD admin — `todo`
 
 ## Requisito — Eventos

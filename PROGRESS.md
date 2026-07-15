@@ -1,5 +1,9 @@
 # PROGRESS.md
 
+- Checkout de produtos omite a linha de desconto quando o cálculo resulta em zero; a regra definitiva de desconto segue pendente.
+- Fluxo público de produtos em Eventos concluído no cliente: card responsivo, variantes, carrinho editável, desconto de volume, medidas, checkout validado, ações primária/secundária e confirmação com Pix demonstrativo nos dois temas. Persistência, expiração e chave Pix oficial seguem pendentes do schema Supabase.
+- Modal compartilhado generalizado em `Dialog`; `ExpandedCardDialog` e as etapas de reserva reutilizam o mesmo foco inicial, trap de Tab, Esc, clique externo e retorno de foco.
+- `CompactCard` padronizado: a ação principal cobre sempre toda a área do card em todas as orientações e páginas, mantendo o botão visível e a ativação por teclado.
 - Página pública de Eventos/Recãopensa implementada com evento ativo, histórico, layout responsivo e temas claro/escuro; Header centraliza a rota ativa no mobile. Dados e ações seguem temporários até o schema e o fluxo de reservas.
 - Migration de Histórias criada: tabela `historias` independente de `caes`, com `name`, `description` e `photos`; view `historias_public`, RLS e seed adicionados. Validação local aguarda Docker ativo; integração do frontend e policies admin seguem pendentes.
 - Semântica dos temas padronizada: base corresponde ao mockup claro e `.dark` ao escuro; Header, superfícies, textos sobre coral e página de Adoção agora mudam no mesmo sentido.
@@ -10,7 +14,6 @@
 - Esquema de `Nossos cuidados` corrigido: texto e fundos dos ícones agora respeitam as cores previstas nos temas claro/escuro.
 - Abas do Header reutilizam os estados do `Action` sobre fundo coral: na landing todas usam a variante padrão; nas páginas internas, a rota ativa é padrão e as demais são secundárias. O estado ativo expõe `aria-current`.
 - Banco materializado e validado no Supabase local: `supabase init` + migration `init_schema.sql` (enums, `caes`, `social_links`, views `*_public`, RLS, trigger `updated_at`) + `seed.sql`. Validado via PostgREST/anon: `caes_public` traz só `disponivel` (4 de 6; `adotado`/`falecido` ocultos) e não expõe `status`; tabelas base negam anon; CHECK de `birth_year` e trigger conferidos. Rodar: `supabase start` (Docker) + `supabase db reset`. Ainda sem policies admin, tipos, client e projeto hospedado.
-- `CompactCard` permite estender a ação ao card inteiro; aplicado aos cards expansíveis de Adoção e Histórias. O card horizontal de evento mantém apenas o botão clicável enquanto não houver expansão.
 - Modelo `caes` aprovado em `DATA_MODEL.md`: enums `cae_genero`/`cae_porte`/`cae_status`, `description` único (card trunca), idade via `birth_year`, `photos text[]` ([0]=capa). View `caes_public` filtra `disponivel` e é fonte única do catálogo de Adoção e do preview da landing. Migration, tipos e client Supabase seguem pendentes; upload de fotos e CRUD ficam para a fase admin.
 - Filtros da Adoção ganharam controles de 40px, rótulos menores, limpeza secundária desabilitada sem seleção, chips ativos e contador de resultados.
 - Tipografia do card expandido alinhada ao catálogo de referência: título mantém escala 28→36px, tags passam a 16px com padding proporcional e descrição a 18px/1.5. O botão usa área estendida acessível, permitindo abrir pelo card inteiro.

@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
 import {
   Action,
   CompactCard,
   ExpandedCardDialog,
-  Icon,
+  SelectField,
 } from '@abrigo/shared'
 import { Tag } from '../components/Tag'
 import dogPhoto from '../assets/landing_adote.jpg'
@@ -16,14 +15,6 @@ type Dog = {
   id: number
   name: string
   size: 'grande' | 'medio' | 'pequeno'
-}
-
-type FilterSelectProps = {
-  children: ReactNode
-  id: string
-  label: string
-  onChange: (value: string) => void
-  value: string
 }
 
 const GOOGLE_FORM_URL = 'https://forms.gle/nLSjXJyeLGUJXZj27'
@@ -60,30 +51,6 @@ const ORDER_LABELS: Record<string, string> = {
 
 function getDogTags(dog: Dog) {
   return [GENDER_LABELS[dog.gender], SIZE_LABELS[dog.size], `${dog.age} ANOS`]
-}
-
-function FilterSelect({ children, id, label, onChange, value }: FilterSelectProps) {
-  return (
-    <div className="grid grid-cols-[6.5rem_1fr] items-center gap-4 lg:block">
-      <label htmlFor={id} className="text-lg font-medium lg:block lg:text-center">
-        {label}
-      </label>
-      <div className="relative lg:mt-1">
-        <select
-          id={id}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="min-h-10 w-full appearance-none rounded-full bg-marca-escura px-5 py-2 text-center text-base font-medium text-marca-clara outline-none focus-visible:ring-2 focus-visible:ring-marca-clara dark:bg-marca"
-        >
-          {children}
-        </select>
-        <Icon
-          name="arrow-separate-vertical"
-          className="pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2 text-marca-clara"
-        />
-      </div>
-    </div>
-  )
 }
 
 export function Adocao() {
@@ -134,23 +101,23 @@ export function Adocao() {
           className="mt-6 rounded-3xl bg-surface-raised p-6 text-on-surface-raised lg:mt-5 lg:p-4"
         >
           <div className="grid gap-4 lg:grid-cols-3 lg:gap-10">
-            <FilterSelect id="gender" label="Gênero" value={gender} onChange={setGender}>
+            <SelectField id="gender" label="Gênero" value={gender} onChange={setGender} variant="filter">
               <option value="">Selecionar</option>
               <option value="macho">Macho</option>
               <option value="femea">Fêmea</option>
-            </FilterSelect>
-            <FilterSelect id="size" label="Porte" value={size} onChange={setSize}>
+            </SelectField>
+            <SelectField id="size" label="Porte" value={size} onChange={setSize} variant="filter">
               <option value="">Selecionar</option>
               <option value="pequeno">Pequeno</option>
               <option value="medio">Médio</option>
               <option value="grande">Grande</option>
-            </FilterSelect>
-            <FilterSelect id="order" label="Ordenar" value={order} onChange={setOrder}>
+            </SelectField>
+            <SelectField id="order" label="Ordenar" value={order} onChange={setOrder} variant="filter">
               <option value="">Selecionar</option>
               <option value="age-asc">Mais novos</option>
               <option value="age-desc">Mais velhos</option>
               <option value="name">Nome</option>
-            </FilterSelect>
+            </SelectField>
           </div>
           <div className="mt-5 flex justify-center lg:justify-end">
             <Action
@@ -191,7 +158,6 @@ export function Adocao() {
             return (
               <CompactCard
                 key={dog.id}
-                actionArea="card"
                 className="min-w-0"
                 image={{ src: dogPhoto, alt: dog.name }}
                 title={dog.name}
