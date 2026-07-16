@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Barra de reserva compartilhada reorganizada no mobile: resumo em cima e ações de toque ampliadas embaixo, preservando a pill horizontal no desktop; na rifa, surge e desaparece com transição, oferece “Limpar” e expande seleções excedentes.
 - Fluxo público da rifa concluído: card responsivo, números disponíveis/reservados/selecionados, resumo, checkout e confirmação; produto e rifa reutilizam o mesmo card Pix demonstrativo.
 - Checkout de produtos omite a linha de desconto quando o cálculo resulta em zero; a regra definitiva de desconto segue pendente.
 - Fluxo público de produtos em Eventos concluído no cliente: card responsivo, variantes, carrinho editável, desconto de volume, medidas, checkout validado, ações primária/secundária e confirmação com Pix demonstrativo nos dois temas. Persistência, expiração e chave Pix oficial seguem pendentes do schema Supabase.

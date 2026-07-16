@@ -9,6 +9,7 @@ type ExpandedCardDialogAction = {
 }
 
 type ExpandedCardDialogProps = {
+  active?: boolean
   children?: ReactNode
   title: string
   description: string
@@ -60,6 +61,7 @@ const DESCRIPTION_CLASSES = {
 }
 
 export function ExpandedCardDialog({
+  active,
   children,
   title,
   description,
@@ -100,6 +102,7 @@ export function ExpandedCardDialog({
 
   return (
     <Dialog
+      active={active}
       ariaLabel={children ? title : undefined}
       ariaLabelledBy={children ? undefined : titleId}
       className={DIALOG_CLASSES[variant]}

@@ -1,9 +1,11 @@
-import { useId, useState } from 'react'
-import { Action, Dialog } from '@abrigo/shared'
+import { useEffect, useId, useState } from 'react'
+import { Dialog } from '@abrigo/shared'
 import {
   ReservationCheckoutDialog,
   ReservationConfirmationDialog,
 } from './ReservationDialogs'
+import { ReservationBar } from './ReservationBar'
+import { ReservationSummaryButton } from './ReservationSummaryButton'
 import { formatCurrency } from './reservation'
 
 type RaffleReservationFlowProps = {
@@ -19,6 +21,7 @@ type FlowStage = 'checkout' | 'confirmation' | 'raffle'
 
 const TOTAL_NUMBERS = 100
 const NUMBER_PRICE = 10
+const VISIBLE_NUMBER_LIMIT = 3
 const RESERVED_NUMBERS = new Set([
   1, 17, 44, 47, 52, 56, 64, 67, 73, 74, 75, 79, 80, 89, 90, 91, 92, 93, 94, 95, 96, 97,
   98, 99, 100,
@@ -38,12 +41,27 @@ export function RaffleReservationFlow({
 }: RaffleReservationFlowProps) {
   const [stage, setStage] = useState<FlowStage>('raffle')
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([])
+  const [barNumbers, setBarNumbers] = useState<number[]>([])
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
   const [selectionExpanded, setSelectionExpanded] = useState(false)
   const titleId = useId()
   const availableCount = TOTAL_NUMBERS - RESERVED_NUMBERS.size
   const total = selectedNumbers.length * NUMBER_PRICE
   const selectedLabel = selectedNumbers.map(formatNumber).join(', ')
+  const countLabel = selectedNumbers.length === 1 ? 'Número' : 'Números'
+  const barVisible = selectedNumbers.length > 0
+  const displayedBarNumbers = barVisible ? selectedNumbers : barNumbers
+  const displayedBarLabel = displayedBarNumbers.map(formatNumber).join(', ')
+  const displayedBarTotal = displayedBarNumbers.length * NUMBER_PRICE
+  const barHasHiddenNumbers = displayedBarNumbers.length > VISIBLE_NUMBER_LIMIT
+
+  useEffect(() => {
+    if (selectedNumbers.length > 0) {
+      setBarNumbers(selectedNumbers)
+    } else {
+      setSelectionExpanded(false)
+    }
+  }, [selectedNumbers])
 
   const toggleNumber = (number: number) => {
     setSelectedNumbers((numbers) =>
@@ -53,11 +71,15 @@ export function RaffleReservationFlow({
     )
   }
 
-  if (stage === 'checkout') {
-    const countLabel = selectedNumbers.length === 1 ? 'Número' : 'Números'
+  const clearSelection = () => {
+    setSelectedNumbers([])
+    setSelectionExpanded(false)
+  }
 
-    return (
+  const checkoutDialog =
+    stage === 'checkout' || stage === 'confirmation' ? (
       <ReservationCheckoutDialog
+        active={stage === 'checkout'}
         title={`Reservar ${selectedNumbers.length} ${countLabel}`}
         onBack={() => setStage('raffle')}
         onConfirm={() => setStage('confirmation')}
@@ -68,27 +90,26 @@ export function RaffleReservationFlow({
           <p>Total: {formatCurrency(total)}</p>
         </section>
       </ReservationCheckoutDialog>
-    )
-  }
+    ) : null
 
-  if (stage === 'confirmation') {
-    return (
-      <ReservationConfirmationDialog onClose={onClose}>
-        <section className="mt-4">
-          <h3 className="text-2xl font-medium sm:text-3xl">Reserva</h3>
-          <p>Números escolhidos: {selectedLabel}</p>
-          <p>Total: {formatCurrency(total)}</p>
-        </section>
-      </ReservationConfirmationDialog>
-    )
-  }
+  const confirmationDialog = stage === 'confirmation' ? (
+    <ReservationConfirmationDialog onClose={onClose}>
+      <section className="mt-4">
+        <h3 className="text-2xl font-medium sm:text-3xl">Reserva</h3>
+        <p>Números escolhidos: {selectedLabel}</p>
+        <p>Total: {formatCurrency(total)}</p>
+      </section>
+    </ReservationConfirmationDialog>
+  ) : null
 
   return (
-    <Dialog
-      ariaLabelledBy={titleId}
-      onClose={onClose}
-      className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised"
-    >
+    <>
+      <Dialog
+        active={stage === 'raffle'}
+        ariaLabelledBy={titleId}
+        onClose={onClose}
+        className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised"
+      >
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 sm:px-8 sm:pt-8 lg:px-10">
         <div className="grid grid-cols-[minmax(7rem,32%)_1fr] gap-5 lg:grid-cols-[30%_1fr] lg:gap-12">
           <div>
@@ -176,44 +197,56 @@ export function RaffleReservationFlow({
         </section>
       </div>
 
-      <div className="m-4 mt-2 shrink-0 rounded-full bg-marca p-2 lg:mx-auto lg:w-[calc(100%_-_2.5rem)] lg:max-w-3xl">
-        {selectionExpanded && selectedNumbers.length > 0 && (
-          <p className="mb-2 px-3 text-center text-sm text-marca-clara">
-            Números escolhidos: {selectedLabel}
-          </p>
-        )}
-        <div className="grid grid-cols-[5rem_minmax(0,1fr)_minmax(0,1.35fr)] items-center gap-2">
-          <Action
-            onClick={onClose}
-            size="small"
-            variant="secondary-on-brand"
-            className="w-full px-1"
+      <div
+        inert={!barVisible}
+        className={`grid shrink-0 transition-[grid-template-rows,opacity,transform] duration-200 ease-out motion-reduce:transform-none motion-reduce:transition-none ${
+          barVisible
+            ? 'grid-rows-[1fr] translate-y-0 opacity-100'
+            : 'pointer-events-none grid-rows-[0fr] translate-y-2 opacity-0'
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <ReservationBar
+            className="m-4 mt-2 lg:mx-auto lg:w-[calc(100%_-_2.5rem)] lg:max-w-3xl"
+            secondaryLabel="Limpar"
+            onSecondary={clearSelection}
+            onFinish={() => setStage('checkout')}
+            finishDisabled={selectedNumbers.length === 0}
+            expandedContent={barHasHiddenNumbers && selectionExpanded && (
+              <p className="mb-2 px-3 text-center text-sm text-marca-clara">
+                Números escolhidos: {displayedBarLabel}
+              </p>
+            )}
           >
-            Cancelar
-          </Action>
-          <button
-            type="button"
-            disabled={selectedNumbers.length === 0}
-            aria-expanded={selectionExpanded}
-            onClick={() => setSelectionExpanded((expanded) => !expanded)}
-            className="min-w-0 cursor-pointer text-center text-xs leading-tight text-marca-clara disabled:cursor-default disabled:opacity-50 sm:text-sm"
-          >
-            <span className="block">
-              {selectedNumbers.length} {selectedNumbers.length === 1 ? 'número escolhido' : 'números escolhidos'}
-            </span>
-            <span className="block font-medium">{formatCurrency(total)}</span>
-          </button>
-          <Action
-            onClick={() => setStage('checkout')}
-            size="small"
-            variant="primary-on-brand"
-            disabled={selectedNumbers.length === 0}
-            className="min-w-0 w-full px-1 text-tag sm:text-sm"
-          >
-            Finalizar sua reserva
-          </Action>
+            {barHasHiddenNumbers ? (
+              <ReservationSummaryButton
+                count={displayedBarNumbers.length}
+                expanded={selectionExpanded}
+                singularLabel="número escolhido"
+                pluralLabel="números escolhidos"
+                onToggle={() => setSelectionExpanded((expanded) => !expanded)}
+                total={displayedBarTotal}
+              />
+            ) : (
+              <div className="min-w-0 text-center text-sm leading-tight text-marca-clara">
+                <span
+                  className="block sm:hidden"
+                  aria-label={`Números escolhidos: ${displayedBarLabel}`}
+                >
+                  {displayedBarLabel}
+                </span>
+                <span className="hidden truncate sm:block">
+                  Números escolhidos: {displayedBarLabel}
+                </span>
+                <span className="block font-medium">{formatCurrency(displayedBarTotal)}</span>
+              </div>
+            )}
+          </ReservationBar>
         </div>
       </div>
-    </Dialog>
+      </Dialog>
+      {checkoutDialog}
+      {confirmationDialog}
+    </>
   )
 }

@@ -4,6 +4,8 @@ import {
   ReservationCheckoutDialog,
   ReservationConfirmationDialog,
 } from './ReservationDialogs'
+import { ReservationBar } from './ReservationBar'
+import { ReservationSummaryButton } from './ReservationSummaryButton'
 import { formatCurrency } from './reservation'
 
 type CartItem = {
@@ -125,82 +127,79 @@ export function ProductReservationFlow({
     setSize('')
   }
 
-  if (stage === 'measures') {
-    return (
-      <Dialog
-        ariaLabelledBy={measuresTitleId}
-        onClose={() => setStage('product')}
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-10"
-      >
-        <h2 id={measuresTitleId} className="text-3xl font-medium text-marca sm:text-4xl">
-          Tabela de Medidas
-        </h2>
-        <section className="mt-4" aria-labelledby={`${measuresTitleId}-female`}>
-          <h3 id={`${measuresTitleId}-female`} className="mb-2 text-2xl font-medium sm:text-3xl">
-            Feminina
-          </h3>
-          <div className="overflow-x-auto">
-            <MeasuresTable rows={FEMALE_MEASURES} />
-          </div>
-        </section>
-        <section className="mt-5" aria-labelledby={`${measuresTitleId}-male`}>
-          <h3 id={`${measuresTitleId}-male`} className="mb-2 text-2xl font-medium sm:text-3xl">
-            Masculina
-          </h3>
-          <div className="overflow-x-auto">
-            <MeasuresTable rows={MALE_MEASURES} />
-          </div>
-        </section>
-        <Action onClick={() => setStage('product')} className="mt-8 flex w-full" size="small">
-          Voltar
-        </Action>
-      </Dialog>
-    )
-  }
+  const measuresDialog = stage === 'measures' ? (
+    <Dialog
+      ariaLabelledBy={measuresTitleId}
+      onClose={() => setStage('product')}
+      className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-10"
+    >
+      <h2 id={measuresTitleId} className="text-3xl font-medium text-marca sm:text-4xl">
+        Tabela de Medidas
+      </h2>
+      <section className="mt-4" aria-labelledby={`${measuresTitleId}-female`}>
+        <h3 id={`${measuresTitleId}-female`} className="mb-2 text-2xl font-medium sm:text-3xl">
+          Feminina
+        </h3>
+        <div className="overflow-x-auto">
+          <MeasuresTable rows={FEMALE_MEASURES} />
+        </div>
+      </section>
+      <section className="mt-5" aria-labelledby={`${measuresTitleId}-male`}>
+        <h3 id={`${measuresTitleId}-male`} className="mb-2 text-2xl font-medium sm:text-3xl">
+          Masculina
+        </h3>
+        <div className="overflow-x-auto">
+          <MeasuresTable rows={MALE_MEASURES} />
+        </div>
+      </section>
+      <Action onClick={() => setStage('product')} className="mt-8 flex w-full" size="small">
+        Voltar
+      </Action>
+    </Dialog>
+  ) : null
 
-  if (stage === 'checkout') {
-    return (
-      <ReservationCheckoutDialog
-        title="Produtos Escolhidos"
-        onBack={() => setStage('product')}
-        onConfirm={() => setStage('confirmation')}
-      >
-        <section className="mt-4">
-          <h3 className="text-2xl font-medium">Itens</h3>
-          <ul className="mt-1 space-y-1">
-            {cart.map((item) => (
-              <li key={item.id}>{itemLabel(item)}</li>
-            ))}
-          </ul>
-        </section>
-        <section className="mt-7">
-          <h3 className="text-2xl font-medium">Valor</h3>
-          <PriceSummary count={cart.length} />
-        </section>
-      </ReservationCheckoutDialog>
-    )
-  }
+  const checkoutDialog = stage === 'checkout' || stage === 'confirmation' ? (
+    <ReservationCheckoutDialog
+      active={stage === 'checkout'}
+      title="Produtos Escolhidos"
+      onBack={() => setStage('product')}
+      onConfirm={() => setStage('confirmation')}
+    >
+      <section className="mt-4">
+        <h3 className="text-2xl font-medium">Itens</h3>
+        <ul className="mt-1 space-y-1">
+          {cart.map((item) => (
+            <li key={item.id}>{itemLabel(item)}</li>
+          ))}
+        </ul>
+      </section>
+      <section className="mt-7">
+        <h3 className="text-2xl font-medium">Valor</h3>
+        <PriceSummary count={cart.length} />
+      </section>
+    </ReservationCheckoutDialog>
+  ) : null
 
-  if (stage === 'confirmation') {
-    return (
-      <ReservationConfirmationDialog onClose={onClose}>
-        <section className="mt-4">
-          <h3 className="text-2xl font-medium sm:text-3xl">Reserva</h3>
-          <p>Modelos escolhidos: {cart.map((item) => `${item.fit} ${item.size}`).join(' + ')}</p>
-          <p>Total: {formatCurrency(total)}</p>
-        </section>
-      </ReservationConfirmationDialog>
-    )
-  }
+  const confirmationDialog = stage === 'confirmation' ? (
+    <ReservationConfirmationDialog onClose={onClose}>
+      <section className="mt-4">
+        <h3 className="text-2xl font-medium sm:text-3xl">Reserva</h3>
+        <p>Modelos escolhidos: {cart.map((item) => `${item.fit} ${item.size}`).join(' + ')}</p>
+        <p>Total: {formatCurrency(total)}</p>
+      </section>
+    </ReservationConfirmationDialog>
+  ) : null
 
   return (
-    <ExpandedCardDialog
-      title={title}
-      description={description}
-      images={[image]}
-      onClose={onClose}
-      variant="product"
-    >
+    <>
+      <ExpandedCardDialog
+        active={stage === 'product'}
+        title={title}
+        description={description}
+        images={[image]}
+        onClose={onClose}
+        variant="product"
+      >
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-4 lg:px-12 lg:pt-10">
           <div className="flex items-center justify-between gap-4">
@@ -300,38 +299,27 @@ export function ProductReservationFlow({
           )}
         </div>
 
-        <div className="m-6 mt-5 grid shrink-0 grid-cols-[4.75rem_minmax(0,1fr)_minmax(0,1.35fr)] items-center gap-2 rounded-full bg-marca p-2 lg:m-5 lg:mt-4 lg:flex lg:gap-3">
-          <Action
-            onClick={onClose}
-            size="small"
-            variant="secondary-on-brand"
-            className="w-full shrink-0 lg:w-24"
-          >
-            Cancelar
-          </Action>
-          <button
-            type="button"
-            disabled={cart.length === 0}
-            aria-expanded={cartExpanded}
-            onClick={() => setCartExpanded((expanded) => !expanded)}
-            className="min-w-0 flex-1 cursor-pointer text-center text-xs leading-tight text-marca-clara disabled:cursor-default disabled:opacity-50 lg:text-sm"
-          >
-            <span className="block">
-              {cart.length} {cart.length === 1 ? 'produto escolhido' : 'produtos escolhidos'}
-            </span>
-            <span className="block font-medium">{formatCurrency(total)}</span>
-          </button>
-          <Action
-            onClick={() => setStage('checkout')}
-            size="small"
-            variant="primary-on-brand"
-            disabled={cart.length === 0}
-            className="min-w-0 w-full px-1 text-tag lg:w-44 lg:flex-none lg:px-3 lg:text-sm"
-          >
-            Finalizar sua reserva
-          </Action>
-        </div>
+        <ReservationBar
+          className="m-6 mt-5 shrink-0 lg:m-5 lg:mt-4"
+          secondaryLabel="Cancelar"
+          onSecondary={onClose}
+          onFinish={() => setStage('checkout')}
+          finishDisabled={cart.length === 0}
+        >
+          <ReservationSummaryButton
+            count={cart.length}
+            expanded={cartExpanded}
+            singularLabel="produto escolhido"
+            pluralLabel="produtos escolhidos"
+            onToggle={() => setCartExpanded((expanded) => !expanded)}
+            total={total}
+          />
+        </ReservationBar>
       </div>
-    </ExpandedCardDialog>
+      </ExpandedCardDialog>
+      {measuresDialog}
+      {checkoutDialog}
+      {confirmationDialog}
+    </>
   )
 }

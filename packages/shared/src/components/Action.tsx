@@ -8,6 +8,7 @@ import { Icon } from './Icon'
 
 type ActionVariant =
   | 'primary'
+  | 'primary-adaptive'
   | 'primary-inverted'
   | 'primary-on-brand'
   | 'secondary'
@@ -54,12 +55,15 @@ const BASE_CLASSES =
 // pela superfície IMEDIATA (contraste):
 //   `primary`   (Padrão)     = coral cheio (marca)       → ação principal em fundo claro/neutro (branco, cinza-claro).
 //   `secondary` (Secundário) = pill pálido (marca-clara) → ação secundária em fundo claro.
+//   `*-adaptive`             = superfície elevada que alterna entre branco e preto.
 //   `*-on-brand`             = fundo coral/marca.
 //   `*-inverted`             = fundos escuros-neutros (cinza-medio, cinza-escuro, preto).
 // Desativado (opacity-40) só atinge <button>; CTAs <Link>/<a> não desabilitam.
 const VARIANT_CLASSES: Record<ActionVariant, string> = {
   primary:
     'bg-marca text-marca-clara hover:bg-marca-escura hover:text-marca-clara active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40',
+  'primary-adaptive':
+    'bg-marca text-marca-clara hover:bg-marca-escura hover:text-marca-clara active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca dark:bg-marca-clara dark:text-marca dark:hover:bg-marca dark:hover:text-marca-clara dark:active:bg-marca-escura dark:active:text-marca-clara dark:focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   'primary-inverted':
     'bg-marca-clara text-marca hover:bg-marca hover:text-marca-clara active:bg-marca-escura active:text-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   'primary-on-brand':

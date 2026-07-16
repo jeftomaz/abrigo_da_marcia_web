@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. Materializado em `supabase/migrations/`; schema base validado no stack local. A migration de Histórias aguarda `supabase db reset` com o Docker ativo. Ainda sem projeto hospedado.
+Fonte de verdade do banco. O schema base está materializado em `supabase/migrations/`; a migration de Histórias aguarda `supabase db reset` com o Docker ativo. O domínio de Eventos abaixo está definido, mas só será materializado após a aprovação completa. Ainda sem projeto hospedado.
 
 ## DER
 
@@ -32,6 +32,113 @@ erDiagram
     timestamptz created_at
     timestamptz updated_at
   }
+  EVENT_SETTINGS {
+    boolean singleton PK
+    integer default_max_raffle_numbers
+    integer default_max_product_units
+    interval default_reservation_ttl
+    timestamptz updated_at
+  }
+  EVENTOS {
+    uuid id PK
+    text name
+    text description
+    evento_tipo type
+    evento_status status
+    text photos "text[] ordenado; [0]=capa"
+    integer max_items_per_reservation "nullable; override"
+    interval reservation_ttl "nullable; override"
+    timestamptz activated_at
+    timestamptz ended_at
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  RIFAS {
+    uuid event_id PK,FK
+    integer total_numbers
+    integer number_price_cents
+    text prize
+    integer winning_number "nullable"
+    text winner_name "nullable"
+  }
+  PRODUTOS {
+    uuid id PK
+    uuid event_id FK
+    text name
+    text description
+    text photos "text[] ordenado"
+    integer unit_price_cents
+    integer discount_min_quantity "nullable"
+    integer discount_unit_price_cents "nullable"
+    integer display_order
+  }
+  PRODUTO_VARIACOES {
+    uuid id PK
+    uuid product_id FK
+    text name
+    integer display_order
+  }
+  PRODUTO_VARIACAO_OPCOES {
+    uuid id PK
+    uuid variation_id FK
+    text name
+    integer display_order
+  }
+  SESSOES_RESERVA {
+    uuid id PK
+    timestamptz last_attempt_at "nullable"
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  RESERVAS {
+    uuid id PK
+    uuid event_id FK
+    uuid session_id FK
+    reserva_status status
+    text customer_name "nullable após limpeza"
+    text customer_contact "nullable após limpeza"
+    bigint total_cents
+    timestamptz expires_at
+    timestamptz paid_at "nullable"
+    timestamptz personal_data_deleted_at "nullable"
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  RESERVA_PRODUTOS {
+    uuid id PK
+    uuid reservation_id FK
+    uuid product_id FK
+    integer unit_price_cents "snapshot"
+  }
+  RESERVA_PRODUTO_OPCOES {
+    uuid reservation_product_id PK,FK
+    uuid variation_id PK,FK
+    uuid option_id FK
+    text variation_name "snapshot"
+    text option_name "snapshot"
+  }
+  RESERVA_NUMEROS {
+    uuid id PK
+    uuid reservation_id FK
+    uuid raffle_id FK
+    integer number
+    integer price_cents "snapshot"
+    timestamptz released_at "nullable"
+  }
+
+  EVENTOS ||--o| RIFAS : "configura"
+  EVENTOS ||--o{ PRODUTOS : "oferece"
+  PRODUTOS ||--o{ PRODUTO_VARIACOES : "possui"
+  PRODUTO_VARIACOES ||--o{ PRODUTO_VARIACAO_OPCOES : "possui"
+  SESSOES_RESERVA ||--o{ RESERVAS : "cria"
+  EVENTOS ||--o{ RESERVAS : "recebe"
+  RESERVAS ||--o{ RESERVA_PRODUTOS : "contém"
+  PRODUTOS ||--o{ RESERVA_PRODUTOS : "é reservado em"
+  RESERVA_PRODUTOS ||--o{ RESERVA_PRODUTO_OPCOES : "seleciona"
+  PRODUTO_VARIACOES ||--o{ RESERVA_PRODUTO_OPCOES : "identifica"
+  PRODUTO_VARIACAO_OPCOES ||--o{ RESERVA_PRODUTO_OPCOES : "escolhe"
+  RESERVAS ||--o{ RESERVA_NUMEROS : "contém"
+  RIFAS ||--o{ RESERVA_NUMEROS : "aloca"
 ```
 
 ## `social_links`
@@ -103,3 +210,148 @@ Histórias de adoção exibidas na página dedicada e no preview da landing. Sã
 - View `historias_public`: expõe `id`, `name`, `description` e `photos`, ordenada por `created_at` desc. A página de Histórias e o preview da landing usam essa mesma view.
 - Admin autenticado poderá inserir, consultar, atualizar e excluir; as policies serão definidas com Auth/MFA.
 - Upload, compressão e regra de ao menos uma foto fazem parte da fase admin.
+
+## Eventos e reservas
+
+Cada evento é exclusivamente `rifa` ou `produtos`. Pode existir no máximo um evento `ativo`; os encerrados formam o histórico público. Reservas nunca misturam tipos nem eventos.
+
+### Enums
+
+- `evento_tipo`: `rifa | produtos`.
+- `evento_status`: `rascunho | ativo | encerrado | cancelado`.
+- `reserva_status`: `pendente | paga | expirada | cancelada`.
+
+### `event_settings`
+
+Configuração singleton editável pelo admin. Os limites são por reserva, não por pessoa: uma mesma sessão pode criar outras reservas depois do intervalo antissobrecarga.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `singleton` | `boolean` | PK; sempre `true`, garantindo uma única linha |
+| `default_max_raffle_numbers` | `integer` | not null; `> 0`; máximo padrão de números por reserva de rifa |
+| `default_max_product_units` | `integer` | not null; `> 0`; máximo padrão de unidades, somando todos os produtos da reserva |
+| `default_reservation_ttl` | `interval` | not null; `> interval '0'`; prazo padrão de expiração |
+| `updated_at` | `timestamptz` | not null; atualizado automaticamente |
+
+### `eventos`
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `uuid` | PK; default `gen_random_uuid()` |
+| `name` | `text` | not null |
+| `description` | `text` | not null |
+| `type` | `evento_tipo` | not null; imutável depois da primeira reserva |
+| `status` | `evento_status` | not null; default `rascunho` |
+| `photos` | `text[]` | not null; default `'{}'`; `[0]` = capa |
+| `max_items_per_reservation` | `integer` | nullable; `> 0`; substitui o padrão correspondente ao tipo do evento |
+| `reservation_ttl` | `interval` | nullable; `> interval '0'`; substitui `default_reservation_ttl` |
+| `activated_at` | `timestamptz` | nullable; preenchido ao ativar |
+| `ended_at` | `timestamptz` | nullable; preenchido ao encerrar ou cancelar |
+| `created_at` | `timestamptz` | not null; default `now()` |
+| `updated_at` | `timestamptz` | not null; atualizado automaticamente |
+
+Índice unique parcial em `status = 'ativo'` garante um único evento ativo. A ativação valida foto, configuração específica do tipo e ao menos um produto no evento de produtos.
+
+### `rifas`
+
+Relação 1:1 obrigatória apenas quando `eventos.type = 'rifa'`. Os números possíveis são sempre inteiros de `1` a `total_numbers`.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `event_id` | `uuid` | PK e FK → `eventos.id` |
+| `total_numbers` | `integer` | not null; `> 0`; quantidade definida pelo admin |
+| `number_price_cents` | `integer` | not null; `> 0`; preço igual para todos os números |
+| `prize` | `text` | not null |
+| `winning_number` | `integer` | nullable; entre `1` e `total_numbers` |
+| `winner_name` | `text` | nullable; informação pública após o resultado |
+
+### `produtos`
+
+Produtos são feitos sob demanda, sem estoque. Um evento de produtos pode possuir vários produtos, embora o caso padrão seja apenas um.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `uuid` | PK; default `gen_random_uuid()` |
+| `event_id` | `uuid` | not null; FK → `eventos.id`; evento deve ser do tipo `produtos` |
+| `name` | `text` | not null; unique dentro do evento |
+| `description` | `text` | not null |
+| `photos` | `text[]` | not null; default `'{}'`; caminhos ordenados |
+| `unit_price_cents` | `integer` | not null; `> 0` |
+| `discount_min_quantity` | `integer` | nullable; `>= 2`; preenchido junto com `discount_unit_price_cents` |
+| `discount_unit_price_cents` | `integer` | nullable; `> 0` e `< unit_price_cents`; preço unitário quando o limiar é atingido |
+| `display_order` | `integer` | not null; unique dentro do evento |
+
+O desconto é calculado separadamente por produto. Se uma reserva alcançar `discount_min_quantity` unidades do mesmo produto, todas as unidades daquele produto usam `discount_unit_price_cents`; quantidades de produtos diferentes não são somadas para atingir o desconto.
+
+### `produto_variacoes` e `produto_variacao_opcoes`
+
+Cada produto possui zero ou mais variações configuráveis, como `Tamanho` e `Caimento`. Cada variação possui uma ou mais opções ordenadas. Todas as combinações do produto cartesiano das opções são válidas; não há tabela de combinações nem estoque por combinação.
+
+| Tabela | Colunas e regras |
+|---|---|
+| `produto_variacoes` | `id uuid` PK; `product_id uuid` FK; `name text`; `display_order integer`; nome e ordem unique dentro do produto |
+| `produto_variacao_opcoes` | `id uuid` PK; `variation_id uuid` FK; `name text`; `display_order integer`; nome e ordem unique dentro da variação |
+
+Para adicionar uma unidade à reserva, o usuário deve escolher exatamente uma opção de cada variação daquele produto. Produto sem variações pode ser reservado sem opções.
+
+### `sessoes_reserva`
+
+Sessão pública anônima e opaca, emitida pelo banco e mantida no `sessionStorage` do navegador. Não contém dados pessoais.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `uuid` | PK; gerado pelo banco |
+| `last_attempt_at` | `timestamptz` | nullable; base do intervalo antissobrecarga |
+| `created_at` | `timestamptz` | not null; default `now()` |
+| `updated_at` | `timestamptz` | not null; atualizado automaticamente |
+
+O intervalo mínimo entre tentativas é uma constante do sistema, não uma configuração do admin. A função de reserva bloqueia a linha da sessão, registra a tentativa e recusa outra chamada da mesma sessão dentro do intervalo. Essa proteção limita abuso acidental por sessão; não substitui limitação por IP na borda caso seja necessária defesa contra troca deliberada de sessão.
+
+### `reservas`
+
+Cabeçalho comum a reservas de rifa e de produtos.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `uuid` | PK; default `gen_random_uuid()` |
+| `event_id` | `uuid` | not null; FK → `eventos.id`; somente evento `ativo` |
+| `session_id` | `uuid` | not null; FK → `sessoes_reserva.id` |
+| `status` | `reserva_status` | not null; default `pendente` |
+| `customer_name` | `text` | not null na criação; torna-se null na limpeza pós-evento |
+| `customer_contact` | `text` | not null na criação; telefone ou e-mail; torna-se null na limpeza pós-evento |
+| `total_cents` | `bigint` | not null; `> 0`; calculado no banco |
+| `expires_at` | `timestamptz` | not null; criação + prazo efetivo do evento |
+| `paid_at` | `timestamptz` | nullable; preenchido quando o admin confirma pagamento |
+| `personal_data_deleted_at` | `timestamptz` | nullable; registra a limpeza dos dados pessoais após o evento |
+| `created_at` | `timestamptz` | not null; default `now()` |
+| `updated_at` | `timestamptz` | not null; atualizado automaticamente |
+
+O limite efetivo é resolvido no momento da reserva: override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` ou `default_max_product_units`. Reservas pendentes expiram via `pg_cron`; reservas pagas não expiram. Cancelamento ou expiração libera números da rifa. Os valores e rótulos selecionados ficam registrados como snapshots para preservar o histórico mesmo se o catálogo mudar.
+
+### `reserva_produtos` e `reserva_produto_opcoes`
+
+Cada linha de `reserva_produtos` representa uma unidade, permitindo que unidades do mesmo produto tenham opções diferentes. `unit_price_cents` guarda o preço unitário já calculado para aquela reserva.
+
+`reserva_produto_opcoes` possui PK composta (`reservation_product_id`, `variation_id`), garantindo uma escolha por variação. Guarda `option_id` e snapshots `variation_name`/`option_name`. A função de reserva valida que produto, variação e opção pertencem à mesma cadeia e que nenhuma variação foi omitida.
+
+### `reserva_numeros`
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `uuid` | PK; default `gen_random_uuid()` |
+| `reservation_id` | `uuid` | not null; FK → `reservas.id` |
+| `raffle_id` | `uuid` | not null; FK → `rifas.event_id` |
+| `number` | `integer` | not null; entre `1` e `rifas.total_numbers` |
+| `price_cents` | `integer` | not null; snapshot de `number_price_cents` |
+| `released_at` | `timestamptz` | nullable; preenchido ao expirar ou cancelar |
+
+Índice unique parcial em (`raffle_id`, `number`) onde `released_at is null` impede duas reservas simultâneas do mesmo número e permite reutilizá-lo após liberação. A criação da reserva e a alocação dos números ocorrem em uma única transação; conflito devolve indisponibilidade sem reserva parcial.
+
+### Exposição, RLS e funções
+
+- Todas as tabelas do domínio têm RLS habilitada; `anon` não lê nem escreve tabelas diretamente.
+- Views públicas expõem eventos `ativo|encerrado`, produtos, variações, opções e disponibilidade dos números, sem dados pessoais ou identificadores de sessão. Rascunhos e cancelados não aparecem.
+- `anon` cria a sessão e a reserva apenas por funções `security definer` com `search_path` fixo. As funções validam status/tipo do evento, intervalo da sessão, limites, opções, disponibilidade, preços, descontos e prazo no servidor.
+- Alterações de preço ou configuração não afetam reservas existentes porque totais, preços unitários e seleções são snapshots.
+- Admin autenticado gerencia catálogo, confirma pagamento e cancela reserva; as policies dependem do modelo de Auth/MFA e serão definidas na migration.
+- `pg_cron` expira reservas pendentes vencidas, libera seus números e limpa sessões antigas. A limpeza pós-evento remove `customer_name` e `customer_contact`, preservando apenas dados não pessoais e totais históricos.

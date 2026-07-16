@@ -3,6 +3,7 @@ import { Action, Dialog } from '@abrigo/shared'
 import { DEMO_PIX_CODE } from './reservation'
 
 type ReservationCheckoutDialogProps = {
+  active?: boolean
   children: ReactNode
   onBack: () => void
   onConfirm: () => void
@@ -62,6 +63,7 @@ function DemoPixQrCode() {
 }
 
 export function ReservationCheckoutDialog({
+  active,
   children,
   onBack,
   onConfirm,
@@ -74,6 +76,7 @@ export function ReservationCheckoutDialog({
 
   return (
     <Dialog
+      active={active}
       ariaLabelledBy={titleId}
       onClose={onBack}
       className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface-raised p-7 text-on-surface-raised sm:p-10"
@@ -119,10 +122,21 @@ export function ReservationCheckoutDialog({
           removidos após o evento.
         </p>
         <div className="mt-6 flex gap-4">
-          <Action onClick={onBack} size="small" variant="secondary" className="w-24 shrink-0">
+          <Action
+            onClick={onBack}
+            size="small"
+            variant="secondary-adaptive"
+            className="w-24 shrink-0"
+          >
             Voltar
           </Action>
-          <Action type="submit" disabled={!canSubmit} size="small" className="min-w-0 flex-1">
+          <Action
+            type="submit"
+            disabled={!canSubmit}
+            size="small"
+            variant="primary-adaptive"
+            className="min-w-0 flex-1"
+          >
             Finalizar sua reserva
           </Action>
         </div>

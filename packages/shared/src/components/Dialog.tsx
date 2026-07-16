@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 
 type DialogProps = {
+  active?: boolean
   ariaLabel?: string
   ariaLabelledBy?: string
   children: ReactNode
@@ -12,7 +13,11 @@ type DialogProps = {
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
 
+let openDialogCount = 0
+let previousBodyOverflow = ''
+
 export function Dialog({
+  active = true,
   ariaLabel,
   ariaLabelledBy,
   children,
@@ -24,8 +29,22 @@ export function Dialog({
   onCloseRef.current = onClose
 
   useEffect(() => {
+    if (openDialogCount === 0) {
+      previousBodyOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+    }
+    openDialogCount += 1
+
+    return () => {
+      openDialogCount -= 1
+      if (openDialogCount === 0) document.body.style.overflow = previousBodyOverflow
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!active) return
+
     const previouslyFocused = document.activeElement as HTMLElement | null
-    const previousOverflow = document.body.style.overflow
     const getFocusables = () =>
       dialogRef.current
         ? Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
@@ -54,17 +73,19 @@ export function Dialog({
     }
 
     document.addEventListener('keydown', handleKeyDown)
-    document.body.style.overflow = 'hidden'
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = previousOverflow
       previouslyFocused?.focus()
     }
-  }, [])
+  }, [active])
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-cinza-escuro/80" onClick={onClose}>
+    <div
+      inert={!active}
+      className={`fixed inset-0 z-50 overflow-y-auto bg-cinza-escuro/80 ${active ? '' : 'pointer-events-none'}`}
+      onClick={active ? onClose : undefined}
+    >
       <div className="flex min-h-full items-center justify-center p-4">
         <div
           ref={dialogRef}
