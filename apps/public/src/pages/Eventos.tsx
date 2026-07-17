@@ -3,6 +3,7 @@ import { Action, CompactCard } from '@abrigo/shared'
 import camisetaPhoto from '../assets/evento_camiseta.jpg'
 import rifaPhoto from '../assets/evento_rifa.jpg'
 import { ProductReservationFlow } from '../components/ProductReservationFlow'
+import type { ProductMeasurementGuide } from '../components/ProductReservationFlow'
 import { RaffleReservationFlow } from '../components/RaffleReservationFlow'
 
 type FundraisingEvent = {
@@ -10,6 +11,7 @@ type FundraisingEvent = {
   description: string
   id: number
   image: string
+  measurementGuide?: ProductMeasurementGuide
   reservationKind?: 'product' | 'raffle'
   prize?: string
   title: string
@@ -23,6 +25,31 @@ const FULL_DESCRIPTION =
 const FULL_RAFFLE_DESCRIPTION =
   'Aqui vem o texto mais completo, descrevendo a rifa e o prêmio. Escolha entre os números disponíveis para montar sua reserva. Os números marcados como reservados não podem ser selecionados e voltam a ficar disponíveis caso o pagamento não seja confirmado dentro do prazo.'
 
+const TEMPORARY_MEASUREMENT_GUIDE: ProductMeasurementGuide = {
+  kind: 'table',
+  sizes: ['P', 'M', 'G', 'GG', 'XG'],
+  sections: [
+    {
+      title: 'Feminina',
+      rows: [
+        { label: 'Ombro', values: ['34', '37', '40', '43', '44'] },
+        { label: 'Altura', values: ['55', '58', '64', '67', '70'] },
+        { label: 'Busto', values: ['41', '44', '47', '50', '52'] },
+        { label: 'Cintura', values: ['37', '40', '43', '46', '48'] },
+        { label: 'Quadril', values: ['44', '46', '49', '53', '55'] },
+      ],
+    },
+    {
+      title: 'Masculina',
+      rows: [
+        { label: 'Ombro', values: ['42', '44', '45', '48', '50'] },
+        { label: 'Altura', values: ['68', '72', '75', '78', '80'] },
+        { label: 'Largura', values: ['48', '52', '55', '61', '64'] },
+      ],
+    },
+  ],
+}
+
 const ACTIVE_EVENT: FundraisingEvent = {
   id: 1,
   title: 'Camiseta Copa 2026',
@@ -30,6 +57,7 @@ const ACTIVE_EVENT: FundraisingEvent = {
   image: camisetaPhoto,
   actionLabel: 'Reserve a sua',
   reservationKind: 'product',
+  measurementGuide: TEMPORARY_MEASUREMENT_GUIDE,
 }
 
 const PAST_EVENTS: FundraisingEvent[] = [
@@ -128,6 +156,7 @@ export function Eventos() {
           title={selectedEvent.title}
           description={FULL_DESCRIPTION}
           image={selectedEvent.image}
+          measurementGuide={selectedEvent.measurementGuide}
           onClose={() => setSelectedEvent(null)}
         />
       )}

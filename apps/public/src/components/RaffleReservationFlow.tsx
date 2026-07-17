@@ -108,9 +108,10 @@ export function RaffleReservationFlow({
         active={stage === 'raffle'}
         ariaLabelledBy={titleId}
         onClose={onClose}
+        persistentClose
         className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised"
       >
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 sm:px-8 sm:pt-8 lg:px-10">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-16 sm:px-8 lg:px-10">
         <div className="grid grid-cols-[minmax(7rem,32%)_1fr] gap-5 lg:grid-cols-[30%_1fr] lg:gap-12">
           <div>
             <img src={image} alt={title} className="aspect-square w-full object-cover" />
@@ -137,7 +138,7 @@ export function RaffleReservationFlow({
               {descriptionExpanded ? 'Mostrar menos' : 'Ler descrição completa'}
             </button>
           </div>
-        </div>
+      </div>
 
         <section className="mx-auto mt-10 max-w-2xl text-center" aria-labelledby={`${titleId}-status`}>
           <h3 id={`${titleId}-status`} className="text-2xl font-medium">
@@ -195,7 +196,7 @@ export function RaffleReservationFlow({
             })}
           </div>
         </section>
-      </div>
+        </div>
 
       <div
         inert={!barVisible}

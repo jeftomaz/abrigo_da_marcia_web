@@ -8,6 +8,49 @@ importers:
 
   .: {}
 
+  apps/admin:
+    dependencies:
+      '@abrigo/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@tailwindcss/vite':
+        specifier: ^4.3.2
+        version: 4.3.2(vite@8.1.4(@types/node@24.13.3)(jiti@2.7.0))
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.7
+        version: 19.2.7(react@19.2.7)
+      react-router-dom:
+        specifier: ^7.18.1
+        version: 7.18.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      tailwindcss:
+        specifier: ^4.3.2
+        version: 4.3.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.13.2
+        version: 24.13.3
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.17)
+      '@vitejs/plugin-react':
+        specifier: ^6.0.3
+        version: 6.0.3(vite@8.1.4(@types/node@24.13.3)(jiti@2.7.0))
+      oxlint:
+        specifier: ^1.71.0
+        version: 1.73.0
+      typescript:
+        specifier: ~6.0.2
+        version: 6.0.3
+      vite:
+        specifier: ^8.1.1
+        version: 8.1.4(@types/node@24.13.3)(jiti@2.7.0)
+
   apps/public:
     dependencies:
       '@abrigo/shared':

@@ -17,7 +17,7 @@
 1. Schema Supabase, views públicas, RLS e tipos — `doing` (migrations de `caes`/`social_links` + views + RLS materializadas e validadas no stack local; tipos, client Supabase, policies admin e projeto hospedado pendentes)
 2. Auth admin com MFA — `todo`
 3. Catálogo público com filtros, ordenação e formulário de adoção — `doing` (interface pronta com dados temporários; integração Supabase pendente)
-4. CRUD admin; status `disponivel|adotado|falecido` — `todo`
+4. CRUD admin; status `disponivel|adotado|falecido` — `doing` (`apps/admin` criado; tela de Cães pronta com dados temporários — stats, lista com busca/filtro, criação/edição responsiva; integração Supabase e Auth/MFA pendentes)
 
 ## Próxima fase — Histórias
 
@@ -33,6 +33,10 @@
 3. Persistência da reserva com Pix real e expiração automática — `todo`
 4. CRUD admin — `todo`
 
+O CRUD de produtos deve permitir um único formato de guia de medidas por produto: tabela preenchida manualmente ou imagem enviada pelo admin.
+
 ## Requisito — Eventos
 
 - Ao implementar as telas e o banco, incluir uma verificação que garanta que os dados inseridos sejam reais.
+- Permitir ao admin cadastrar e editar um link externo por evento (ex.: pasta do Google Drive com comprovantes de pagamento) e acessá-lo rapidamente na gestão. O link será apenas um atalho; não haverá upload, sincronização ou integração do destino com o sistema.
+- Disponibilizar na gestão uma checkbox por reserva para registrar se o respectivo comprovante já foi salvo no destino externo; será apenas um controle administrativo, sem vínculo com arquivos no sistema.

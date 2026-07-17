@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
+import { Action } from './Action'
 
 type DialogProps = {
   active?: boolean
@@ -8,6 +9,7 @@ type DialogProps = {
   children: ReactNode
   className?: string
   onClose: () => void
+  persistentClose?: boolean
 }
 
 const FOCUSABLE_SELECTOR =
@@ -23,6 +25,7 @@ export function Dialog({
   children,
   className = '',
   onClose,
+  persistentClose = false,
 }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
@@ -93,9 +96,20 @@ export function Dialog({
           aria-modal="true"
           aria-label={ariaLabel}
           aria-labelledby={ariaLabelledBy}
-          className={className}
+          className={`relative ${className}`}
           onClick={(event) => event.stopPropagation()}
         >
+          {persistentClose && (
+            <Action
+              onClick={onClose}
+              icon="xmark-circle-solid"
+              size="small"
+              className="absolute top-3 right-3 z-20 shadow-md"
+              aria-label="Fechar"
+            >
+              Fechar
+            </Action>
+          )}
           {children}
         </div>
       </div>

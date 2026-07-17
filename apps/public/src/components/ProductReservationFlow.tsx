@@ -18,29 +18,31 @@ type CartItem = {
 type ProductReservationFlowProps = {
   description: string
   image: string
+  measurementGuide?: ProductMeasurementGuide
   onClose: () => void
   title: string
 }
+
+export type ProductMeasurementGuide =
+  | {
+      alt: string
+      kind: 'image'
+      src: string
+    }
+  | {
+      kind: 'table'
+      sections: {
+        rows: { label: string; values: string[] }[]
+        title: string
+      }[]
+      sizes: string[]
+    }
 
 type FlowStage = 'checkout' | 'confirmation' | 'measures' | 'product'
 
 const UNIT_PRICE = 70
 const BULK_PRICE = 60
 const BULK_THRESHOLD = 2
-
-const FEMALE_MEASURES = [
-  ['Ombro', '34', '37', '40', '43', '44'],
-  ['Altura', '55', '58', '64', '67', '70'],
-  ['Busto', '41', '44', '47', '50', '52'],
-  ['Cintura', '37', '40', '43', '46', '48'],
-  ['Quadril', '44', '46', '49', '53', '55'],
-]
-
-const MALE_MEASURES = [
-  ['Ombro', '42', '44', '45', '48', '50'],
-  ['Altura', '68', '72', '75', '78', '80'],
-  ['Largura', '48', '52', '55', '61', '64'],
-]
 
 const SIZES = ['P', 'M', 'G', 'GG', 'XG']
 
@@ -62,13 +64,19 @@ function PriceSummary({ count }: { count: number }) {
   )
 }
 
-function MeasuresTable({ rows }: { rows: string[][] }) {
+function MeasuresTable({
+  rows,
+  sizes,
+}: {
+  rows: { label: string; values: string[] }[]
+  sizes: string[]
+}) {
   return (
     <table className="w-full border-collapse text-center text-xs sm:text-sm">
       <thead>
         <tr>
           <th className="border border-current p-1" aria-label="Medida" />
-          {SIZES.map((size) => (
+          {sizes.map((size) => (
             <th key={size} scope="col" className="border border-current p-1 font-medium underline">
               {size}
             </th>
@@ -76,13 +84,13 @@ function MeasuresTable({ rows }: { rows: string[][] }) {
         </tr>
       </thead>
       <tbody>
-        {rows.map(([label, ...values]) => (
+        {rows.map(({ label, values }) => (
           <tr key={label}>
             <th scope="row" className="border border-current p-1 font-medium underline">
               {label}
             </th>
             {values.map((value, index) => (
-              <td key={`${label}-${SIZES[index]}`} className="border border-current p-1 underline">
+              <td key={`${label}-${sizes[index]}`} className="border border-current p-1 underline">
                 {value}
               </td>
             ))}
@@ -96,6 +104,7 @@ function MeasuresTable({ rows }: { rows: string[][] }) {
 export function ProductReservationFlow({
   description,
   image,
+  measurementGuide,
   onClose,
   title,
 }: ProductReservationFlowProps) {
@@ -136,22 +145,31 @@ export function ProductReservationFlow({
       <h2 id={measuresTitleId} className="text-3xl font-medium text-marca sm:text-4xl">
         Tabela de Medidas
       </h2>
-      <section className="mt-4" aria-labelledby={`${measuresTitleId}-female`}>
-        <h3 id={`${measuresTitleId}-female`} className="mb-2 text-2xl font-medium sm:text-3xl">
-          Feminina
-        </h3>
-        <div className="overflow-x-auto">
-          <MeasuresTable rows={FEMALE_MEASURES} />
-        </div>
-      </section>
-      <section className="mt-5" aria-labelledby={`${measuresTitleId}-male`}>
-        <h3 id={`${measuresTitleId}-male`} className="mb-2 text-2xl font-medium sm:text-3xl">
-          Masculina
-        </h3>
-        <div className="overflow-x-auto">
-          <MeasuresTable rows={MALE_MEASURES} />
-        </div>
-      </section>
+      {measurementGuide?.kind === 'table' &&
+        measurementGuide.sections.map((section, index) => (
+          <section
+            key={section.title}
+            className="mt-5"
+            aria-labelledby={`${measuresTitleId}-section-${index}`}
+          >
+            <h3
+              id={`${measuresTitleId}-section-${index}`}
+              className="mb-2 text-2xl font-medium sm:text-3xl"
+            >
+              {section.title}
+            </h3>
+            <div className="overflow-x-auto">
+              <MeasuresTable rows={section.rows} sizes={measurementGuide.sizes} />
+            </div>
+          </section>
+        ))}
+      {measurementGuide?.kind === 'image' && (
+        <img
+          src={measurementGuide.src}
+          alt={measurementGuide.alt}
+          className="mt-5 max-h-[65vh] w-full object-contain"
+        />
+      )}
       <Action onClick={() => setStage('product')} className="mt-8 flex w-full" size="small">
         Voltar
       </Action>
@@ -198,20 +216,23 @@ export function ProductReservationFlow({
         description={description}
         images={[image]}
         onClose={onClose}
+        persistentClose
         variant="product"
       >
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-4 lg:px-12 lg:pt-10">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-3xl font-medium text-marca lg:text-4xl">{title}</h2>
-            <Action
-              onClick={() => setStage('measures')}
-              size="small"
-              variant="secondary"
-              className="shrink-0"
-            >
-              Medidas
-            </Action>
+            {measurementGuide && (
+              <Action
+                onClick={() => setStage('measures')}
+                size="small"
+                variant="secondary"
+                className="shrink-0 lg:mr-20"
+              >
+                Medidas
+              </Action>
+            )}
           </div>
 
           <p

@@ -70,6 +70,8 @@ erDiagram
     integer unit_price_cents
     integer discount_min_quantity "nullable"
     integer discount_unit_price_cents "nullable"
+    jsonb measurement_table "nullable; exclusivo com imagem"
+    text measurement_image "nullable; exclusivo com tabela"
     integer display_order
   }
   PRODUTO_VARIACOES {
@@ -279,9 +281,13 @@ Produtos são feitos sob demanda, sem estoque. Um evento de produtos pode possui
 | `unit_price_cents` | `integer` | not null; `> 0` |
 | `discount_min_quantity` | `integer` | nullable; `>= 2`; preenchido junto com `discount_unit_price_cents` |
 | `discount_unit_price_cents` | `integer` | nullable; `> 0` e `< unit_price_cents`; preço unitário quando o limiar é atingido |
+| `measurement_table` | `jsonb` | nullable; cabeçalhos e seções/linhas da tabela inserida manualmente pelo admin |
+| `measurement_image` | `text` | nullable; caminho da imagem de medidas no Storage |
 | `display_order` | `integer` | not null; unique dentro do evento |
 
 O desconto é calculado separadamente por produto. Se uma reserva alcançar `discount_min_quantity` unidades do mesmo produto, todas as unidades daquele produto usam `discount_unit_price_cents`; quantidades de produtos diferentes não são somadas para atingir o desconto.
+
+O guia de medidas é opcional, mas aceita apenas um formato por produto: `measurement_table` ou `measurement_image` (`CHECK (num_nonnulls(measurement_table, measurement_image) <= 1)`). A tabela manual usa o formato `{ "sizes": [text], "sections": [{ "title": text, "rows": [{ "label": text, "values": [text] }] }] }`; cada linha deve ter a mesma quantidade de valores de `sizes`. A view pública expõe somente o formato preenchido. O admin apresenta uma escolha exclusiva entre tabela manual e imagem e limpa o formato anterior ao trocar a opção.
 
 ### `produto_variacoes` e `produto_variacao_opcoes`
 

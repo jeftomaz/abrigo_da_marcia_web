@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@source "../../../packages/shared/src";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+
+  /* Único limiar desta tela: abaixo dele o layout é empilhado (mobile/modal);
+     acima, as três colunas (stats + lista + edição) cabem sem se espremer. */
+  --breakpoint-desk: 85rem;
+
+  --color-cinza-escuro: #262626;
+  --color-cinza-medio: #404040;
+  --color-cinza-claro: #e6e6e6;
+  --color-marca-escura: #8d0e0c;
+  --color-marca: #f15a55;
+  --color-marca-clara: #fbd1d0;
+  --color-on-brand: var(--color-marca-clara);
+  --color-surface-raised: #fff;
+  --color-on-surface-raised: var(--color-cinza-escuro);
+
+  /* Cores de estado dos status/controles do admin (sheet "Estados"/"Botões
+     Admin"): não seguem a correspondência claro/escuro — o mesmo valor vale
+     sobre superfície branca ou preta. Verde = ativo/disponível; amarelo =
+     encerrado/em processo; neutro (`cinza-medio`), marca e marca-escura reusam
+     a paleta base. `verde-escura` é o hover da metade verde do `OptionToggle`. */
+  --color-status-verde: #7ed957;
+  --color-status-verde-escura: #63c13f;
+  --color-status-verde-texto: #1f5e14;
+  --color-status-amarelo: #e6da4e;
+  --color-status-amarelo-texto: #5c5510;
+}
+
+.dark {
+  --color-on-brand: var(--color-marca-escura);
+  --color-surface-raised: #000;
+  --color-on-surface-raised: var(--color-cinza-claro);
+}

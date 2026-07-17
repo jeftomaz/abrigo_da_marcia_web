@@ -17,6 +17,7 @@ type ExpandedCardDialogProps = {
   tags?: ReactNode
   primaryAction?: ExpandedCardDialogAction
   onClose: () => void
+  persistentClose?: boolean
   variant?: 'adoption' | 'default' | 'product' | 'story'
 }
 
@@ -26,7 +27,7 @@ const DIALOG_CLASSES = {
   default:
     'flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised lg:max-h-none lg:flex-row',
   product:
-    'flex h-[90vh] max-h-[720px] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised lg:h-[70vh] lg:flex-row',
+    'flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised lg:flex-row',
   story:
     'flex max-h-[90vh] w-5/6 max-w-3xl flex-col overflow-hidden rounded-3xl bg-surface-raised text-on-surface-raised lg:h-[60vh] lg:w-full lg:flex-row',
 }
@@ -37,7 +38,7 @@ const GALLERY_CLASSES = {
   default:
     'flex h-[min(54vh,400px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-cinza-escuro select-none lg:h-auto lg:max-h-[90vh] lg:w-2/5 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto',
   product:
-    'flex h-[min(33vh,280px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-surface-raised pt-8 select-none lg:h-full lg:w-[30%] lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto lg:pt-0',
+    'flex h-[min(33vh,280px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-surface-raised pt-16 select-none lg:h-full lg:w-[30%] lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto lg:pt-0',
   story:
     'flex h-[min(40vh,320px)] w-full flex-shrink-0 snap-x snap-mandatory overflow-x-auto overscroll-contain bg-surface-raised pt-6 select-none lg:h-full lg:w-1/3 lg:flex-col lg:snap-y lg:overflow-x-hidden lg:overflow-y-auto lg:pt-0',
 }
@@ -69,6 +70,7 @@ export function ExpandedCardDialog({
   tags,
   primaryAction,
   onClose,
+  persistentClose = false,
   variant = 'default',
 }: ExpandedCardDialogProps) {
   const dragStart = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null)
@@ -107,6 +109,7 @@ export function ExpandedCardDialog({
       ariaLabelledBy={children ? undefined : titleId}
       className={DIALOG_CLASSES[variant]}
       onClose={onClose}
+      persistentClose={persistentClose}
     >
       <div
         className={`${GALLERY_CLASSES[variant]} ${isCarousel ? 'cursor-grab active:cursor-grabbing' : ''}`}
