@@ -51,6 +51,11 @@ export function Caes() {
   )
 
   const handleSave = (dog: Dog) => {
+    if (editingTarget) {
+      editingTarget.photos
+        .filter((photo) => photo.startsWith('blob:') && !dog.photos.includes(photo))
+        .forEach((photo) => URL.revokeObjectURL(photo))
+    }
     setDogs((current) =>
       current.some((item) => item.id === dog.id)
         ? current.map((item) => (item.id === dog.id ? dog : item))
@@ -61,6 +66,9 @@ export function Caes() {
 
   const handleRemove = (dog: Dog) => {
     if (!window.confirm(`Remover ${dog.name}?`)) return
+    dog.photos
+      .filter((photo) => photo.startsWith('blob:'))
+      .forEach((photo) => URL.revokeObjectURL(photo))
     setDogs((current) => current.filter((item) => item.id !== dog.id))
   }
 

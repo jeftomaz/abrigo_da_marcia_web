@@ -19,6 +19,10 @@ export type Dog = {
 
 export const DEFAULT_ADOPTION_FORM_URL = 'https://forms.gle/nLSjXJyeLGUJXZj27'
 
+export function isPhotoPreviewUrl(photo: string) {
+  return /^(blob:|data:|https?:\/\/|\/)/.test(photo)
+}
+
 export const STATUS_LABELS: Record<DogStatus, string> = {
   disponivel: 'Disponível',
   adotado: 'Adotado',

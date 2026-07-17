@@ -1,7 +1,13 @@
-import { useId, useState } from 'react'
-import { Action, Icon, Switch } from '@abrigo/shared'
+import { useEffect, useId, useRef, useState } from 'react'
+import {
+  ACCEPTED_UPLOAD_IMAGE_TYPES,
+  Action,
+  Icon,
+  Switch,
+  compressImages,
+} from '@abrigo/shared'
 import type { Dog, DogGender, DogSize } from '../data/dogs'
-import { DEFAULT_ADOPTION_FORM_URL } from '../data/dogs'
+import { DEFAULT_ADOPTION_FORM_URL, isPhotoPreviewUrl } from '../data/dogs'
 
 type DogFormProps = {
   dog: Dog | null
@@ -34,6 +40,11 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   const [adoptionFormUrl, setAdoptionFormUrl] = useState(dog?.adoptionFormUrl ?? DEFAULT_ADOPTION_FORM_URL)
   const [featured, setFeatured] = useState(dog?.featured ?? false)
   const [photos, setPhotos] = useState(dog?.photos ?? [])
+  const [isCompressing, setIsCompressing] = useState(false)
+  const [photoError, setPhotoError] = useState('')
+  const createdPhotoUrls = useRef(new Set<string>())
+  const didSave = useRef(false)
+  const isMounted = useRef(true)
   const isPanel = layout === 'panel'
   const fieldClasses = `${
     isPanel ? 'h-8 px-3 text-sm' : 'h-10 px-4'
@@ -50,8 +61,54 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   const nestedLabelClasses = `${isPanel ? 'text-sm' : ''} block font-medium`
   const fieldGridClasses = `${isPanel ? 'mt-2 gap-3' : 'mt-3 gap-4'} grid grid-cols-2`
 
-  const addPhoto = () => setPhotos((current) => [...current, `foto-${current.length + 1}-${Date.now()}`])
-  const removePhoto = (photo: string) => setPhotos((current) => current.filter((item) => item !== photo))
+  useEffect(
+    () => {
+      const photoUrls = createdPhotoUrls.current
+      isMounted.current = true
+      return () => {
+        isMounted.current = false
+        if (!didSave.current) {
+          photoUrls.forEach((url) => URL.revokeObjectURL(url))
+        }
+      }
+    },
+    [],
+  )
+
+  const addPhotos = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
+    const selectedFiles = Array.from(input.files ?? [])
+    const availableSlots = MAX_PHOTOS - photos.length
+    input.value = ''
+    if (selectedFiles.length === 0 || availableSlots === 0) return
+
+    setIsCompressing(true)
+    setPhotoError('')
+
+    try {
+      const filesToAdd = selectedFiles.slice(0, availableSlots)
+      const compressedFiles = await compressImages(filesToAdd)
+      if (!isMounted.current) return
+      const urls = compressedFiles.map((file) => URL.createObjectURL(file))
+      urls.forEach((url) => createdPhotoUrls.current.add(url))
+      setPhotos((current) => [...current, ...urls])
+
+      if (selectedFiles.length > availableSlots) {
+        setPhotoError(`A galeria aceita no máximo ${MAX_PHOTOS} imagens.`)
+      }
+    } catch {
+      if (isMounted.current) {
+        setPhotoError('Não foi possível adicionar uma das imagens.')
+      }
+    } finally {
+      if (isMounted.current) setIsCompressing(false)
+    }
+  }
+
+  const removePhoto = (photo: string) => {
+    if (createdPhotoUrls.current.delete(photo)) URL.revokeObjectURL(photo)
+    setPhotos((current) => current.filter((item) => item !== photo))
+  }
   const handleBirthYearChange = (value: string) => {
     const year = parseBoundedInteger(value, MIN_BIRTH_YEAR, CURRENT_YEAR)
     setBirthYear(value)
@@ -65,17 +122,27 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
+    const normalizedName = name.trim()
+    const normalizedDescription = description.trim()
     const validBirthYear = parseBoundedInteger(birthYear, MIN_BIRTH_YEAR, CURRENT_YEAR)
     const validApproxAge = parseBoundedInteger(approxAge, 0, MAX_APPROX_AGE)
-    if (!gender || !size || validBirthYear === null || validApproxAge === null) return
+    if (
+      !normalizedName ||
+      !normalizedDescription ||
+      !gender ||
+      !size ||
+      validBirthYear === null ||
+      validApproxAge === null
+    ) return
 
+    didSave.current = true
     onSave({
       id: dog?.id ?? crypto.randomUUID(),
-      name,
+      name: normalizedName,
       gender,
       size,
       birthYear: validBirthYear,
-      description,
+      description: normalizedDescription,
       status: dog?.status ?? 'disponivel',
       adoptionFormUrl,
       featured,
@@ -189,7 +256,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       </div>
 
       <label htmlFor={`${formId}-description`} className={labelClasses}>
-        Descrição
+        Descrição*
       </label>
       <textarea
         id={`${formId}-description`}
@@ -197,6 +264,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         onChange={(event) => setDescription(event.target.value)}
         placeholder="Ex: Doguinho é um cachorro animado e querido por todo o abrigo, recém-chegado. Ele gosta de correr e brincar com os outros cães."
         rows={2}
+        required
         className={`mt-1 w-full resize-y rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50 ${isPanel ? 'px-3 py-2 text-sm' : 'px-4 py-3'}`}
       />
     </section>
@@ -235,25 +303,41 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       </p>
       <div className={`mt-2 grid gap-2 ${isPanel ? 'grid-cols-3' : 'grid-cols-[repeat(4,4rem)]'}`}>
         {photos.length < MAX_PHOTOS && (
-          <button
-            type="button"
-            onClick={addPhoto}
+          <label
+            htmlFor={`${formId}-photos`}
             aria-label="Adicionar foto"
+            aria-disabled={isCompressing}
             className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-cinza-medio text-xs font-medium text-cinza-medio dark:border-cinza-claro dark:text-cinza-claro"
           >
+            <input
+              id={`${formId}-photos`}
+              type="file"
+              accept={ACCEPTED_UPLOAD_IMAGE_TYPES.join(',')}
+              multiple
+              disabled={isCompressing}
+              onChange={addPhotos}
+              className="sr-only"
+            />
             <Icon name="plus-circle-solid" className="size-6" />
             Adicionar
-          </button>
+          </label>
         )}
-        {photos.map((photo) => (
+        {photos.map((photo, index) => (
           <div key={photo} className="relative aspect-square overflow-hidden rounded-xl bg-cinza-claro dark:bg-cinza-medio">
             <div className="flex h-full w-full items-center justify-center">
               <Icon name="pata" className="size-8 text-cinza-medio dark:text-cinza-claro" />
             </div>
+            {isPhotoPreviewUrl(photo) && (
+              <img
+                src={photo}
+                alt={`Foto ${index + 1} do cão`}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
             <button
               type="button"
               onClick={() => removePhoto(photo)}
-              aria-label="Remover foto"
+              aria-label={`Remover foto ${index + 1}`}
               className="absolute top-1 right-1 rounded-full bg-cinza-escuro/70 p-1 text-cinza-claro"
             >
               <Icon name="xmark-circle-solid" className="size-4" />
@@ -261,6 +345,11 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
           </div>
         ))}
       </div>
+      {photoError && (
+        <p role="alert" className="mt-2 text-sm font-medium text-marca-escura dark:text-marca">
+          {photoError}
+        </p>
+      )}
     </section>
   )
 
@@ -269,7 +358,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       <Action onClick={onCancel} size="small" variant="secondary" className={`${isPanel ? 'w-20' : 'w-28'} shrink-0`}>
         Cancelar
       </Action>
-      <Action type="submit" size="small" variant="primary" className="min-w-0 flex-1">
+      <Action type="submit" size="small" variant="primary" disabled={isCompressing} className="min-w-0 flex-1">
         Salvar Cão
       </Action>
     </div>

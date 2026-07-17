@@ -10,3 +10,9 @@ export { FeatureSection } from './components/FeatureSection'
 export { ExpandedCardDialog } from './components/ExpandedCardDialog'
 export { SelectField } from './components/SelectField'
 export { Dialog } from './components/Dialog'
+export {
+  ACCEPTED_UPLOAD_IMAGE_TYPES,
+  MAX_UPLOAD_IMAGE_BYTES,
+  compressImage,
+  compressImages,
+} from './images/compressImage'

@@ -1,5 +1,7 @@
 # PROGRESS.md
 
+- Gestão de Cães: descrição passou a ser obrigatória no formulário. No banco, Nome, Descrição, Ano de Nascimento, Gênero e Porte já eram `NOT NULL`; migration adicional impede Nome/Descrição vazios ou compostos apenas por espaços, e o formulário normaliza os dois textos antes de salvar.
+- Gestão de Cães: admin seleciona, pré-visualiza e remove até 5 imagens por cão mantendo o controle visual original (`plus-circle-solid`); compressão/formato são tratados de forma transparente. `compressImage` em `packages/shared` é o ponto obrigatório para todos os uploads e garante no máximo 500.000 bytes, sem dependência nova.
 - Gestão de Cães: ano de nascimento e idade aproximada agora são obrigatórios e sincronizados em tempo real nos dois sentidos; somente `birth_year` é persistido, conforme o schema, e a idade continua derivada para não envelhecer no banco.
 - Gestão de Cães: o alternador de tema agora exibe o SVG completo sem uma segunda forma ao redor; no formulário, “Salvar Cão” usa a variante primária e “Cancelar” permanece secundário.
 - Gestão de Cães: a descrição voltou a aceitar redimensionamento vertical manual; o shell do admin agora distribui header + conteúdo com flex, eliminando a rolagem causada por `min-h-screen` no `main` e permitindo que o painel desktop cresça naturalmente quando necessário.

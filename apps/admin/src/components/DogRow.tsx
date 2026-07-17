@@ -1,5 +1,5 @@
 import { Action, Icon } from '@abrigo/shared'
-import { STATUS_LABELS, type Dog, type DogStatus } from '../data/dogs'
+import { isPhotoPreviewUrl, STATUS_LABELS, type Dog, type DogStatus } from '../data/dogs'
 import { OptionToggle } from './OptionToggle'
 import { StatusBadge, type StatusTone } from './StatusBadge'
 
@@ -22,6 +22,13 @@ export function DogRow({ dog, onEdit, onRemove, onSetStatus }: DogRowProps) {
       <div className="relative shrink-0">
         <div className="flex size-14 items-center justify-center overflow-hidden rounded-xl bg-cinza-claro dark:bg-cinza-medio sm:size-16">
           <Icon name="pata" className="size-7 text-cinza-medio dark:text-cinza-claro sm:size-8" />
+          {dog.photos[0] && isPhotoPreviewUrl(dog.photos[0]) && (
+            <img
+              src={dog.photos[0]}
+              alt=""
+              className="absolute inset-0 h-full w-full rounded-xl object-cover"
+            />
+          )}
         </div>
         <StatusBadge tone={STATUS_TONE[dog.status]} size="sm" className="absolute -bottom-2 left-0">
           {STATUS_LABELS[dog.status]}

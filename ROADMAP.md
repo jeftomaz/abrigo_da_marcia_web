@@ -17,7 +17,7 @@
 1. Schema Supabase, views públicas, RLS e tipos — `doing` (migrations de `caes`/`social_links` + views + RLS materializadas e validadas no stack local; tipos, client Supabase, policies admin e projeto hospedado pendentes)
 2. Auth admin com MFA — `todo`
 3. Catálogo público com filtros, ordenação e formulário de adoção — `doing` (interface pronta com dados temporários; integração Supabase pendente)
-4. CRUD admin; status `disponivel|adotado|falecido` — `doing` (`apps/admin` criado; tela de Cães pronta com dados temporários — stats, lista com busca/filtro, criação/edição responsiva; integração Supabase e Auth/MFA pendentes)
+4. CRUD admin; status `disponivel|adotado|falecido` — `doing` (`apps/admin` criado; tela de Cães pronta com dados temporários — stats, lista, criação/edição e gestão de até 5 imagens comprimidas para ≤500 KB; persistência no Supabase e Auth/MFA pendentes)
 
 ## Próxima fase — Histórias
 

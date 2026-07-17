@@ -22,7 +22,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - Design system: fidelidade aos mockups Photoshop. Tokens (cores, fontes, radius, spacing) só via `tailwind.config` — nunca valores hardcoded em componente.
 - Superfícies 100% brancas no modo claro são sempre 100% pretas no modo escuro; cores de estado e ilustrações não entram nessa correspondência.
 - **Fluxo Git:** cada tela é desenvolvida em branch própria criada a partir da `main` atualizada. Ao finalizar, validar, publicar a branch, integrá-la à `main` e publicar a `main` antes de iniciar a próxima tela.
-- Fotos: comprimir no client antes do upload (preservar cota do Storage free tier).
+- Fotos: todo upload usa `compressImage` de `packages/shared` no client e só segue ao Storage com até 500.000 bytes (JPG, PNG ou WebP; preservar a cota free tier).
 
 ## Ordem de desenvolvimento
 

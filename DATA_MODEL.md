@@ -2,6 +2,11 @@
 
 Fonte de verdade do banco. O schema base está materializado em `supabase/migrations/`; a migration de Histórias aguarda `supabase db reset` com o Docker ativo. O domínio de Eventos abaixo está definido, mas só será materializado após a aprovação completa. Ainda sem projeto hospedado.
 
+## Imagens no Storage
+
+- Todo arquivo passa por `compressImage` de `packages/shared` no client antes do upload; somente JPG, PNG e WebP com até 500.000 bytes seguem ao Storage.
+- A gestão local de imagens de cães já usa esse fluxo. Upload, exclusão do objeto e persistência dos caminhos entram na integração Supabase/Auth; Histórias, Eventos, Produtos e guias de medidas devem reutilizar o mesmo utilitário.
+
 ## DER
 
 ```mermaid
@@ -176,8 +181,8 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `id` | `uuid` | PK; default `gen_random_uuid()` |
-| `name` | `text` | not null |
-| `description` | `text` | not null; card trunca (line-clamp), diálogo mostra completo |
+| `name` | `text` | not null; texto sem espaços deve ter ao menos 1 caractere |
+| `description` | `text` | not null; texto sem espaços deve ter ao menos 1 caractere; card trunca (line-clamp), diálogo mostra completo |
 | `birth_year` | `smallint` | not null; CHECK `birth_year between 1990 and 2100` (CHECK exige expressão imutável; "não-futuro" é validado no cadastro admin) |
 | `gender` | `cae_genero` | not null |
 | `size` | `cae_porte` | not null |
@@ -191,7 +196,7 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 - RLS habilitada na tabela; `anon` não acessa a tabela diretamente.
 - View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, somente quando `status = 'disponivel'`, ordenada por `created_at` desc. Não expõe `status` (público só vê disponíveis). O preview da landing usa os primeiros N desta mesma view.
 - Admin autenticado pode inserir, consultar, atualizar e excluir; a condição da policy será definida junto ao modelo de Auth/MFA — **ainda não há policies admin nas migrations** (por ora só o service role escreve).
-- Upload e compressão das fotos no Storage fazem parte da fase admin, não deste escopo.
+- A UI admin já inclui inclusão, prévia, remoção e compressão; upload/exclusão no Storage e persistência dos caminhos aguardam a integração Supabase/Auth.
 
 ## `historias`
 
@@ -211,7 +216,7 @@ Histórias de adoção exibidas na página dedicada e no preview da landing. Sã
 - RLS habilitada na tabela; `anon` não acessa a tabela diretamente.
 - View `historias_public`: expõe `id`, `name`, `description` e `photos`, ordenada por `created_at` desc. A página de Histórias e o preview da landing usam essa mesma view.
 - Admin autenticado poderá inserir, consultar, atualizar e excluir; as policies serão definidas com Auth/MFA.
-- Upload, compressão e regra de ao menos uma foto fazem parte da fase admin.
+- Upload/exclusão no Storage, integração com a compressão compartilhada e regra de ao menos uma foto fazem parte do CRUD admin.
 
 ## Eventos e reservas
 
