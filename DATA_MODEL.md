@@ -184,7 +184,7 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 |---|---|---|
 | `id` | `uuid` | PK; default `gen_random_uuid()` |
 | `name` | `text` | not null; texto sem espaços deve ter 1–40 caracteres |
-| `description` | `text` | not null; texto sem espaços deve ter 1–1000 caracteres; CHECK `NOT VALID` até a revisão de registros legados, mas já impede inserções/atualizações inválidas; card trunca (line-clamp), diálogo mostra completo |
+| `description` | `text` | not null; texto sem espaços deve ter 1–1000 caracteres; card trunca (line-clamp), diálogo mostra completo |
 | `birth_year` | `smallint` | not null; CHECK `birth_year between 1990 and 2100` (CHECK exige expressão imutável; "não-futuro" é validado no cadastro admin) |
 | `gender` | `cae_genero` | not null |
 | `size` | `cae_porte` | not null |
