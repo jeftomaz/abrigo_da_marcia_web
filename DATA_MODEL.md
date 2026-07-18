@@ -189,7 +189,7 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 | `gender` | `cae_genero` | not null |
 | `size` | `cae_porte` | not null |
 | `status` | `cae_status` | not null; default `disponivel` |
-| `photos` | `text[]` | not null; default `'{}'`; caminhos ordenados no Storage, `[0]` = capa (regra "≥1 foto para publicar" fica na fase admin) |
+| `photos` | `text[]` | not null; default `'{}'`; 0–5 caminhos ordenados no Storage, `[0]` = capa quando existir |
 | `adoption_form_url` | `text` | not null; URL HTTP(S) usada pelo CTA do cão |
 | `featured` | `boolean` | not null; default `false`; destacados aparecem primeiro na view pública |
 | `created_at` | `timestamptz` | not null; default `now()` |

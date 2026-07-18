@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Gestão de Cães limita `caes.photos` a 0–5 itens também no PostgreSQL; cadastro sem foto permanece permitido e a interface já aplica a mesma regra.
 - Gestão de Cães limita nome a 40 e descrição a 1000 caracteres no formulário e no PostgreSQL; a descrição exibe contador. O CHECK de descrição usa `NOT VALID` para preservar um registro local legado de Negão (8.857 caracteres), mas já bloqueia novas inserções/atualizações inválidas; revisar esse texto e validar a constraint depois.
 - Gestão de Cães: ao marcar um cão como adotado ou falecido, a opção ativa ganha um glow interno suave e a opção oposta fica desabilitada; o estado ativo também é exposto semanticamente pelo controle.
 - Catálogo de adoção agora revalida cães automaticamente a cada 5s enquanto visível (e ao retomar foco), com status otimista no admin. Galerias permitem ampliar imagens; no admin, a ordem pode ser alterada por arraste e `[0]` segue como capa, inclusive ao misturar fotos existentes e novas. A seleção de arquivos mostra prévias antes da compressão para não aparentar travamento.
