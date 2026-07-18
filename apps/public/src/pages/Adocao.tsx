@@ -4,33 +4,13 @@ import {
   CompactCard,
   ExpandedCardDialog,
   SelectField,
+  getDogPhotoUrl,
+  usePublicDogs,
 } from '@abrigo/shared'
+import type { Dog } from '@abrigo/shared'
 import { Tag } from '../components/Tag'
-import dogPhoto from '../assets/landing_adote.jpg'
 
-type Dog = {
-  age: number
-  description: string
-  gender: 'femea' | 'macho'
-  id: number
-  name: string
-  size: 'grande' | 'medio' | 'pequeno'
-}
-
-const GOOGLE_FORM_URL = 'https://forms.gle/nLSjXJyeLGUJXZj27'
-const DESCRIPTION =
-  'Aqui vem o começo do texto descrevendo um cão ou um produto, depende do contexto'
-const FULL_DESCRIPTION =
-  'Aqui vem o texto completo, descrevendo o cão com mais detalhes: temperamento, histórico de resgate e cuidados necessários — até que o conteúdo real de cada animal esteja cadastrado.'
-
-const DOGS: Dog[] = [
-  { id: 1, name: 'Negão', gender: 'macho', size: 'grande', age: 7, description: DESCRIPTION },
-  { id: 2, name: 'Dentinho', gender: 'macho', size: 'medio', age: 4, description: DESCRIPTION },
-  { id: 3, name: 'Doguinho', gender: 'macho', size: 'pequeno', age: 2, description: DESCRIPTION },
-  { id: 4, name: 'Doguinho', gender: 'macho', size: 'medio', age: 5, description: DESCRIPTION },
-  { id: 5, name: 'Negão', gender: 'macho', size: 'grande', age: 8, description: DESCRIPTION },
-  { id: 6, name: 'Dentinho', gender: 'femea', size: 'pequeno', age: 3, description: DESCRIPTION },
-]
+const CURRENT_YEAR = new Date().getFullYear()
 
 const GENDER_LABELS: Record<Dog['gender'], string> = {
   femea: 'FÊMEA',
@@ -50,27 +30,35 @@ const ORDER_LABELS: Record<string, string> = {
 }
 
 function getDogTags(dog: Dog) {
-  return [GENDER_LABELS[dog.gender], SIZE_LABELS[dog.size], `${dog.age} ANOS`]
+  return [
+    GENDER_LABELS[dog.gender],
+    SIZE_LABELS[dog.size],
+    `${CURRENT_YEAR - dog.birthYear} ANOS`,
+  ]
 }
 
 export function Adocao() {
+  const { data: availableDogs = [], isLoading, error } = usePublicDogs()
   const [gender, setGender] = useState('')
   const [size, setSize] = useState('')
   const [order, setOrder] = useState('')
-  const [selectedDog, setSelectedDog] = useState<Dog | null>(null)
+  const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
+  const selectedDog = availableDogs.find((dog) => dog.id === selectedDogId) ?? null
 
   const dogs = useMemo(() => {
-    const filtered = DOGS.filter(
+    const filtered = availableDogs.filter(
       (dog) => (!gender || dog.gender === gender) && (!size || dog.size === size),
     )
 
     return [...filtered].sort((a, b) => {
-      if (order === 'age-asc') return a.age - b.age
-      if (order === 'age-desc') return b.age - a.age
+      const aAge = CURRENT_YEAR - a.birthYear
+      const bAge = CURRENT_YEAR - b.birthYear
+      if (order === 'age-asc') return aAge - bAge
+      if (order === 'age-desc') return bAge - aAge
       if (order === 'name') return a.name.localeCompare(b.name, 'pt-BR')
-      return a.id - b.id
+      return 0
     })
-  }, [gender, order, size])
+  }, [availableDogs, gender, order, size])
 
   const clearFilters = () => {
     setGender('')
@@ -151,21 +139,29 @@ export function Adocao() {
           </p>
         </div>
 
+        {isLoading && <p className="mt-10 text-center text-2xl">Carregando cães...</p>}
+        {error && (
+          <p role="alert" className="mt-10 text-center text-2xl">
+            Não foi possível carregar os cães.
+          </p>
+        )}
+
         <section aria-label="Cães disponíveis" className="mt-10 grid grid-cols-2 gap-5 lg:mt-10 lg:grid-cols-3 lg:gap-6">
           {dogs.map((dog) => {
             const tags = getDogTags(dog)
+            const cover = dog.photos[0]
 
             return (
               <CompactCard
                 key={dog.id}
                 className="min-w-0"
-                image={{ src: dogPhoto, alt: dog.name }}
+                image={cover ? { src: getDogPhotoUrl(cover), alt: dog.name } : undefined}
                 title={dog.name}
                 description={dog.description}
                 tags={tags.map((tag) => <Tag key={tag}>{tag}</Tag>)}
                 action={
                   <Action
-                    onClick={() => setSelectedDog(dog)}
+                    onClick={() => setSelectedDogId(dog.id)}
                     size="compact"
                     className="px-2"
                     aria-label={`Conhecer ${dog.name}`}
@@ -179,7 +175,7 @@ export function Adocao() {
           })}
         </section>
 
-        {dogs.length === 0 && (
+        {!isLoading && !error && dogs.length === 0 && (
           <p className="mt-10 text-center text-2xl">Nenhum cão encontrado.</p>
         )}
       </div>
@@ -187,13 +183,14 @@ export function Adocao() {
       {selectedDog && (
         <ExpandedCardDialog
           title={selectedDog.name}
-          description={FULL_DESCRIPTION}
+          description={selectedDog.description}
           tags={getDogTags(selectedDog).map((tag) => (
             <Tag key={tag} size="dialog" variant="dialog">{tag}</Tag>
           ))}
-          images={[dogPhoto, dogPhoto, dogPhoto]}
-          primaryAction={{ label: 'Adote-me', href: GOOGLE_FORM_URL }}
-          onClose={() => setSelectedDog(null)}
+          images={selectedDog.photos.map(getDogPhotoUrl)}
+          expandableImages
+          primaryAction={{ label: 'Adote-me', href: selectedDog.adoptionFormUrl }}
+          onClose={() => setSelectedDogId(null)}
           variant="adoption"
         />
       )}

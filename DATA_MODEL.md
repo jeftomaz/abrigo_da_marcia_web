@@ -1,11 +1,11 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema base está materializado em `supabase/migrations/`; a migration de Histórias aguarda `supabase db reset` com o Docker ativo. O domínio de Eventos abaixo está definido, mas só será materializado após a aprovação completa. Ainda sem projeto hospedado.
+Fonte de verdade do banco. O schema base e Histórias estão materializados e validados em `supabase/migrations/`. O domínio de Eventos abaixo está definido, mas só será materializado após a aprovação completa. Ainda sem projeto hospedado.
 
 ## Imagens no Storage
 
 - Todo arquivo passa por `compressImage` de `packages/shared` no client antes do upload; somente JPG, PNG e WebP com até 500.000 bytes seguem ao Storage.
-- A gestão local de imagens de cães já usa esse fluxo. Upload, exclusão do objeto e persistência dos caminhos entram na integração Supabase/Auth; Histórias, Eventos, Produtos e guias de medidas devem reutilizar o mesmo utilitário.
+- Cães usam o bucket público `dog-photos` (limite 500.000 bytes; JPG, PNG e WebP); `caes.photos` persiste os caminhos e o CRUD remove objetos descartados. Histórias, Eventos, Produtos e guias de medidas devem reutilizar o mesmo utilitário.
 
 ## DER
 
@@ -26,6 +26,8 @@ erDiagram
     cae_porte size
     cae_status status
     text photos "text[] ordenado; [0]=capa"
+    text adoption_form_url
+    boolean featured
     timestamptz created_at
     timestamptz updated_at
   }
@@ -181,22 +183,24 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `id` | `uuid` | PK; default `gen_random_uuid()` |
-| `name` | `text` | not null; texto sem espaços deve ter ao menos 1 caractere |
-| `description` | `text` | not null; texto sem espaços deve ter ao menos 1 caractere; card trunca (line-clamp), diálogo mostra completo |
+| `name` | `text` | not null; texto sem espaços deve ter 1–40 caracteres |
+| `description` | `text` | not null; texto sem espaços deve ter 1–1000 caracteres; CHECK `NOT VALID` até a revisão de registros legados, mas já impede inserções/atualizações inválidas; card trunca (line-clamp), diálogo mostra completo |
 | `birth_year` | `smallint` | not null; CHECK `birth_year between 1990 and 2100` (CHECK exige expressão imutável; "não-futuro" é validado no cadastro admin) |
 | `gender` | `cae_genero` | not null |
 | `size` | `cae_porte` | not null |
 | `status` | `cae_status` | not null; default `disponivel` |
 | `photos` | `text[]` | not null; default `'{}'`; caminhos ordenados no Storage, `[0]` = capa (regra "≥1 foto para publicar" fica na fase admin) |
+| `adoption_form_url` | `text` | not null; URL HTTP(S) usada pelo CTA do cão |
+| `featured` | `boolean` | not null; default `false`; destacados aparecem primeiro na view pública |
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
 ### Exposição e acesso
 
-- RLS habilitada na tabela; `anon` não acessa a tabela diretamente.
-- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, somente quando `status = 'disponivel'`, ordenada por `created_at` desc. Não expõe `status` (público só vê disponíveis). O preview da landing usa os primeiros N desta mesma view.
-- Admin autenticado pode inserir, consultar, atualizar e excluir; a condição da policy será definida junto ao modelo de Auth/MFA — **ainda não há policies admin nas migrations** (por ora só o service role escreve).
-- A UI admin já inclui inclusão, prévia, remoção e compressão; upload/exclusão no Storage e persistência dos caminhos aguardam a integração Supabase/Auth.
+- RLS habilitada na tabela; as migrations não concedem acesso direto a `anon`.
+- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, `adoption_form_url` e `featured`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status`.
+- Enquanto Auth/MFA não existe, `seed.sql` cria policies de CRUD para `anon` condicionadas ao Origin local (`localhost`, `127.0.0.1` ou `::1`). Essas policies não são aplicadas por `supabase db push`.
+- O bucket `dog-photos` é público para leitura; upload/leitura de objetos/exclusão pelo admin anônimo recebem a mesma policy temporária apenas no seed local. Policies definitivas exigirão admin autenticado.
 
 ## `historias`
 

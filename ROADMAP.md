@@ -14,10 +14,10 @@
 
 ## Fase — Adoção
 
-1. Schema Supabase, views públicas, RLS e tipos — `doing` (migrations de `caes`/`social_links` + views + RLS materializadas e validadas no stack local; tipos, client Supabase, policies admin e projeto hospedado pendentes)
+1. Schema Supabase, views públicas, RLS e tipos — `doing` (schema, bucket, tipos gerados e client compartilhado validados no stack local; policies definitivas com Auth/MFA e projeto hospedado pendentes)
 2. Auth admin com MFA — `todo`
-3. Catálogo público com filtros, ordenação e formulário de adoção — `doing` (interface pronta com dados temporários; integração Supabase pendente)
-4. CRUD admin; status `disponivel|adotado|falecido` — `doing` (`apps/admin` criado; tela de Cães pronta com dados temporários — stats, lista, criação/edição e gestão de até 5 imagens comprimidas para ≤500 KB; persistência no Supabase e Auth/MFA pendentes)
+3. Catálogo público com filtros, ordenação e formulário de adoção — `done` (catálogo e preview da landing leem `caes_public`)
+4. CRUD admin; status `disponivel|adotado|falecido` — `doing` (CRUD e Storage funcionam no stack local sem login; Auth/MFA e policies hospedadas pendentes)
 
 ## Próxima fase — Histórias
 

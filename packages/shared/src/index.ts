@@ -10,6 +10,28 @@ export { FeatureSection } from './components/FeatureSection'
 export { ExpandedCardDialog } from './components/ExpandedCardDialog'
 export { SelectField } from './components/SelectField'
 export { Dialog } from './components/Dialog'
+export { ImageLightbox } from './components/ImageLightbox'
+export { DataProvider } from './data/DataProvider'
+export type { Database, Tables, TablesInsert, TablesUpdate } from './database.types'
+export {
+  DEFAULT_ADOPTION_FORM_URL,
+  STATUS_LABELS,
+  getDogPhotoUrl,
+  toEditableDogPhotos,
+  useAdminDogs,
+  useDeleteDog,
+  usePublicDogs,
+  useSaveDog,
+  useUpdateDogStatus,
+} from './dogs/dogs'
+export type {
+  Dog,
+  DogDraft,
+  DogGender,
+  DogSize,
+  DogStatus,
+  EditableDogPhoto,
+} from './dogs/dogs'
 export {
   ACCEPTED_UPLOAD_IMAGE_TYPES,
   MAX_UPLOAD_IMAGE_BYTES,

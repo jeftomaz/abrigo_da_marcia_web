@@ -12,6 +12,8 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - **Dados no client:** TanStack Query; client Supabase único e tipado (`database.types.ts` gerado) em `packages/shared`.
 - **Monorepo:** pnpm workspaces — `apps/public`, `apps/admin`, `packages/shared`.
 - **Dev local do banco:** `supabase start` (requer Docker) sobe o stack; `supabase db reset` aplica `supabase/migrations/` + `supabase/seed.sql`. Studio em `localhost:54323`.
+- **Bootstrap local removível:** `./scripts/dev-local.sh` inicia Supabase, público (`5173`) e admin (`5174`). O arquivo não participa de build/deploy.
+- **Admin local sem Auth:** até a etapa de Auth/MFA, somente o `seed.sql` concede CRUD de cães/Storage a `anon`, condicionado ao Origin local. Nunca levar essa exceção para migrations ou projeto hospedado.
 
 ## Regras específicas
 

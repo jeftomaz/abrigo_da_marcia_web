@@ -31,6 +31,7 @@
   --color-status-verde-texto: #1f5e14;
   --color-status-amarelo: #e6da4e;
   --color-status-amarelo-texto: #5c5510;
+  --shadow-status-active: inset 0 0 0.75rem color-mix(in srgb, currentColor 22%, transparent);
 }
 
 .dark {

@@ -1,7 +1,9 @@
-import { useId, useRef } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Action } from './Action'
 import { Dialog } from './Dialog'
+import { ImageLightbox } from './ImageLightbox'
+import { Icon } from './Icon'
 
 type ExpandedCardDialogAction = {
   label: string
@@ -14,6 +16,7 @@ type ExpandedCardDialogProps = {
   title: string
   description: string
   images: string[]
+  expandableImages?: boolean
   tags?: ReactNode
   primaryAction?: ExpandedCardDialogAction
   onClose: () => void
@@ -54,6 +57,13 @@ const IMAGE_CLASSES = {
     'h-full w-5/12 flex-shrink-0 snap-center object-cover lg:h-1/2 lg:w-full',
 }
 
+const EXPANDED_IMAGE_CLASSES = {
+  adoption: 'h-full w-full object-cover',
+  default: 'h-full w-full object-contain lg:object-cover',
+  product: 'h-full w-full object-cover',
+  story: 'h-full w-full object-cover',
+}
+
 const DESCRIPTION_CLASSES = {
   adoption: 'text-justify text-lg leading-normal',
   default: 'indent-8 text-justify',
@@ -67,6 +77,7 @@ export function ExpandedCardDialog({
   title,
   description,
   images,
+  expandableImages = false,
   tags,
   primaryAction,
   onClose,
@@ -74,24 +85,35 @@ export function ExpandedCardDialog({
   variant = 'default',
 }: ExpandedCardDialogProps) {
   const dragStart = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null)
+  const didDrag = useRef(false)
+  const [expandedImage, setExpandedImage] = useState<{ alt: string; src: string } | null>(null)
   const titleId = useId()
 
   // overflow-auto só recebe drag nativo em touch/trackpad; mouse precisa desse handler manual
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== 'mouse') return
     const container = event.currentTarget
+    didDrag.current = false
     dragStart.current = {
       x: event.clientX,
       y: event.clientY,
       scrollLeft: container.scrollLeft,
       scrollTop: container.scrollTop,
     }
-    container.setPointerCapture(event.pointerId)
   }
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!dragStart.current) return
     const container = event.currentTarget
+    if (
+      Math.abs(event.clientX - dragStart.current.x) > 4 ||
+      Math.abs(event.clientY - dragStart.current.y) > 4
+    ) {
+      didDrag.current = true
+      if (!container.hasPointerCapture(event.pointerId)) {
+        container.setPointerCapture(event.pointerId)
+      }
+    }
     container.scrollLeft = dragStart.current.scrollLeft - (event.clientX - dragStart.current.x)
     container.scrollTop = dragStart.current.scrollTop - (event.clientY - dragStart.current.y)
   }
@@ -118,15 +140,48 @@ export function ExpandedCardDialog({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {images.map((src, index) => (
-          <img
-            key={index}
-            src={src}
-            alt={`${title} - foto ${index + 1}`}
-            draggable={false}
-            className={IMAGE_CLASSES[variant]}
-          />
-        ))}
+        {images.length ? (
+          images.map((src, index) => (
+            expandableImages ? (
+              <button
+                key={`${src}-${index}`}
+                type="button"
+                aria-label={`Ampliar ${title} - foto ${index + 1}`}
+                className={`${IMAGE_CLASSES[variant]} cursor-zoom-in`}
+                onClick={() => {
+                  if (didDrag.current) {
+                    didDrag.current = false
+                    return
+                  }
+                  setExpandedImage({ src, alt: `${title} - foto ${index + 1}` })
+                }}
+              >
+                <img
+                  src={src}
+                  alt=""
+                  draggable={false}
+                  className={EXPANDED_IMAGE_CLASSES[variant]}
+                />
+              </button>
+            ) : (
+              <img
+                key={`${src}-${index}`}
+                src={src}
+                alt={`${title} - foto ${index + 1}`}
+                draggable={false}
+                className={IMAGE_CLASSES[variant]}
+              />
+            )
+          ))
+        ) : (
+          <div
+            role="img"
+            aria-label={`Sem foto de ${title}`}
+            className="flex h-full w-full flex-shrink-0 items-center justify-center bg-cinza-claro text-cinza-medio dark:bg-cinza-medio dark:text-cinza-claro"
+          >
+            <Icon name="pata" className="size-20" />
+          </div>
+        )}
       </div>
 
       {children ?? (
@@ -178,6 +233,13 @@ export function ExpandedCardDialog({
             )}
           </div>
         </div>
+      )}
+      {expandedImage && (
+        <ImageLightbox
+          src={expandedImage.src}
+          alt={expandedImage.alt}
+          onClose={() => setExpandedImage(null)}
+        />
       )}
     </Dialog>
   )

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Icon } from './Icon'
 
 type CompactCardOrientation = 'horizontal' | 'responsive' | 'vertical'
 type CompactCardImageAspect = 'landscape' | 'square'
@@ -7,7 +8,7 @@ type CompactCardProps = {
   action?: ReactNode
   className?: string
   description: string
-  image: {
+  image?: {
     alt: string
     src: string
   }
@@ -54,11 +55,21 @@ export function CompactCard({
     <article
       className={`relative flex overflow-hidden rounded-2xl bg-surface-raised text-on-surface-raised transition-transform duration-200 ease-out motion-safe:hover:-translate-y-1 ${ORIENTATION_CLASSES[orientation]} ${className}`}
     >
-      <img
-        src={image.src}
-        alt={image.alt}
-        className={`${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
-      />
+      {image ? (
+        <img
+          src={image.src}
+          alt={image.alt}
+          className={`${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
+        />
+      ) : (
+        <div
+          role="img"
+          aria-label={`Sem foto de ${title}`}
+          className={`flex items-center justify-center bg-cinza-claro text-cinza-medio dark:bg-cinza-medio dark:text-cinza-claro ${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
+        >
+          <Icon name="pata" className="size-12" />
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col gap-2 p-3">
         {tags && <div className="flex flex-wrap gap-1">{tags}</div>}

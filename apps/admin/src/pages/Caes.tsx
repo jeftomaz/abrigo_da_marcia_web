@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Action, Dialog, Icon } from '@abrigo/shared'
+import {
+  Action,
+  Dialog,
+  Icon,
+  useAdminDogs,
+  useDeleteDog,
+  useSaveDog,
+  useUpdateDogStatus,
+} from '@abrigo/shared'
+import type { Dog, DogDraft, DogStatus } from '@abrigo/shared'
 import { DogForm } from '../components/DogForm'
 import { DogRow } from '../components/DogRow'
 import { StatCards } from '../components/StatCards'
-import { SEED_DOGS, type Dog, type DogStatus } from '../data/dogs'
 
 // Só dois estados: desktop (painel lateral) e mobile (modal). O limiar (85rem,
 // alinhado ao breakpoint `desk`) é onde as três colunas cabem sem se espremer.
@@ -23,10 +31,14 @@ function useIsDesktop() {
 }
 
 export function Caes() {
-  const [dogs, setDogs] = useState(SEED_DOGS)
+  const { data: dogs = [], isLoading, error } = useAdminDogs()
+  const saveDog = useSaveDog()
+  const deleteDog = useDeleteDog()
+  const updateDogStatus = useUpdateDogStatus()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<DogStatus | ''>('')
   const [editingTarget, setEditingTarget] = useState<Dog | null | undefined>(undefined)
+  const [operationError, setOperationError] = useState('')
   const isDesktop = useIsDesktop()
   const isEditing = editingTarget !== undefined
 
@@ -50,30 +62,29 @@ export function Caes() {
     [dogs],
   )
 
-  const handleSave = (dog: Dog) => {
-    if (editingTarget) {
-      editingTarget.photos
-        .filter((photo) => photo.startsWith('blob:') && !dog.photos.includes(photo))
-        .forEach((photo) => URL.revokeObjectURL(photo))
-    }
-    setDogs((current) =>
-      current.some((item) => item.id === dog.id)
-        ? current.map((item) => (item.id === dog.id ? dog : item))
-        : [dog, ...current],
-    )
+  const handleSave = async (dog: DogDraft) => {
+    await saveDog.mutateAsync(dog)
     setEditingTarget(undefined)
   }
 
-  const handleRemove = (dog: Dog) => {
+  const handleRemove = async (dog: Dog) => {
     if (!window.confirm(`Remover ${dog.name}?`)) return
-    dog.photos
-      .filter((photo) => photo.startsWith('blob:'))
-      .forEach((photo) => URL.revokeObjectURL(photo))
-    setDogs((current) => current.filter((item) => item.id !== dog.id))
+    setOperationError('')
+    try {
+      await deleteDog.mutateAsync(dog)
+    } catch {
+      setOperationError('Não foi possível remover o cão.')
+    }
   }
 
-  const handleSetStatus = (dog: Dog, status: DogStatus) =>
-    setDogs((current) => current.map((item) => (item.id === dog.id ? { ...item, status } : item)))
+  const handleSetStatus = async (dog: Dog, status: DogStatus) => {
+    setOperationError('')
+    try {
+      await updateDogStatus.mutateAsync({ id: dog.id, status })
+    } catch {
+      setOperationError('Não foi possível atualizar o status do cão.')
+    }
+  }
 
   const formTitle = editingTarget ? 'Editar Cão' : 'Novo Cão'
 
@@ -133,6 +144,9 @@ export function Caes() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 rounded-3xl bg-cinza-claro p-2 desk:gap-3 desk:bg-transparent desk:p-0 dark:bg-cinza-medio desk:dark:bg-transparent">
+            {isLoading && <p className="text-center">Carregando cães...</p>}
+            {error && <p role="alert" className="text-center">Não foi possível carregar os cães.</p>}
+            {operationError && <p role="alert" className="text-center">{operationError}</p>}
             {filteredDogs.map((dog) => (
               <DogRow
                 key={dog.id}
@@ -142,7 +156,9 @@ export function Caes() {
                 onSetStatus={(status) => handleSetStatus(dog, status)}
               />
             ))}
-            {filteredDogs.length === 0 && <p className="text-center">Nenhum cão encontrado.</p>}
+            {!isLoading && !error && filteredDogs.length === 0 && (
+              <p className="text-center">Nenhum cão encontrado.</p>
+            )}
           </div>
         </section>
 

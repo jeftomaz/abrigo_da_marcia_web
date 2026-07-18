@@ -7,6 +7,7 @@ type ToggleOption = {
   label: string
   icon?: string
   onClick: () => void
+  active?: boolean
   disabled?: boolean
 }
 
@@ -22,7 +23,13 @@ const HALF_BASE =
 
 function Half({ option, extra }: { option: ToggleOption; extra: string }) {
   return (
-    <button type="button" onClick={option.onClick} disabled={option.disabled} className={`${HALF_BASE} ${extra}`}>
+    <button
+      type="button"
+      onClick={option.onClick}
+      aria-pressed={option.active}
+      disabled={option.disabled}
+      className={`${HALF_BASE} ${option.active ? 'z-10 font-semibold shadow-status-active' : ''} ${extra}`}
+    >
       {option.icon && <Icon name={option.icon} className="size-3.5 shrink-0 sm:size-4" />}
       {option.label}
     </button>

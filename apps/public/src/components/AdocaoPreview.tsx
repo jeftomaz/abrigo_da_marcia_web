@@ -1,43 +1,40 @@
 import { useState } from 'react'
-import { Action, CompactCard, ExpandedCardDialog, FeatureSection } from '@abrigo/shared'
+import {
+  Action,
+  CompactCard,
+  ExpandedCardDialog,
+  FeatureSection,
+  getDogPhotoUrl,
+  usePublicDogs,
+} from '@abrigo/shared'
+import type { Dog } from '@abrigo/shared'
 import { Tag } from './Tag'
 import adotePhoto from '../assets/landing_adote.jpg'
 
-type DogPreview = {
-  name: string
-  description: string
-  fullDescription: string
+const CURRENT_YEAR = new Date().getFullYear()
+const GENDER_LABELS: Record<Dog['gender'], string> = {
+  femea: 'FÊMEA',
+  macho: 'MACHO',
+}
+const SIZE_LABELS: Record<Dog['size'], string> = {
+  grande: 'GRANDE',
+  medio: 'MÉDIO',
+  pequeno: 'PEQUENO',
 }
 
-const TAGS = ['MACHO', 'GRANDE', '7 ANOS']
-const GOOGLE_FORM_URL = 'https://forms.gle/nLSjXJyeLGUJXZj27'
-
-const FULL_DESCRIPTION =
-  'Aqui vem o texto completo, descrevendo o cão com mais detalhes: temperamento, histórico de resgate e cuidados necessários — até que o conteúdo real de cada animal esteja cadastrado.'
-
-const DOGS: DogPreview[] = [
-  {
-    name: 'Negão',
-    description:
-      'Aqui vem o começo do texto descrevendo um cão ou um produto, depende do contexto',
-    fullDescription: FULL_DESCRIPTION,
-  },
-  {
-    name: 'Dentinho',
-    description:
-      'Aqui vem o começo do texto descrevendo um cão ou um produto, depende do contexto',
-    fullDescription: FULL_DESCRIPTION,
-  },
-  {
-    name: 'Dentinho',
-    description:
-      'Aqui vem o começo do texto descrevendo um cão ou um produto, depende do contexto',
-    fullDescription: FULL_DESCRIPTION,
-  },
-]
+function getDogTags(dog: Dog) {
+  return [
+    GENDER_LABELS[dog.gender],
+    SIZE_LABELS[dog.size],
+    `${CURRENT_YEAR - dog.birthYear} ANOS`,
+  ]
+}
 
 export function AdocaoPreview() {
-  const [selectedDog, setSelectedDog] = useState<number | null>(null)
+  const { data: availableDogs = [], isLoading, error } = usePublicDogs()
+  const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
+  const selectedDog = availableDogs.find((dog) => dog.id === selectedDogId) ?? null
+  const dogs = availableDogs.slice(0, 3)
 
   return (
     <FeatureSection
@@ -50,18 +47,19 @@ export function AdocaoPreview() {
         </h2>
       }
       after={
-        selectedDog !== null && (
+        selectedDog && (
           <ExpandedCardDialog
-            title={DOGS[selectedDog].name}
-            description={DOGS[selectedDog].fullDescription}
-            tags={TAGS.map((tag, index) => (
-              <Tag key={index} size="md">
+            title={selectedDog.name}
+            description={selectedDog.description}
+            tags={getDogTags(selectedDog).map((tag) => (
+              <Tag key={tag} size="md">
                 {tag}
               </Tag>
             ))}
-            images={[adotePhoto]}
-            primaryAction={{ label: 'Adote-me', href: GOOGLE_FORM_URL }}
-            onClose={() => setSelectedDog(null)}
+            images={selectedDog.photos.map(getDogPhotoUrl)}
+            expandableImages
+            primaryAction={{ label: 'Adote-me', href: selectedDog.adoptionFormUrl }}
+            onClose={() => setSelectedDogId(null)}
             variant="adoption"
           />
         )
@@ -72,23 +70,29 @@ export function AdocaoPreview() {
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
-        {DOGS.map((dog, index) => (
-          <CompactCard
-            key={index}
-            image={{ src: adotePhoto, alt: dog.name }}
-            title={dog.name}
-            description={dog.description}
-            tags={TAGS.map((tag, tagIndex) => (
-              <Tag key={tagIndex}>{tag}</Tag>
-            ))}
-            action={
-              <Action onClick={() => setSelectedDog(index)} size="compact">
-                Ler mais
-              </Action>
-            }
-          />
-        ))}
+        {dogs.map((dog) => {
+          const cover = dog.photos[0]
+          return (
+            <CompactCard
+              key={dog.id}
+              image={cover ? { src: getDogPhotoUrl(cover), alt: dog.name } : undefined}
+              title={dog.name}
+              description={dog.description}
+              tags={getDogTags(dog).map((tag) => (
+                <Tag key={tag}>{tag}</Tag>
+              ))}
+              action={
+                <Action onClick={() => setSelectedDogId(dog.id)} size="compact">
+                  Ler mais
+                </Action>
+              }
+            />
+          )
+        })}
       </div>
+
+      {isLoading && <p className="mt-8 text-center">Carregando cães...</p>}
+      {error && <p role="alert" className="mt-8 text-center">Não foi possível carregar os cães.</p>}
 
       <div className="mt-8 flex justify-center">
         <Action to="/adocao" icon="wolf-solid">

@@ -17,6 +17,7 @@ const FOCUSABLE_SELECTOR =
 
 let openDialogCount = 0
 let previousBodyOverflow = ''
+const activeDialogs: symbol[] = []
 
 export function Dialog({
   active = true,
@@ -28,6 +29,7 @@ export function Dialog({
   persistentClose = false,
 }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const dialogId = useRef(Symbol('dialog'))
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
 
@@ -47,6 +49,8 @@ export function Dialog({
   useEffect(() => {
     if (!active) return
 
+    const id = dialogId.current
+    activeDialogs.push(id)
     const previouslyFocused = document.activeElement as HTMLElement | null
     const getFocusables = () =>
       dialogRef.current
@@ -56,6 +60,7 @@ export function Dialog({
     getFocusables()[0]?.focus()
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (activeDialogs[activeDialogs.length - 1] !== id) return
       if (event.key === 'Escape') {
         onCloseRef.current()
         return
@@ -79,6 +84,8 @@ export function Dialog({
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      const index = activeDialogs.lastIndexOf(id)
+      if (index >= 0) activeDialogs.splice(index, 1)
       previouslyFocused?.focus()
     }
   }, [active])

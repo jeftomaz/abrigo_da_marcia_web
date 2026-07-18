@@ -1,5 +1,5 @@
-import { Action, Icon } from '@abrigo/shared'
-import { isPhotoPreviewUrl, STATUS_LABELS, type Dog, type DogStatus } from '../data/dogs'
+import { Action, Icon, STATUS_LABELS, getDogPhotoUrl } from '@abrigo/shared'
+import type { Dog, DogStatus } from '@abrigo/shared'
 import { OptionToggle } from './OptionToggle'
 import { StatusBadge, type StatusTone } from './StatusBadge'
 
@@ -22,9 +22,9 @@ export function DogRow({ dog, onEdit, onRemove, onSetStatus }: DogRowProps) {
       <div className="relative shrink-0">
         <div className="flex size-14 items-center justify-center overflow-hidden rounded-xl bg-cinza-claro dark:bg-cinza-medio sm:size-16">
           <Icon name="pata" className="size-7 text-cinza-medio dark:text-cinza-claro sm:size-8" />
-          {dog.photos[0] && isPhotoPreviewUrl(dog.photos[0]) && (
+          {dog.photos[0] && (
             <img
-              src={dog.photos[0]}
+              src={getDogPhotoUrl(dog.photos[0])}
               alt=""
               className="absolute inset-0 h-full w-full rounded-xl object-cover"
             />
@@ -39,8 +39,20 @@ export function DogRow({ dog, onEdit, onRemove, onSetStatus }: DogRowProps) {
 
       <OptionToggle
         className="w-[5.5rem] shrink-0 sm:w-[6.5rem]"
-        first={{ label: 'Adotado', icon: 'home-simple-door', onClick: () => onSetStatus('adotado') }}
-        second={{ label: 'Falecido', icon: 'eye-closed', onClick: () => onSetStatus('falecido') }}
+        first={{
+          label: 'Adotado',
+          icon: 'home-simple-door',
+          onClick: () => onSetStatus('adotado'),
+          active: dog.status === 'adotado',
+          disabled: dog.status === 'falecido',
+        }}
+        second={{
+          label: 'Falecido',
+          icon: 'eye-closed',
+          onClick: () => onSetStatus('falecido'),
+          active: dog.status === 'falecido',
+          disabled: dog.status === 'adotado',
+        }}
       />
 
       <div className="flex w-[5.5rem] shrink-0 flex-col gap-2 sm:w-[6.5rem]">

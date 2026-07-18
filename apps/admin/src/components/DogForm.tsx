@@ -2,22 +2,32 @@ import { useEffect, useId, useRef, useState } from 'react'
 import {
   ACCEPTED_UPLOAD_IMAGE_TYPES,
   Action,
+  DEFAULT_ADOPTION_FORM_URL,
   Icon,
+  ImageLightbox,
   Switch,
   compressImages,
+  toEditableDogPhotos,
 } from '@abrigo/shared'
-import type { Dog, DogGender, DogSize } from '../data/dogs'
-import { DEFAULT_ADOPTION_FORM_URL, isPhotoPreviewUrl } from '../data/dogs'
+import type {
+  Dog,
+  DogDraft,
+  DogGender,
+  DogSize,
+  EditableDogPhoto,
+} from '@abrigo/shared'
 
 type DogFormProps = {
   dog: Dog | null
   layout: 'modal' | 'panel'
   title: string
   onCancel: () => void
-  onSave: (dog: Dog) => void
+  onSave: (dog: DogDraft) => Promise<void>
 }
 
 const MAX_PHOTOS = 5
+const MAX_NAME_LENGTH = 40
+const MAX_DESCRIPTION_LENGTH = 1000
 const CURRENT_YEAR = new Date().getFullYear()
 const MIN_BIRTH_YEAR = 1990
 const MAX_APPROX_AGE = CURRENT_YEAR - MIN_BIRTH_YEAR
@@ -25,6 +35,12 @@ const MAX_APPROX_AGE = CURRENT_YEAR - MIN_BIRTH_YEAR
 function parseBoundedInteger(value: string, min: number, max: number) {
   const number = Number(value)
   return Number.isInteger(number) && number >= min && number <= max ? number : null
+}
+
+function waitForPaint() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
 }
 
 export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) {
@@ -39,11 +55,15 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   const [description, setDescription] = useState(dog?.description ?? '')
   const [adoptionFormUrl, setAdoptionFormUrl] = useState(dog?.adoptionFormUrl ?? DEFAULT_ADOPTION_FORM_URL)
   const [featured, setFeatured] = useState(dog?.featured ?? false)
-  const [photos, setPhotos] = useState(dog?.photos ?? [])
+  const [photos, setPhotos] = useState<EditableDogPhoto[]>(() => toEditableDogPhotos(dog))
   const [isCompressing, setIsCompressing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [photoError, setPhotoError] = useState('')
+  const [saveError, setSaveError] = useState('')
+  const [expandedPhoto, setExpandedPhoto] = useState<EditableDogPhoto | null>(null)
   const createdPhotoUrls = useRef(new Set<string>())
-  const didSave = useRef(false)
+  const draggedPhotoKey = useRef<string | null>(null)
+  const didDragPhoto = useRef(false)
   const isMounted = useRef(true)
   const isPanel = layout === 'panel'
   const fieldClasses = `${
@@ -67,9 +87,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       isMounted.current = true
       return () => {
         isMounted.current = false
-        if (!didSave.current) {
-          photoUrls.forEach((url) => URL.revokeObjectURL(url))
-        }
+        photoUrls.forEach((url) => URL.revokeObjectURL(url))
       }
     },
     [],
@@ -85,19 +103,40 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
     setIsCompressing(true)
     setPhotoError('')
 
+    const filesToAdd = selectedFiles.slice(0, availableSlots)
+    const pendingPhotos: EditableDogPhoto[] = filesToAdd.map((file) => {
+      const previewUrl = URL.createObjectURL(file)
+      createdPhotoUrls.current.add(previewUrl)
+      return { key: crypto.randomUUID(), previewUrl, file }
+    })
+    setPhotos((current) => [...current, ...pendingPhotos])
+
     try {
-      const filesToAdd = selectedFiles.slice(0, availableSlots)
+      await waitForPaint()
       const compressedFiles = await compressImages(filesToAdd)
       if (!isMounted.current) return
-      const urls = compressedFiles.map((file) => URL.createObjectURL(file))
-      urls.forEach((url) => createdPhotoUrls.current.add(url))
-      setPhotos((current) => [...current, ...urls])
+      const compressedByKey = new Map(
+        pendingPhotos.map((photo, index) => [photo.key, compressedFiles[index]]),
+      )
+      setPhotos((current) =>
+        current.map((photo) => ({
+          ...photo,
+          file: compressedByKey.get(photo.key) ?? photo.file,
+        })),
+      )
 
       if (selectedFiles.length > availableSlots) {
         setPhotoError(`A galeria aceita no máximo ${MAX_PHOTOS} imagens.`)
       }
     } catch {
       if (isMounted.current) {
+        const pendingKeys = new Set(pendingPhotos.map((photo) => photo.key))
+        setPhotos((current) => current.filter((photo) => !pendingKeys.has(photo.key)))
+        setExpandedPhoto((current) => current && pendingKeys.has(current.key) ? null : current)
+        pendingPhotos.forEach((photo) => {
+          createdPhotoUrls.current.delete(photo.previewUrl)
+          URL.revokeObjectURL(photo.previewUrl)
+        })
         setPhotoError('Não foi possível adicionar uma das imagens.')
       }
     } finally {
@@ -105,9 +144,23 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
     }
   }
 
-  const removePhoto = (photo: string) => {
-    if (createdPhotoUrls.current.delete(photo)) URL.revokeObjectURL(photo)
-    setPhotos((current) => current.filter((item) => item !== photo))
+  const removePhoto = (photo: EditableDogPhoto) => {
+    if (expandedPhoto?.key === photo.key) setExpandedPhoto(null)
+    if (createdPhotoUrls.current.delete(photo.previewUrl)) URL.revokeObjectURL(photo.previewUrl)
+    setPhotos((current) => current.filter((item) => item.key !== photo.key))
+  }
+  const movePhoto = (targetKey: string) => {
+    const sourceKey = draggedPhotoKey.current
+    if (!sourceKey || sourceKey === targetKey) return
+    setPhotos((current) => {
+      const sourceIndex = current.findIndex((photo) => photo.key === sourceKey)
+      const targetIndex = current.findIndex((photo) => photo.key === targetKey)
+      if (sourceIndex < 0 || targetIndex < 0) return current
+      const reordered = [...current]
+      const [movedPhoto] = reordered.splice(sourceIndex, 1)
+      reordered.splice(targetIndex, 0, movedPhoto)
+      return reordered
+    })
   }
   const handleBirthYearChange = (value: string) => {
     const year = parseBoundedInteger(value, MIN_BIRTH_YEAR, CURRENT_YEAR)
@@ -120,34 +173,45 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
     setBirthYear(age === null ? '' : (CURRENT_YEAR - age).toString())
   }
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     const normalizedName = name.trim()
     const normalizedDescription = description.trim()
+    const normalizedAdoptionFormUrl = adoptionFormUrl.trim()
     const validBirthYear = parseBoundedInteger(birthYear, MIN_BIRTH_YEAR, CURRENT_YEAR)
     const validApproxAge = parseBoundedInteger(approxAge, 0, MAX_APPROX_AGE)
     if (
       !normalizedName ||
+      normalizedName.length > MAX_NAME_LENGTH ||
       !normalizedDescription ||
+      normalizedDescription.length > MAX_DESCRIPTION_LENGTH ||
+      !normalizedAdoptionFormUrl ||
       !gender ||
       !size ||
       validBirthYear === null ||
       validApproxAge === null
     ) return
 
-    didSave.current = true
-    onSave({
-      id: dog?.id ?? crypto.randomUUID(),
-      name: normalizedName,
-      gender,
-      size,
-      birthYear: validBirthYear,
-      description: normalizedDescription,
-      status: dog?.status ?? 'disponivel',
-      adoptionFormUrl,
-      featured,
-      photos,
-    })
+    setIsSaving(true)
+    setSaveError('')
+    try {
+      await onSave({
+        id: dog?.id,
+        name: normalizedName,
+        gender,
+        size,
+        birthYear: validBirthYear,
+        description: normalizedDescription,
+        status: dog?.status ?? 'disponivel',
+        adoptionFormUrl: normalizedAdoptionFormUrl,
+        featured,
+        photos,
+      })
+    } catch {
+      if (isMounted.current) setSaveError('Não foi possível salvar o cão.')
+    } finally {
+      if (isMounted.current) setIsSaving(false)
+    }
   }
 
   const dadosSection = (
@@ -161,6 +225,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         value={name}
         onChange={(event) => setName(event.target.value)}
         placeholder="Ex: Doguinho"
+        maxLength={MAX_NAME_LENGTH}
         required
         className={fieldClasses}
       />
@@ -255,14 +320,25 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         </div>
       </div>
 
-      <label htmlFor={`${formId}-description`} className={labelClasses}>
-        Descrição*
-      </label>
+      <div className={`${isPanel ? 'mt-2 text-sm' : 'mt-3'} flex items-center justify-between gap-2`}>
+        <label htmlFor={`${formId}-description`} className="font-medium">
+          Descrição*
+        </label>
+        <output
+          id={`${formId}-description-count`}
+          htmlFor={`${formId}-description`}
+          className="text-xs text-cinza-medio dark:text-cinza-claro"
+        >
+          {description.length}/{MAX_DESCRIPTION_LENGTH}
+        </output>
+      </div>
       <textarea
         id={`${formId}-description`}
         value={description}
         onChange={(event) => setDescription(event.target.value)}
         placeholder="Ex: Doguinho é um cachorro animado e querido por todo o abrigo, recém-chegado. Ele gosta de correr e brincar com os outros cães."
+        maxLength={MAX_DESCRIPTION_LENGTH}
+        aria-describedby={`${formId}-description-count`}
         rows={2}
         required
         className={`mt-1 w-full resize-y rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50 ${isPanel ? 'px-3 py-2 text-sm' : 'px-4 py-3'}`}
@@ -282,6 +358,8 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         value={adoptionFormUrl}
         onChange={(event) => setAdoptionFormUrl(event.target.value)}
         placeholder="https://forms.gle/..."
+        type="url"
+        required
         className={fieldClasses}
       />
 
@@ -301,6 +379,11 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       <p className={`${isPanel ? 'mt-2 text-sm' : 'mt-3'} font-medium`}>
         Galeria de Divulgação ({photos.length}/{MAX_PHOTOS})
       </p>
+      {photos.length > 1 && (
+        <p className="mt-1 text-xs text-cinza-medio dark:text-cinza-claro">
+          Arraste para reordenar. A primeira imagem é a capa.
+        </p>
+      )}
       <div className={`mt-2 grid gap-2 ${isPanel ? 'grid-cols-3' : 'grid-cols-[repeat(4,4rem)]'}`}>
         {photos.length < MAX_PHOTOS && (
           <label
@@ -323,16 +406,50 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
           </label>
         )}
         {photos.map((photo, index) => (
-          <div key={photo} className="relative aspect-square overflow-hidden rounded-xl bg-cinza-claro dark:bg-cinza-medio">
+          <div
+            key={photo.key}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault()
+              movePhoto(photo.key)
+            }}
+            className="relative aspect-square overflow-hidden rounded-xl bg-cinza-claro dark:bg-cinza-medio"
+          >
             <div className="flex h-full w-full items-center justify-center">
               <Icon name="pata" className="size-8 text-cinza-medio dark:text-cinza-claro" />
             </div>
-            {isPhotoPreviewUrl(photo) && (
+            <button
+              type="button"
+              draggable
+              onDragStart={(event) => {
+                draggedPhotoKey.current = photo.key
+                didDragPhoto.current = true
+                event.dataTransfer.effectAllowed = 'move'
+                event.dataTransfer.setData('text/plain', photo.key)
+              }}
+              onDragEnd={() => {
+                draggedPhotoKey.current = null
+                window.setTimeout(() => {
+                  didDragPhoto.current = false
+                }, 0)
+              }}
+              onClick={() => {
+                if (!didDragPhoto.current) setExpandedPhoto(photo)
+              }}
+              aria-label={`Ampliar foto ${index + 1} do cão`}
+              className="absolute inset-0 cursor-grab active:cursor-grabbing"
+            >
               <img
-                src={photo}
-                alt={`Foto ${index + 1} do cão`}
-                className="absolute inset-0 h-full w-full object-cover"
+                src={photo.previewUrl}
+                alt=""
+                draggable={false}
+                className="h-full w-full object-cover"
               />
+            </button>
+            {index === 0 && (
+              <span className="pointer-events-none absolute bottom-1 left-1 rounded-full bg-cinza-escuro/80 px-2 py-0.5 text-[0.625rem] font-medium text-cinza-claro">
+                Capa
+              </span>
             )}
             <button
               type="button"
@@ -345,9 +462,19 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
           </div>
         ))}
       </div>
+      {isCompressing && (
+        <p role="status" className="mt-2 text-sm font-medium">
+          Processando imagens...
+        </p>
+      )}
       {photoError && (
         <p role="alert" className="mt-2 text-sm font-medium text-marca-escura dark:text-marca">
           {photoError}
+        </p>
+      )}
+      {saveError && (
+        <p role="alert" className="mt-2 text-sm font-medium text-marca-escura dark:text-marca">
+          {saveError}
         </p>
       )}
     </section>
@@ -358,10 +485,17 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       <Action onClick={onCancel} size="small" variant="secondary" className={`${isPanel ? 'w-20' : 'w-28'} shrink-0`}>
         Cancelar
       </Action>
-      <Action type="submit" size="small" variant="primary" disabled={isCompressing} className="min-w-0 flex-1">
-        Salvar Cão
+      <Action type="submit" size="small" variant="primary" disabled={isCompressing || isSaving} className="min-w-0 flex-1">
+        {isSaving ? 'Salvando...' : 'Salvar Cão'}
       </Action>
     </div>
+  )
+  const imageLightbox = expandedPhoto && (
+    <ImageLightbox
+      src={expandedPhoto.previewUrl}
+      alt={`Foto ampliada de ${dog?.name || name || 'cão'}`}
+      onClose={() => setExpandedPhoto(null)}
+    />
   )
 
   if (layout === 'panel') {
@@ -376,6 +510,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
           {adocaoSection}
           {buttonsRow}
         </div>
+        {imageLightbox}
       </form>
     )
   }
@@ -387,6 +522,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       {adocaoSection}
       {imagensSection}
       {buttonsRow}
+      {imageLightbox}
     </form>
   )
 }
