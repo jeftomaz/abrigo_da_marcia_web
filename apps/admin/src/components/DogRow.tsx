@@ -5,6 +5,7 @@ import { StatusBadge, type StatusTone } from './StatusBadge'
 
 type DogRowProps = {
   dog: Dog
+  isEditing: boolean
   onEdit: () => void
   onRemove: () => void
   onSetStatus: (status: DogStatus) => void
@@ -16,7 +17,7 @@ const STATUS_TONE: Record<DogStatus, StatusTone> = {
   falecido: 'neutro',
 }
 
-export function DogRow({ dog, onEdit, onRemove, onSetStatus }: DogRowProps) {
+export function DogRow({ dog, isEditing, onEdit, onRemove, onSetStatus }: DogRowProps) {
   return (
     <article className="flex min-w-0 items-center gap-2 rounded-2xl bg-surface-raised p-2 text-on-surface-raised sm:gap-3 sm:p-3">
       <div className="relative shrink-0">
@@ -56,7 +57,14 @@ export function DogRow({ dog, onEdit, onRemove, onSetStatus }: DogRowProps) {
       />
 
       <div className="flex w-[5.5rem] shrink-0 flex-col gap-2 sm:w-[6.5rem]">
-        <Action onClick={onEdit} size="small" variant="neutral" icon="edit-pencil" className="w-full gap-1 px-2">
+        <Action
+          onClick={onEdit}
+          size="small"
+          variant={isEditing ? 'secondary' : 'neutral'}
+          icon="edit-pencil"
+          aria-pressed={isEditing}
+          className="w-full gap-1 px-2"
+        >
           Editar
         </Action>
         <Action onClick={onRemove} size="small" variant="neutral" icon="trash-solid" className="w-full gap-1 px-2">

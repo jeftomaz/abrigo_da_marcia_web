@@ -1,3 +1,4 @@
+import { Action } from './Action'
 import { Dialog } from './Dialog'
 
 type ImageLightboxProps = {
@@ -10,11 +11,29 @@ export function ImageLightbox({ alt, onClose, src }: ImageLightboxProps) {
   return (
     <Dialog
       ariaLabel={`Imagem ampliada: ${alt}`}
-      className="flex h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] items-center justify-center bg-black p-4"
       onClose={onClose}
-      persistentClose
     >
-      <img src={src} alt={alt} className="max-h-full max-w-full object-contain" />
+      <div
+        className="flex max-h-[calc(100dvh-2rem)] max-w-[calc(100vw-2rem)] flex-col items-center gap-4"
+        onClick={onClose}
+      >
+        <img
+          src={src}
+          alt={alt}
+          className="max-h-[calc(100dvh-7rem)] max-w-[calc(100vw-2rem)] object-contain"
+          onClick={(event) => event.stopPropagation()}
+        />
+        <Action
+          onClick={(event) => {
+            event.stopPropagation()
+            onClose()
+          }}
+          size="small"
+          variant="neutral"
+        >
+          Fechar imagem
+        </Action>
+      </div>
     </Dialog>
   )
 }

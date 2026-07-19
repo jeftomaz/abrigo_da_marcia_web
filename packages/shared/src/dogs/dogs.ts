@@ -1,5 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Tables, TablesInsert } from '../database.types'
+import {
+  getStoredPhotoUrl,
+  removeStoredPhotos,
+  toEditablePhotos,
+  uploadNewPhotos,
+} from '../images/storagePhotos'
+import type { EditablePhoto } from '../images/storagePhotos'
 import { supabase } from '../supabase/client'
 
 export type DogGender = 'macho' | 'femea'
@@ -19,12 +26,7 @@ export type Dog = {
   photos: string[]
 }
 
-export type EditableDogPhoto = {
-  key: string
-  path?: string
-  previewUrl: string
-  file?: File
-}
+export type EditableDogPhoto = EditablePhoto
 
 export type DogDraft = Omit<Dog, 'id' | 'photos'> & {
   id?: string
@@ -39,7 +41,6 @@ export const STATUS_LABELS: Record<DogStatus, string> = {
 
 export const DEFAULT_ADOPTION_FORM_URL = 'https://forms.gle/nLSjXJyeLGUJXZj27'
 
-const DOG_PHOTOS_BUCKET = 'dog-photos'
 const adminDogsKey = ['dogs', 'admin'] as const
 const publicDogsKey = ['dogs', 'public'] as const
 
@@ -102,36 +103,6 @@ async function listPublicDogs() {
   return data.map(mapPublicDog)
 }
 
-function getPhotoExtension(file: File) {
-  if (file.type === 'image/png') return 'png'
-  if (file.type === 'image/webp') return 'webp'
-  return 'jpg'
-}
-
-async function uploadNewPhotos(dogId: string, photos: EditableDogPhoto[]) {
-  const uploadedPhotos = new Map<string, string>()
-
-  try {
-    for (const photo of photos) {
-      if (!photo.file) continue
-      const path = `${dogId}/${crypto.randomUUID()}.${getPhotoExtension(photo.file)}`
-      const { error } = await supabase.storage.from(DOG_PHOTOS_BUCKET).upload(path, photo.file, {
-        contentType: photo.file.type,
-        upsert: false,
-      })
-      if (error) throw error
-      uploadedPhotos.set(photo.key, path)
-    }
-    return uploadedPhotos
-  } catch (error) {
-    const uploadedPaths = [...uploadedPhotos.values()]
-    if (uploadedPaths.length) {
-      await supabase.storage.from(DOG_PHOTOS_BUCKET).remove(uploadedPaths)
-    }
-    throw error
-  }
-}
-
 async function saveDog(draft: DogDraft) {
   const id = draft.id ?? crypto.randomUUID()
   let storedPaths: string[] = []
@@ -171,16 +142,12 @@ async function saveDog(draft: DogDraft) {
   const { data, error } = await request
 
   if (error) {
-    if (uploadedPaths.length) {
-      await supabase.storage.from(DOG_PHOTOS_BUCKET).remove(uploadedPaths)
-    }
+    await removeStoredPhotos(uploadedPaths)
     throw error
   }
 
   const removedPaths = storedPaths.filter((path) => !photos.includes(path))
-  if (removedPaths.length) {
-    await supabase.storage.from(DOG_PHOTOS_BUCKET).remove(removedPaths)
-  }
+  await removeStoredPhotos(removedPaths)
 
   return mapDog(data)
 }
@@ -201,9 +168,7 @@ async function deleteDog(dog: Dog) {
   const { error } = await supabase.from('caes').delete().eq('id', dog.id)
   if (error) throw error
 
-  if (dog.photos.length) {
-    await supabase.storage.from(DOG_PHOTOS_BUCKET).remove(dog.photos)
-  }
+  await removeStoredPhotos(dog.photos)
 }
 
 function useInvalidateDogs() {
@@ -278,16 +243,9 @@ export function useDeleteDog() {
 }
 
 export function getDogPhotoUrl(path: string) {
-  if (/^(blob:|data:|https?:\/\/|\/)/.test(path)) return path
-  return supabase.storage.from(DOG_PHOTOS_BUCKET).getPublicUrl(path).data.publicUrl
+  return getStoredPhotoUrl(path)
 }
 
 export function toEditableDogPhotos(dog: Dog | null): EditableDogPhoto[] {
-  return (
-    dog?.photos.map((path) => ({
-      key: path,
-      path,
-      previewUrl: getDogPhotoUrl(path),
-    })) ?? []
-  )
+  return toEditablePhotos(dog?.photos ?? [])
 }

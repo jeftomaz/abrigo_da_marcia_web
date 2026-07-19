@@ -8,10 +8,13 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Cães', to: '/' },
-  { label: 'Histórias' },
+  { label: 'Histórias', to: '/historias' },
   { label: 'Eventos' },
   { label: 'Configurações' },
 ]
+
+const ADMIN_THEME_ICON_CLASSES =
+  'size-10 [&_circle]:!fill-cinza-claro [&_path]:!fill-cinza-escuro hover:[&_circle]:!fill-cinza-medio hover:[&_path]:!fill-cinza-claro active:[&_circle]:!fill-cinza-escuro active:[&_path]:!fill-cinza-claro dark:[&_circle]:!fill-cinza-medio dark:[&_path]:!fill-cinza-claro dark:hover:[&_circle]:!fill-cinza-claro dark:hover:[&_path]:!fill-cinza-escuro dark:active:[&_circle]:!fill-cinza-escuro dark:active:[&_path]:!fill-cinza-claro'
 
 export function AdminHeader() {
   const { theme, toggleTheme } = useTheme()
@@ -31,14 +34,10 @@ export function AdminHeader() {
               <Action
                 key={item.label}
                 to={item.to}
-                variant={pathname === item.to ? 'neutral-inverted' : 'neutral'}
+                variant={pathname === item.to ? 'primary' : 'neutral'}
                 size="small"
                 aria-current={pathname === item.to ? 'page' : undefined}
-                className={`h-10 shrink-0 px-7 text-base desk:h-8 desk:min-w-28 desk:px-5 desk:text-sm ${
-                  pathname === item.to
-                    ? 'desk:bg-marca desk:text-marca-clara dark:bg-cinza-claro dark:text-cinza-escuro desk:dark:bg-marca desk:dark:text-marca-clara'
-                    : ''
-                }`}
+                className="h-10 shrink-0 px-7 text-base desk:h-8 desk:min-w-28 desk:px-5 desk:text-sm"
               >
                 {item.label}
               </Action>
@@ -61,9 +60,12 @@ export function AdminHeader() {
             type="button"
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
-            className="shrink-0"
+            className="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio"
           >
-            <Icon name={theme === 'dark' ? 'half-moon' : 'sun-light'} className="size-10" />
+            <Icon
+              name={theme === 'dark' ? 'half-moon' : 'sun-light'}
+              className={ADMIN_THEME_ICON_CLASSES}
+            />
           </button>
           <Action
             disabled

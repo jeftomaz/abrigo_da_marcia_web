@@ -5,7 +5,7 @@ Fonte de verdade do banco. O schema base e Histórias estão materializados e va
 ## Imagens no Storage
 
 - Todo arquivo passa por `compressImage` de `packages/shared` no client antes do upload; somente JPG, PNG e WebP com até 500.000 bytes seguem ao Storage.
-- Cães usam o bucket público `dog-photos` (limite 500.000 bytes; JPG, PNG e WebP); `caes.photos` persiste os caminhos e o CRUD remove objetos descartados. Histórias, Eventos, Produtos e guias de medidas devem reutilizar o mesmo utilitário.
+- Cães e Histórias usam o bucket público `dog-photos` (limite 500.000 bytes; JPG, PNG e WebP); cada tabela persiste os caminhos em `photos` e o CRUD remove objetos descartados. Eventos, Produtos e guias de medidas devem reutilizar o mesmo utilitário.
 
 ## DER
 
@@ -34,8 +34,9 @@ erDiagram
   HISTORIAS {
     uuid id PK
     text name
-    text description
-    text photos "text[] ordenado; [0]=capa"
+      text description
+      text photos "text[] ordenado; [0]=capa"
+      boolean published
     timestamptz created_at
     timestamptz updated_at
   }
@@ -204,23 +205,24 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 
 ## `historias`
 
-Histórias de adoção exibidas na página dedicada e no preview da landing. São independentes de `caes`: não exigem porte, idade, gênero ou status. O card trunca `description`; o diálogo mostra o texto completo.
+Histórias de adoção exibidas na página dedicada e no preview da landing. São independentes de `caes`: não exigem porte, idade, gênero ou o status do catálogo de cães. O card trunca `description`; o diálogo mostra o texto completo.
 
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `id` | `uuid` | PK; default `gen_random_uuid()` |
-| `name` | `text` | not null |
-| `description` | `text` | not null |
-| `photos` | `text[]` | not null; default `'{}'`; caminhos ordenados no Storage, `[0]` = capa |
+| `name` | `text` | not null; texto sem espaços deve ter 1–40 caracteres |
+| `description` | `text` | not null; texto sem espaços deve ter 1–1000 caracteres |
+| `photos` | `text[]` | not null; default `'{}'`; CHECK exige 1–5 caminhos ordenados no Storage, `[0]` = capa |
+| `published` | `boolean` | not null; default `false`; somente publicadas aparecem na view pública |
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
 ### Exposição e acesso
 
 - RLS habilitada na tabela; `anon` não acessa a tabela diretamente.
-- View `historias_public`: expõe `id`, `name`, `description` e `photos`, ordenada por `created_at` desc. A página de Histórias e o preview da landing usam essa mesma view.
+- View `historias_public`: expõe `id`, `name`, `description` e `photos` apenas quando `published = true`, ordenada por `created_at` desc. A página de Histórias e o preview da landing usam exclusivamente essa view.
 - Admin autenticado poderá inserir, consultar, atualizar e excluir; as policies serão definidas com Auth/MFA.
-- Upload/exclusão no Storage, integração com a compressão compartilhada e regra de ao menos uma foto fazem parte do CRUD admin.
+- Enquanto Auth/MFA não existe, `seed.sql` concede CRUD de histórias e Storage a `anon` somente para Origin local; as policies não são aplicadas por `supabase db push`.
 
 ## Eventos e reservas
 

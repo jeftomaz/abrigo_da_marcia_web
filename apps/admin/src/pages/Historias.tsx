@@ -3,74 +3,65 @@ import {
   Action,
   Dialog,
   Icon,
-  useAdminDogs,
-  useDeleteDog,
-  useSaveDog,
-  useUpdateDogStatus,
+  useAdminStories,
+  useDeleteStory,
+  useSaveStory,
+  useUpdateStoryPublished,
 } from '@abrigo/shared'
-import type { Dog, DogDraft, DogStatus } from '@abrigo/shared'
-import { DogForm } from '../components/DogForm'
-import { DogRow } from '../components/DogRow'
+import type { Story, StoryDraft } from '@abrigo/shared'
 import { StatCards } from '../components/StatCards'
+import { StoryForm } from '../components/StoryForm'
+import { StoryRow } from '../components/StoryRow'
 import { useIsDesktop } from '../hooks/useIsDesktop'
 
-export function Caes() {
-  const { data: dogs = [], isLoading, error } = useAdminDogs()
-  const saveDog = useSaveDog()
-  const deleteDog = useDeleteDog()
-  const updateDogStatus = useUpdateDogStatus()
+export function Historias() {
+  const { data: stories = [], isLoading, error } = useAdminStories()
+  const saveStory = useSaveStory()
+  const deleteStory = useDeleteStory()
+  const updateStoryPublished = useUpdateStoryPublished()
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<DogStatus | ''>('')
-  const [editingTarget, setEditingTarget] = useState<Dog | null | undefined>(undefined)
+  const [publicationFilter, setPublicationFilter] = useState<'published' | 'draft' | ''>('')
+  const [editingTarget, setEditingTarget] = useState<Story | null | undefined>(undefined)
   const [operationError, setOperationError] = useState('')
   const isDesktop = useIsDesktop()
   const isEditing = editingTarget !== undefined
 
-  const filteredDogs = useMemo(
+  const filteredStories = useMemo(
     () =>
-      dogs.filter(
-        (dog) =>
-          (!search || dog.name.toLowerCase().includes(search.toLowerCase())) &&
-          (!statusFilter || dog.status === statusFilter),
+      stories.filter(
+        (story) =>
+          (!search || story.name.toLowerCase().includes(search.toLowerCase())) &&
+          (!publicationFilter ||
+            (publicationFilter === 'published' ? story.published : !story.published)),
       ),
-    [dogs, search, statusFilter],
+    [publicationFilter, search, stories],
   )
 
-  const stats = useMemo(
-    () => ({
-      total: dogs.length,
-      disponiveis: dogs.filter((dog) => dog.status === 'disponivel').length,
-      adotados: dogs.filter((dog) => dog.status === 'adotado').length,
-      falecidos: dogs.filter((dog) => dog.status === 'falecido').length,
-    }),
-    [dogs],
-  )
-
-  const handleSave = async (dog: DogDraft) => {
-    await saveDog.mutateAsync(dog)
+  const handleSave = async (story: StoryDraft) => {
+    await saveStory.mutateAsync(story)
     setEditingTarget(undefined)
   }
 
-  const handleRemove = async (dog: Dog) => {
-    if (!window.confirm(`Remover ${dog.name}?`)) return
+  const handleRemove = async (story: Story) => {
+    if (!window.confirm(`Remover a história de ${story.name}?`)) return
     setOperationError('')
     try {
-      await deleteDog.mutateAsync(dog)
+      await deleteStory.mutateAsync(story)
     } catch {
-      setOperationError('Não foi possível remover o cão.')
+      setOperationError('Não foi possível remover a história.')
     }
   }
 
-  const handleSetStatus = async (dog: Dog, status: DogStatus) => {
+  const handleTogglePublished = async (story: Story) => {
     setOperationError('')
     try {
-      await updateDogStatus.mutateAsync({ id: dog.id, status })
+      await updateStoryPublished.mutateAsync({ id: story.id, published: !story.published })
     } catch {
-      setOperationError('Não foi possível atualizar o status do cão.')
+      setOperationError('Não foi possível atualizar a publicação da história.')
     }
   }
 
-  const formTitle = editingTarget ? 'Editar Cão' : 'Novo Cão'
+  const formTitle = editingTarget ? 'Editar História' : 'Nova História'
 
   return (
     <main className="flex-1 overflow-x-hidden bg-white px-4 py-8 text-cinza-escuro sm:px-6 desk:bg-cinza-claro desk:py-4 dark:bg-black dark:text-cinza-claro desk:dark:bg-cinza-escuro">
@@ -81,30 +72,25 @@ export function Caes() {
             : 'desk:max-w-[64rem] desk:grid-cols-[29rem_29rem] desk:justify-between'
         }`}
       >
-        <StatCards
-          label="Total de cães"
-          total={stats.total}
-          items={[
-            { label: 'Disponíveis', value: stats.disponiveis },
-            { label: 'Adotados', value: stats.adotados },
-            { label: 'Falecidos', value: stats.falecidos, className: 'col-span-2' },
-          ]}
-        />
+        <StatCards label="Total de histórias" total={stories.length} />
 
         <section className="flex min-w-0 flex-col gap-4">
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 desk:gap-3">
-            <h1 className="text-2xl font-medium text-marca desk:col-span-3 desk:text-3xl">Cães Cadastrados</h1>
+            <h1 className="text-2xl font-medium text-marca desk:col-span-3 desk:text-3xl">
+              Histórias Contadas
+            </h1>
             <div className="relative shrink-0 desk:col-start-2 desk:row-start-2">
               <select
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value as DogStatus | '')}
-                aria-label="Filtrar por status"
+                value={publicationFilter}
+                onChange={(event) =>
+                  setPublicationFilter(event.target.value as 'published' | 'draft' | '')
+                }
+                aria-label="Filtrar histórias por publicação"
                 className="h-10 appearance-none rounded-full bg-cinza-claro pr-8 pl-3 text-sm text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca desk:bg-white dark:bg-cinza-medio dark:text-cinza-claro"
               >
                 <option value="">Todos os status</option>
-                <option value="disponivel">Disponível</option>
-                <option value="adotado">Adotado</option>
-                <option value="falecido">Falecido</option>
+                <option value="published">Publicadas</option>
+                <option value="draft">Rascunhos</option>
               </select>
               <Icon
                 name="arrow-separate-vertical"
@@ -118,7 +104,7 @@ export function Caes() {
               variant="primary"
               className="px-4 desk:col-start-3 desk:row-start-2"
             >
-              Novo Cão
+              Nova História
             </Action>
             <div className="relative col-span-3 min-w-0 desk:col-span-1 desk:col-start-1 desk:row-start-2">
               <Icon
@@ -128,38 +114,38 @@ export function Caes() {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Busca por nome, contato..."
-                aria-label="Busca por nome, contato"
+                placeholder="Busca por nome..."
+                aria-label="Busca por nome"
                 className="h-10 w-full rounded-full bg-cinza-claro pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca desk:bg-white dark:bg-cinza-medio dark:text-cinza-claro"
               />
             </div>
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 rounded-3xl bg-cinza-claro p-2 desk:gap-3 desk:bg-transparent desk:p-0 dark:bg-cinza-medio desk:dark:bg-transparent">
-            {isLoading && <p className="text-center">Carregando cães...</p>}
-            {error && <p role="alert" className="text-center">Não foi possível carregar os cães.</p>}
+            {isLoading && <p className="text-center">Carregando histórias...</p>}
+            {error && <p role="alert" className="text-center">Não foi possível carregar as histórias.</p>}
             {operationError && <p role="alert" className="text-center">{operationError}</p>}
-            {filteredDogs.map((dog) => (
-              <DogRow
-                key={dog.id}
-                dog={dog}
-                isEditing={editingTarget?.id === dog.id}
-                onEdit={() => setEditingTarget(dog)}
-                onRemove={() => handleRemove(dog)}
-                onSetStatus={(status) => handleSetStatus(dog, status)}
+            {filteredStories.map((story) => (
+              <StoryRow
+                key={story.id}
+                story={story}
+                isEditing={editingTarget?.id === story.id}
+                onEdit={() => setEditingTarget(story)}
+                onRemove={() => handleRemove(story)}
+                onTogglePublished={() => handleTogglePublished(story)}
               />
             ))}
-            {!isLoading && !error && filteredDogs.length === 0 && (
-              <p className="text-center">Nenhum cão encontrado.</p>
+            {!isLoading && !error && filteredStories.length === 0 && (
+              <p className="text-center">Nenhuma história encontrada.</p>
             )}
           </div>
         </section>
 
         {isEditing && isDesktop && (
           <aside className="w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
-            <DogForm
+            <StoryForm
               key={editingTarget?.id ?? 'new'}
-              dog={editingTarget ?? null}
+              story={editingTarget ?? null}
               layout="panel"
               title={formTitle}
               onCancel={() => setEditingTarget(undefined)}
@@ -173,11 +159,11 @@ export function Caes() {
         <Dialog
           ariaLabel={formTitle}
           onClose={() => setEditingTarget(undefined)}
-          className="max-h-[90vh] w-full max-w-[26rem] overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-8"
+          className="max-h-[90vh] w-full max-w-[46rem] overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-8"
         >
-          <DogForm
+          <StoryForm
             key={editingTarget?.id ?? 'new'}
-            dog={editingTarget ?? null}
+            story={editingTarget ?? null}
             layout="modal"
             title={formTitle}
             onCancel={() => setEditingTarget(undefined)}

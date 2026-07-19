@@ -33,6 +33,21 @@ export type {
   EditableDogPhoto,
 } from './dogs/dogs'
 export {
+  getStoryPhotoUrl,
+  toEditableStoryPhotos,
+  useAdminStories,
+  useDeleteStory,
+  usePublicStories,
+  useSaveStory,
+  useUpdateStoryPublished,
+} from './stories/stories'
+export type {
+  EditableStoryPhoto,
+  Story,
+  StoryDraft,
+} from './stories/stories'
+export type { EditablePhoto } from './images/storagePhotos'
+export {
   ACCEPTED_UPLOAD_IMAGE_TYPES,
   MAX_UPLOAD_IMAGE_BYTES,
   compressImage,

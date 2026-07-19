@@ -1,5 +1,12 @@
 # PROGRESS.md
 
+- Galerias dos cards expandidos de Adoção e Histórias abrem cada foto em tela cheia; o lightbox compartilhado fecha por botão claro abaixo da imagem, clique externo ou `Esc`.
+- Gestão de Histórias exibe a tag “Rascunho” abaixo da foto enquanto o registro não está publicado; reutiliza o `StatusBadge` e o tom vermelho escuro definidos pela matriz de estados.
+- Histórias públicas integradas ao Supabase: página dedicada e preview da landing leem `historias_public`, resolvem as imagens do Storage e revalidam publicação automaticamente; os dados temporários foram removidos.
+- Gestão de Cães e Histórias destaca com a variante secundária apenas o botão Editar correspondente ao formulário aberto; o estado também é exposto por `aria-pressed`.
+- Ações da listagem de Histórias dimensionam pela largura do conteúdo e quebram de linha quando necessário. No tema escuro, ações neutras usam cinza médio; apenas “Publicada” usa a superfície clara invertida.
+- Admin: abas ativas e ações de novo cadastro usam coral invariável nos dois temas; o toggle de tema agora segue a paleta neutra do botão Sair. Histórias ganharam publicação/rascunho persistente, ação otimista por linha e filtro; `historias_public` expõe somente publicadas.
+- Gestão de Histórias iniciada no admin: rota, total, busca, criação, edição e remoção persistem no Supabase local; formulário exige nome, história e 1–5 imagens comprimidas. Cães e Histórias compartilham a galeria e o acesso ao bucket.
 - Gestão de Cães limita nome a 40 e descrição a 1000 caracteres no formulário e no PostgreSQL; a descrição exibe contador e o CHECK foi validado após a revisão dos dados legados.
 - Gestão de Cães limita `caes.photos` a 0–5 itens também no PostgreSQL; cadastro sem foto permanece permitido e a interface já aplica a mesma regra.
 - Gestão de Cães: ao marcar um cão como adotado ou falecido, a opção ativa ganha um glow interno suave e a opção oposta fica desabilitada; o estado ativo também é exposto semanticamente pelo controle.

@@ -1,9 +1,16 @@
 import { useState } from 'react'
-import { Action, CompactCard, ExpandedCardDialog } from '@abrigo/shared'
-import { STORIES, type Story } from '../data/stories'
+import {
+  Action,
+  CompactCard,
+  ExpandedCardDialog,
+  getStoryPhotoUrl,
+  usePublicStories,
+} from '@abrigo/shared'
 
 export function Historias() {
-  const [selectedStory, setSelectedStory] = useState<Story | null>(null)
+  const { data: stories = [], isLoading, error } = usePublicStories()
+  const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null)
+  const selectedStory = stories.find((story) => story.id === selectedStoryId) ?? null
 
   return (
     <main className="min-h-screen bg-marca px-10 pt-10 pb-20 text-on-brand lg:px-6 lg:pt-4">
@@ -21,16 +28,19 @@ export function Historias() {
           aria-label="Histórias de adoção"
           className="mt-10 grid grid-cols-2 gap-5 lg:grid-cols-3 lg:gap-6"
         >
-          {STORIES.map((story) => (
+          {stories.map((story) => (
             <CompactCard
               key={story.id}
-              image={{ src: story.photos[0], alt: `Cão adotado: ${story.name}` }}
+              image={{
+                src: getStoryPhotoUrl(story.photos[0]),
+                alt: `Cão adotado: ${story.name}`,
+              }}
               imageAspect="landscape"
               title={story.name}
               description={story.description}
               action={
                 <Action
-                  onClick={() => setSelectedStory(story)}
+                  onClick={() => setSelectedStoryId(story.id)}
                   size="small"
                   className="px-1"
                   aria-label={`Conhecer a história de ${story.name}`}
@@ -41,14 +51,25 @@ export function Historias() {
             />
           ))}
         </section>
+
+        {isLoading && <p className="mt-10 text-center text-2xl">Carregando histórias...</p>}
+        {error && (
+          <p role="alert" className="mt-10 text-center text-2xl">
+            Não foi possível carregar as histórias.
+          </p>
+        )}
+        {!isLoading && !error && stories.length === 0 && (
+          <p className="mt-10 text-center text-2xl">Nenhuma história publicada.</p>
+        )}
       </div>
 
       {selectedStory && (
         <ExpandedCardDialog
           title={selectedStory.name}
-          description={selectedStory.fullDescription}
-          images={selectedStory.photos}
-          onClose={() => setSelectedStory(null)}
+          description={selectedStory.description}
+          images={selectedStory.photos.map(getStoryPhotoUrl)}
+          expandableImages
+          onClose={() => setSelectedStoryId(null)}
           variant="story"
         />
       )}

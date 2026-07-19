@@ -26,14 +26,15 @@ insert into public.caes (
   ('Fumaça',   'Em memória.',                         2012, 'femea', 'pequeno', 'falecido',   '{}', 'https://forms.gle/nLSjXJyeLGUJXZj27', false);
 
 -- Histórias são registros independentes e não exigem os atributos do catálogo.
-insert into public.historias (name, description, photos) values
-  ('Maia',     'Do resgate à chegada em seu novo lar.', '{historias/maia-1.jpg,historias/maia-2.jpg}'),
-  ('Clarinha', 'Uma recuperação cercada de cuidado.',   '{historias/clarinha-1.jpg}'),
-  ('Moleque',  'A história de uma adoção muito feliz.', '{historias/moleque-1.jpg}');
+insert into public.historias (name, description, photos, published) values
+  ('Maia',     'Do resgate à chegada em seu novo lar.', '{historias/maia-1.jpg,historias/maia-2.jpg}', false),
+  ('Clarinha', 'Uma recuperação cercada de cuidado.',   '{historias/clarinha-1.jpg}', true),
+  ('Moleque',  'A história de uma adoção muito feliz.', '{historias/moleque-1.jpg}', false);
 
 -- Acesso temporário apenas no stack local, enquanto Auth/MFA não foi implementado.
 -- `seed.sql` não é aplicado por `supabase db push` em projetos hospedados.
 grant select, insert, update, delete on public.caes to anon;
+grant select, insert, update, delete on public.historias to anon;
 
 create policy "Local admin reads dogs"
   on public.caes
@@ -75,7 +76,47 @@ create policy "Local admin deletes dogs"
       ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
   );
 
-create policy "Local admin uploads dog photos"
+create policy "Local admin reads stories"
+  on public.historias
+  for select
+  to anon
+  using (
+    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
+      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
+  );
+
+create policy "Local admin creates stories"
+  on public.historias
+  for insert
+  to anon
+  with check (
+    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
+      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
+  );
+
+create policy "Local admin updates stories"
+  on public.historias
+  for update
+  to anon
+  using (
+    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
+      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
+  )
+  with check (
+    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
+      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
+  );
+
+create policy "Local admin deletes stories"
+  on public.historias
+  for delete
+  to anon
+  using (
+    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
+      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
+  );
+
+create policy "Local admin uploads media photos"
   on storage.objects
   for insert
   to anon
@@ -85,7 +126,7 @@ create policy "Local admin uploads dog photos"
       ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
   );
 
-create policy "Local admin reads dog photo objects"
+create policy "Local admin reads media photo objects"
   on storage.objects
   for select
   to anon
@@ -95,7 +136,7 @@ create policy "Local admin reads dog photo objects"
       ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
   );
 
-create policy "Local admin deletes dog photos"
+create policy "Local admin deletes media photos"
   on storage.objects
   for delete
   to anon

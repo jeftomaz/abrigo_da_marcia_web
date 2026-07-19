@@ -21,10 +21,10 @@
 
 ## Próxima fase — Histórias
 
-1. Listagem pública responsiva e detalhe expandido — `done` (dados temporários)
+1. Listagem pública responsiva e detalhe expandido — `done`
 2. Schema, view pública e RLS — `done`
-3. Integração Supabase no frontend — `todo`
-4. CRUD admin — `todo`
+3. Integração Supabase no frontend — `done` (página pública e preview leem `historias_public`)
+4. CRUD admin — `doing` (listagem, busca, formulário, imagens e persistência funcionam no stack local; Auth/MFA e policies hospedadas pendentes)
 
 ## Fase — Eventos
 

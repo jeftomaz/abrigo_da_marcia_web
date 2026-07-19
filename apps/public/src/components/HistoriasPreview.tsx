@@ -1,13 +1,22 @@
 import { useState } from 'react'
-import { Action, CompactCard, ExpandedCardDialog, FeatureSection } from '@abrigo/shared'
-import { STORIES } from '../data/stories'
+import {
+  Action,
+  CompactCard,
+  ExpandedCardDialog,
+  FeatureSection,
+  getStoryPhotoUrl,
+  usePublicStories,
+} from '@abrigo/shared'
+import historiasPhoto from '../assets/landing_historias.jpg'
 
 export function HistoriasPreview() {
-  const [selectedStory, setSelectedStory] = useState<number | null>(null)
+  const { data: stories = [], isLoading, error } = usePublicStories()
+  const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null)
+  const selectedStory = stories.find((story) => story.id === selectedStoryId) ?? null
 
   return (
     <FeatureSection
-      image={{ src: STORIES[0].photos[0], alt: 'Cão adotado recebendo carinho' }}
+      image={{ src: historiasPhoto, alt: 'Cão adotado recebendo carinho' }}
       heading={
         <h2 className="text-5xl leading-tight font-medium lg:text-8xl">
           O final feliz que
@@ -16,12 +25,13 @@ export function HistoriasPreview() {
         </h2>
       }
       after={
-        selectedStory !== null && (
+        selectedStory && (
           <ExpandedCardDialog
-            title={STORIES[selectedStory].name}
-            description={STORIES[selectedStory].fullDescription}
-            images={STORIES[selectedStory].photos}
-            onClose={() => setSelectedStory(null)}
+            title={selectedStory.name}
+            description={selectedStory.description}
+            images={selectedStory.photos.map(getStoryPhotoUrl)}
+            expandableImages
+            onClose={() => setSelectedStoryId(null)}
             variant="story"
           />
         )
@@ -34,20 +44,27 @@ export function HistoriasPreview() {
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
-        {STORIES.slice(0, 3).map((story, index) => (
+        {stories.slice(0, 3).map((story) => (
           <CompactCard
             key={story.id}
-            image={{ src: story.photos[0], alt: story.name }}
+            image={{ src: getStoryPhotoUrl(story.photos[0]), alt: story.name }}
             title={story.name}
             description={story.description}
             action={
-              <Action onClick={() => setSelectedStory(index)} size="compact">
+              <Action onClick={() => setSelectedStoryId(story.id)} size="compact">
                 Conheça essa história
               </Action>
             }
           />
         ))}
       </div>
+
+      {isLoading && <p className="mt-8 text-center">Carregando histórias...</p>}
+      {error && (
+        <p role="alert" className="mt-8 text-center">
+          Não foi possível carregar as histórias.
+        </p>
+      )}
 
       <div className="mt-8 flex justify-center">
         <Action to="/historias" icon="open-book" variant="secondary">
