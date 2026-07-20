@@ -20,6 +20,8 @@
   --color-on-brand: var(--color-marca-clara);
   --color-surface-raised: #fff;
   --color-on-surface-raised: var(--color-cinza-escuro);
+  --color-surface-inverted: #000;
+  --color-on-surface-inverted: var(--color-cinza-claro);
 
   /* Cores de estado dos status/controles do admin (sheet "Estados"/"Botões
      Admin"): não seguem a correspondência claro/escuro — o mesmo valor vale
@@ -38,4 +40,6 @@
   --color-on-brand: var(--color-marca-escura);
   --color-surface-raised: #000;
   --color-on-surface-raised: var(--color-cinza-claro);
+  --color-surface-inverted: #fff;
+  --color-on-surface-inverted: var(--color-cinza-escuro);
 }

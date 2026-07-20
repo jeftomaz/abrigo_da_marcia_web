@@ -64,7 +64,7 @@ export function Historias() {
   const formTitle = editingTarget ? 'Editar História' : 'Nova História'
 
   return (
-    <main className="flex-1 overflow-x-hidden bg-white px-4 py-8 text-cinza-escuro sm:px-6 desk:bg-cinza-claro desk:py-4 dark:bg-black dark:text-cinza-claro desk:dark:bg-cinza-escuro">
+    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-4 py-8 text-cinza-escuro sm:px-6 desk:py-4 dark:bg-cinza-escuro dark:text-cinza-claro">
       <div
         className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-8 desk:items-start desk:gap-6 ${
           isEditing
@@ -101,7 +101,7 @@ export function Historias() {
               onClick={() => setEditingTarget(null)}
               icon="keyframe-plus-in-solid"
               size="small"
-              variant="primary"
+              variant="primary-adaptive"
               className="px-4 desk:col-start-3 desk:row-start-2"
             >
               Nova História

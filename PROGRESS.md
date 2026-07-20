@@ -1,5 +1,11 @@
 # PROGRESS.md
 
+- Linhas das gestões de Cães, Histórias e Eventos compartilham o estado visual de edição: somente o registro ligado ao formulário aberto inverte a superfície no desktop; sem edição, nenhuma linha fica destacada.
+- Gestão de Cães mobile realinhada aos quatro modelos: cabeçalho, métricas, toolbar, linhas e formulário recuperaram proporções, superfícies e cores claro/escuro; badges voltaram abaixo das fotos e a galeria ganhou densidade própria, sem alterar regras de dados ou layout desktop.
+- Gestão de Eventos revisada contra os modelos desktop/mobile: cards, espaçamentos e inversão do evento ativo foram alinhados; formulário preserva as grades de Geral/Objetivos/Pagamento, diferencia produto e rifa, usa opções em chips, prêmio visual e composição de capa/galeria por tipo.
+- Estados interativos de `Action` revisados contra os modelos “Botão Hover”: variantes adaptativas/invertidas agora trocam para rosa-claro no hover escuro e preservam as combinações previstas no clique. Abas e toggle do header usam o ciclo neutro invertido completo; ações de Cães foram alinhadas às de Histórias/Eventos.
+- Shell do admin corrigido: header permanece branco no tema claro e preto no escuro; todas as páginas usam cinza-claro/#262626. Abas inativas usam #262626 no escuro, destinos ainda indisponíveis mantêm aparência desativada e o resumo de Eventos voltou aos dois cards lado a lado.
+- Gestão de Eventos iniciada no admin: rota, resumo, listagem por estado e formulário responsivo de produto/rifa funcionam com dados temporários. O formulário reutiliza a galeria comprimida, exige confirmação dos dados reais e inclui o atalho externo de comprovantes; Supabase, reservas e sorteio seguem pendentes.
 - Galerias dos cards expandidos de Adoção e Histórias abrem cada foto em tela cheia; o lightbox compartilhado fecha por botão claro abaixo da imagem, clique externo ou `Esc`.
 - Gestão de Histórias exibe a tag “Rascunho” abaixo da foto enquanto o registro não está publicado; reutiliza o `StatusBadge` e o tom vermelho escuro definidos pela matriz de estados.
 - Histórias públicas integradas ao Supabase: página dedicada e preview da landing leem `historias_public`, resolvem as imagens do Storage e revalidam publicação automaticamente; os dados temporários foram removidos.

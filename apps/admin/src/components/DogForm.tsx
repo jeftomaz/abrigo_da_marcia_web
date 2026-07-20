@@ -50,20 +50,19 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const isPanel = layout === 'panel'
-  const fieldClasses = `${
-    isPanel ? 'h-8 px-3 text-sm' : 'h-10 px-4'
-  } mt-1 w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50`
+  const fieldClasses =
+    'mt-1 h-8 w-full rounded-lg border-2 border-cinza-medio bg-transparent px-3 text-sm text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50'
   const selectClasses = `${
     isPanel
       ? 'bg-marca-clara text-marca dark:bg-marca-escura dark:text-marca'
-      : 'bg-cinza-claro text-cinza-escuro dark:bg-cinza-medio dark:text-cinza-claro'
+      : 'bg-cinza-claro text-cinza-escuro dark:bg-marca-escura dark:text-marca'
   } mt-1 w-full appearance-none rounded-full outline-none focus-visible:ring-2 focus-visible:ring-marca ${
-    isPanel ? 'h-8 px-3 pr-8 text-sm' : 'h-10 px-5 pr-10'
+    isPanel ? 'h-8 px-3 pr-8 text-sm' : 'h-8 px-4 pr-8 text-sm'
   }`
   const sectionHeadingClasses = `${isPanel ? 'text-lg' : 'text-xl'} font-medium`
-  const labelClasses = `${isPanel ? 'mt-2 text-sm' : 'mt-3'} block font-medium`
-  const nestedLabelClasses = `${isPanel ? 'text-sm' : ''} block font-medium`
-  const fieldGridClasses = `${isPanel ? 'mt-2 gap-3' : 'mt-3 gap-4'} grid grid-cols-2`
+  const labelClasses = 'mt-2 block text-sm font-medium'
+  const nestedLabelClasses = 'block text-sm font-medium'
+  const fieldGridClasses = `${isPanel ? 'gap-3' : 'gap-4'} mt-2 grid grid-cols-2`
 
   const handleBirthYearChange = (value: string) => {
     const year = parseBoundedInteger(value, MIN_BIRTH_YEAR, CURRENT_YEAR)
@@ -185,7 +184,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         </div>
       </div>
 
-      <div className={`${isPanel ? 'mt-2 gap-2' : 'mt-3 gap-3'} grid grid-cols-[1fr_auto_1fr] items-end`}>
+      <div className={`${isPanel ? 'gap-2' : 'gap-3'} mt-2 grid grid-cols-[1fr_auto_1fr] items-end`}>
         <div>
           <label htmlFor={`${formId}-birth-year`} className={nestedLabelClasses}>
             Ano de Nascimento*
@@ -203,7 +202,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
             className={fieldClasses}
           />
         </div>
-        <span className={`${isPanel ? 'pb-1.5 text-sm' : 'pb-3'} font-medium`}>Ou</span>
+        <span className={`${isPanel ? 'pb-1.5' : 'pb-1'} text-sm font-medium`}>Ou</span>
         <div>
           <label htmlFor={`${formId}-approx-age`} className={nestedLabelClasses}>
             Idade (aprox.)*
@@ -223,7 +222,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         </div>
       </div>
 
-      <div className={`${isPanel ? 'mt-2 text-sm' : 'mt-3'} flex items-center justify-between gap-2`}>
+      <div className="mt-2 flex items-center justify-between gap-2 text-sm">
         <label htmlFor={`${formId}-description`} className="font-medium">
           Descrição*
         </label>
@@ -244,15 +243,24 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         aria-describedby={`${formId}-description-count`}
         rows={2}
         required
-        className={`mt-1 w-full resize-y rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50 ${isPanel ? 'px-3 py-2 text-sm' : 'px-4 py-3'}`}
+        className="mt-1 w-full resize-y rounded-lg border-2 border-cinza-medio bg-transparent px-3 py-2 text-sm text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50"
       />
     </section>
   )
 
   const adocaoSection = (
-    <section className={`${isPanel ? 'mt-3 pt-3' : 'mt-4 pt-4'} border-t border-cinza-claro dark:border-cinza-medio`}>
+    <section
+      className={`mt-3 border-t pt-3 ${
+        isPanel
+          ? 'border-cinza-claro dark:border-cinza-medio'
+          : 'border-cinza-medio dark:border-cinza-claro'
+      }`}
+    >
       <h3 className={sectionHeadingClasses}>Adoção</h3>
-      <label htmlFor={`${formId}-form-url`} className={`${isPanel ? 'mt-2 text-sm' : 'mt-3'} flex items-center gap-2 font-medium`}>
+      <label
+        htmlFor={`${formId}-form-url`}
+        className="mt-2 flex items-center gap-2 text-sm font-medium"
+      >
         Link do formulário de adoção
         <Icon name="info-circle-solid" className="size-4 opacity-60" aria-hidden="true" />
       </label>
@@ -266,18 +274,21 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         className={fieldClasses}
       />
 
-      <div className={`${isPanel ? 'mt-2 gap-2' : 'mt-3 gap-4'} flex flex-wrap items-center justify-between`}>
-        <span className={`${isPanel ? 'text-sm' : ''} flex items-center gap-2 font-medium`}>
+      <div
+        className={`${isPanel ? 'flex-row items-center justify-between' : 'flex-col items-start'} mt-2 flex gap-2`}
+      >
+        <span className="flex items-center gap-2 text-sm font-medium">
           Destacar no catálogo
           <Icon name="info-circle-solid" className="size-4 opacity-60" aria-hidden="true" />
         </span>
-        <Switch checked={featured} onChange={setFeatured} className={isPanel ? 'origin-left scale-75' : ''} />
+        <Switch checked={featured} onChange={setFeatured} className="origin-left scale-75" />
       </div>
     </section>
   )
 
   const imagensSection = (
     <PhotoGalleryField
+      density="compact"
       error={saveError}
       formId={formId}
       layout={layout}
@@ -289,11 +300,22 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   )
 
   const buttonsRow = (
-    <div className={`${isPanel ? 'mt-4 gap-3' : 'mt-4 gap-4'} flex`}>
-      <Action onClick={onCancel} size="small" variant="secondary" className={`${isPanel ? 'w-20' : 'w-28'} shrink-0`}>
+    <div className={`${isPanel ? 'mt-4 gap-3' : 'mt-3 gap-4'} flex`}>
+      <Action
+        onClick={onCancel}
+        size={isPanel ? 'small' : 'compact'}
+        variant="secondary-adaptive"
+        className={`${isPanel ? 'w-20' : 'w-28'} shrink-0`}
+      >
         Cancelar
       </Action>
-      <Action type="submit" size="small" variant="primary" disabled={isCompressing || isSaving} className="min-w-0 flex-1">
+      <Action
+        type="submit"
+        size={isPanel ? 'small' : 'compact'}
+        variant="primary"
+        disabled={isCompressing || isSaving}
+        className="min-w-0 flex-1"
+      >
         {isSaving ? 'Salvando...' : 'Salvar Cão'}
       </Action>
     </div>

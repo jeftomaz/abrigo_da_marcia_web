@@ -73,9 +73,9 @@ export function Caes() {
   const formTitle = editingTarget ? 'Editar Cão' : 'Novo Cão'
 
   return (
-    <main className="flex-1 overflow-x-hidden bg-white px-4 py-8 text-cinza-escuro sm:px-6 desk:bg-cinza-claro desk:py-4 dark:bg-black dark:text-cinza-claro desk:dark:bg-cinza-escuro">
+    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-3 py-4 text-cinza-escuro sm:px-6 dark:bg-cinza-escuro dark:text-cinza-claro">
       <div
-        className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-8 desk:items-start desk:gap-6 ${
+        className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-6 desk:items-start ${
           isEditing
             ? 'desk:max-w-[1920px] desk:grid-cols-[minmax(17rem,29rem)_minmax(26rem,29rem)_minmax(32rem,45rem)] desk:justify-between'
             : 'desk:max-w-[64rem] desk:grid-cols-[29rem_29rem] desk:justify-between'
@@ -93,13 +93,15 @@ export function Caes() {
 
         <section className="flex min-w-0 flex-col gap-4">
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 desk:gap-3">
-            <h1 className="text-2xl font-medium text-marca desk:col-span-3 desk:text-3xl">Cães Cadastrados</h1>
+            <h1 className="text-2xl font-medium desk:col-span-3 desk:text-3xl desk:text-marca">
+              Cães Cadastrados
+            </h1>
             <div className="relative shrink-0 desk:col-start-2 desk:row-start-2">
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value as DogStatus | '')}
                 aria-label="Filtrar por status"
-                className="h-10 appearance-none rounded-full bg-cinza-claro pr-8 pl-3 text-sm text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca desk:bg-white dark:bg-cinza-medio dark:text-cinza-claro"
+                className="h-10 appearance-none rounded-full bg-white pr-8 pl-3 text-sm text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
               >
                 <option value="">Todos os status</option>
                 <option value="disponivel">Disponível</option>
@@ -116,7 +118,7 @@ export function Caes() {
               icon="keyframe-plus-in-solid"
               size="small"
               variant="primary"
-              className="px-4 desk:col-start-3 desk:row-start-2"
+              className="h-10 px-4 desk:col-start-3 desk:row-start-2"
             >
               Novo Cão
             </Action>
@@ -130,12 +132,12 @@ export function Caes() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Busca por nome, contato..."
                 aria-label="Busca por nome, contato"
-                className="h-10 w-full rounded-full bg-cinza-claro pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca desk:bg-white dark:bg-cinza-medio dark:text-cinza-claro"
+                className="h-10 w-full rounded-full bg-white pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
               />
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-2 rounded-3xl bg-cinza-claro p-2 desk:gap-3 desk:bg-transparent desk:p-0 dark:bg-cinza-medio desk:dark:bg-transparent">
+          <div className="flex min-w-0 flex-col gap-2 desk:gap-3">
             {isLoading && <p className="text-center">Carregando cães...</p>}
             {error && <p role="alert" className="text-center">Não foi possível carregar os cães.</p>}
             {operationError && <p role="alert" className="text-center">{operationError}</p>}

@@ -119,7 +119,7 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
       <Action
         onClick={onCancel}
         size="small"
-        variant="secondary"
+        variant="secondary-adaptive"
         className={`${isPanel ? 'w-20' : 'w-28'} shrink-0`}
       >
         Cancelar
@@ -127,7 +127,7 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
       <Action
         type="submit"
         size="small"
-        variant="primary"
+        variant="primary-adaptive"
         disabled={isCompressing || isSaving}
         className="min-w-0 flex-1"
       >

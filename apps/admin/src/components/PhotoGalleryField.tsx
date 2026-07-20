@@ -10,12 +10,15 @@ import type { EditablePhoto } from '@abrigo/shared'
 
 type PhotoGalleryFieldProps = {
   error?: string
+  density?: 'default' | 'compact'
   formId: string
   layout: 'modal' | 'panel'
   onProcessingChange: (isProcessing: boolean) => void
   photos: EditablePhoto[]
   setPhotos: Dispatch<SetStateAction<EditablePhoto[]>>
+  showCoverPreview?: boolean
   subjectLabel: string
+  title?: string
 }
 
 const MAX_PHOTOS = 5
@@ -28,12 +31,15 @@ function waitForPaint() {
 
 export function PhotoGalleryField({
   error,
+  density = 'default',
   formId,
   layout,
   onProcessingChange,
   photos,
   setPhotos,
+  showCoverPreview = false,
   subjectLabel,
+  title = 'Imagens',
 }: PhotoGalleryFieldProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [photoError, setPhotoError] = useState('')
@@ -43,6 +49,7 @@ export function PhotoGalleryField({
   const didDragPhoto = useRef(false)
   const isMounted = useRef(true)
   const isPanel = layout === 'panel'
+  const isCompact = !isPanel && density === 'compact'
 
   useEffect(() => {
     const photoUrls = createdPhotoUrls.current
@@ -130,9 +137,44 @@ export function PhotoGalleryField({
   }
 
   return (
-    <section className={isPanel ? '' : 'mt-4 border-t border-cinza-claro pt-4 dark:border-cinza-medio'}>
-      <h3 className={`${isPanel ? 'text-lg' : 'text-xl'} font-medium`}>Imagens</h3>
-      <p className={`${isPanel ? 'mt-2 text-sm' : 'mt-3'} font-medium`}>
+    <section
+      className={
+        isPanel
+          ? ''
+          : `${isCompact ? 'mt-3 pt-3' : 'mt-4 pt-4'} border-t border-cinza-medio dark:border-cinza-claro`
+      }
+    >
+      <h3
+        className={`${isPanel ? 'text-lg' : isCompact ? 'text-xl' : 'text-3xl'} font-medium`}
+      >
+        {title}
+      </h3>
+      {showCoverPreview && (
+        <div className="mt-4 flex flex-col items-center">
+          <p className="font-medium">Capa</p>
+          <button
+            type="button"
+            disabled={!photos[0]}
+            onClick={() => photos[0] && setExpandedPhoto(photos[0])}
+            aria-label={`Ampliar capa de ${subjectLabel}`}
+            className={`relative mt-2 flex items-center justify-center overflow-hidden rounded-3xl bg-cinza-claro dark:bg-cinza-medio ${
+              isPanel ? 'size-28' : 'size-40'
+            }`}
+          >
+            <Icon name="pata" className="size-10 text-cinza-medio dark:text-cinza-claro" />
+            {photos[0] && (
+              <img
+                src={photos[0].previewUrl}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
+          </button>
+        </div>
+      )}
+      <p
+        className={`${isPanel || isCompact ? 'mt-2' : 'mt-3'} ${isPanel ? 'text-sm' : ''} font-medium`}
+      >
         Galeria de Divulgação ({photos.length}/{MAX_PHOTOS})
       </p>
       {photos.length > 1 && (
@@ -140,7 +182,15 @@ export function PhotoGalleryField({
           Arraste para reordenar. A primeira imagem é a capa.
         </p>
       )}
-      <div className={`mt-2 grid gap-2 ${isPanel ? 'grid-cols-3' : 'grid-cols-[repeat(4,4rem)]'}`}>
+      <div
+        className={`mt-2 grid gap-2 ${
+          isPanel
+            ? 'grid-cols-3'
+            : isCompact
+              ? 'grid-cols-[repeat(4,3.25rem)]'
+              : 'grid-cols-[repeat(4,4rem)]'
+        }`}
+      >
         {photos.length < MAX_PHOTOS && (
           <label
             htmlFor={`${formId}-photos`}

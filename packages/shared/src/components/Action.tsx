@@ -16,6 +16,7 @@ type ActionVariant =
   | 'secondary-inverted'
   | 'secondary-on-brand'
   | 'neutral'
+  | 'neutral-adaptive'
   | 'neutral-inverted'
 type ActionSize = 'compact' | 'default' | 'small'
 
@@ -57,32 +58,36 @@ const BASE_CLASSES =
 // pela superfície IMEDIATA (contraste):
 //   `primary`   (Padrão)     = coral cheio (marca)       → ação principal em fundo claro/neutro (branco, cinza-claro).
 //   `secondary` (Secundário) = pill pálido (marca-clara) → ação secundária em fundo claro.
-//   `*-adaptive`             = superfície elevada que alterna entre branco e preto.
+//   `*-adaptive`             = usa a matriz padrão em superfícies claras e a
+//                              invertida em superfícies escuras.
 //   `*-on-brand`             = fundo coral/marca.
 //   `*-inverted`             = fundos escuros-neutros (cinza-medio, cinza-escuro, preto).
 //   `neutral` (Botão)        = versão sóbria, sem cor de marca: pílula clara/texto
 //                              escuro, legível sobre qualquer superfície (card branco
-//                              ou preto). `neutral-inverted` é a metade escura (Invertido).
+//                              ou preto). `neutral-adaptive` acompanha o tema e
+//                              `neutral-inverted` é a metade escura (Invertido).
 // Desativado (opacity-40) só atinge <button>; CTAs <Link>/<a> não desabilitam.
 const VARIANT_CLASSES: Record<ActionVariant, string> = {
   primary:
     'bg-marca text-marca-clara hover:bg-marca-escura hover:text-marca-clara active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40',
   'primary-adaptive':
-    'bg-marca text-marca-clara hover:bg-marca-escura hover:text-marca-clara active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca dark:bg-marca-clara dark:text-marca dark:hover:bg-marca dark:hover:text-marca-clara dark:active:bg-marca-escura dark:active:text-marca-clara dark:focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
+    'bg-marca text-marca-clara hover:bg-marca-escura hover:text-marca-clara active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca dark:bg-marca dark:text-marca-escura dark:hover:bg-marca-clara dark:hover:text-marca dark:active:bg-marca-escura dark:active:text-marca dark:focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   'primary-inverted':
-    'bg-marca-clara text-marca hover:bg-marca hover:text-marca-clara active:bg-marca-escura active:text-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
+    'bg-marca text-marca-escura hover:bg-marca-clara hover:text-marca active:bg-marca-escura active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   'primary-on-brand':
     'bg-marca-clara text-marca hover:bg-cinza-escuro hover:text-marca active:bg-marca-escura active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   secondary:
     'bg-marca-clara text-marca hover:bg-marca-escura hover:text-marca-clara active:bg-marca active:text-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40',
   'secondary-adaptive':
-    'bg-marca-escura text-marca-clara hover:bg-marca active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara dark:bg-marca-clara dark:text-marca dark:hover:bg-marca-escura dark:hover:text-marca-clara dark:active:bg-marca dark:active:text-marca-clara disabled:pointer-events-none disabled:opacity-40',
+    'bg-marca-clara text-marca hover:bg-marca-escura hover:text-marca-clara active:bg-marca active:text-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca dark:bg-marca-escura dark:text-marca dark:hover:bg-marca-clara dark:hover:text-marca dark:active:bg-marca dark:active:text-marca-escura dark:focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   'secondary-inverted':
-    'bg-marca-escura text-marca-clara hover:bg-marca hover:text-marca-clara active:bg-marca-clara active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
+    'bg-marca-escura text-marca hover:bg-marca-clara hover:text-marca active:bg-marca active:text-marca-escura focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   'secondary-on-brand':
     'bg-marca-escura text-marca hover:bg-cinza-escuro active:bg-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
   neutral:
     'bg-cinza-claro text-cinza-escuro hover:bg-cinza-medio hover:text-cinza-claro active:bg-cinza-escuro active:text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio disabled:pointer-events-none disabled:opacity-40',
+  'neutral-adaptive':
+    'bg-cinza-claro text-cinza-escuro hover:bg-cinza-medio hover:text-cinza-claro active:bg-cinza-escuro active:text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio dark:bg-cinza-medio dark:text-cinza-claro dark:hover:bg-cinza-claro dark:hover:text-cinza-escuro dark:active:bg-cinza-escuro dark:active:text-cinza-claro disabled:pointer-events-none disabled:opacity-40',
   'neutral-inverted':
     'bg-cinza-escuro text-cinza-claro hover:bg-cinza-claro hover:text-cinza-escuro active:bg-cinza-medio active:text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio disabled:pointer-events-none disabled:opacity-40',
 }
