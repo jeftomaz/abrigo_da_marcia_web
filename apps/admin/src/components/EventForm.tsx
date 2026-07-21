@@ -1,5 +1,6 @@
-import { useId, useState } from 'react'
-import { Action, Icon } from '@abrigo/shared'
+import { useEffect, useId, useRef, useState } from 'react'
+import { ACCEPTED_UPLOAD_IMAGE_TYPES, Action, Dialog, Icon, compressImage } from '@abrigo/shared'
+import type { EditablePhoto } from '@abrigo/shared'
 import type { EventDraft, EventKind, FundraisingEvent } from '../events/events'
 import { toEditableEventPhotos } from '../events/events'
 import { PhotoGalleryField } from './PhotoGalleryField'
@@ -19,7 +20,7 @@ type FieldProps = {
   wide?: boolean
 }
 
-const EMPTY_EVENT: Omit<EventDraft, 'gallery'> = {
+const EMPTY_EVENT: Omit<EventDraft, 'gallery' | 'prizeImage'> = {
   kind: 'product',
   title: '',
   description: '',
@@ -30,8 +31,7 @@ const EMPTY_EVENT: Omit<EventDraft, 'gallery'> = {
   productPrice: '',
   productDiscountPrice: '',
   productDiscountMinimum: '',
-  variationName: '',
-  variationOptions: '',
+  variations: [{ id: 'new-variation', name: '', options: [] }],
   raffleTotalNumbers: '',
   raffleNumberPrice: '',
   prize: '',
@@ -60,33 +60,62 @@ export function EventForm({ event, layout, onCancel, onSave, title }: EventFormP
   const [isCompressing, setIsCompressing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
-  const [newVariationOption, setNewVariationOption] = useState('')
+  const [isPrizeDialogOpen, setIsPrizeDialogOpen] = useState(false)
+  const [prizeDraft, setPrizeDraft] = useState(initial.prize)
+  const [prizePhoto, setPrizePhoto] = useState<EditablePhoto | null>(() =>
+    event?.prizeImage
+      ? { key: `${event.id}-prize`, previewUrl: event.prizeImage }
+      : null,
+  )
+  const [isPrizeCompressing, setIsPrizeCompressing] = useState(false)
+  const createdPrizeUrl = useRef<string | null>(null)
   const isPanel = layout === 'panel'
   const fieldClasses = `${isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'} w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50`
   const sectionClasses = 'border-t border-cinza-medio pt-3 dark:border-cinza-claro'
   const sectionTitleClasses = `${isPanel ? 'text-xl' : 'text-3xl'} font-medium`
 
+  useEffect(() => () => {
+    if (createdPrizeUrl.current) URL.revokeObjectURL(createdPrizeUrl.current)
+  }, [])
+
   const setField = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {
     setDraft((current) => ({ ...current, [key]: value }))
   }
 
-  const variationOptions = draft.variationOptions
-    .split(',')
-    .map((option) => option.trim())
-    .filter(Boolean)
+  const addVariation = () => {
+    const id = crypto.randomUUID()
+    setField('variations', [...draft.variations, { id, name: '', options: [] }])
+    requestAnimationFrame(() => document.getElementById(`${formId}-variation-${id}`)?.focus())
+  }
 
-  const addVariationOption = () => {
-    const option = newVariationOption.trim()
-    if (!option || variationOptions.includes(option)) return
-    setField('variationOptions', [...variationOptions, option].join(', '))
-    setNewVariationOption('')
+  const updateVariation = (
+    id: string,
+    changes: Partial<(typeof draft.variations)[number]>,
+  ) => {
+    setField(
+      'variations',
+      draft.variations.map((variation) =>
+        variation.id === id ? { ...variation, ...changes } : variation,
+      ),
+    )
   }
 
   const handleSubmit = async (submitEvent: React.FormEvent) => {
     submitEvent.preventDefault()
     if (!draft.title.trim() || !draft.description.trim()) return
+    if (draft.kind === 'raffle' && (!draft.prize.trim() || !prizePhoto)) {
+      setSaveError('Adicione o nome e a imagem do prêmio da rifa.')
+      return
+    }
     if (photos.length === 0) {
       setSaveError('Adicione ao menos uma imagem.')
+      return
+    }
+    const hasIncompleteVariation = draft.kind === 'product' && draft.variations.some(
+      (variation) => Boolean(variation.name.trim()) !== variation.options.some((option) => option.trim()),
+    )
+    if (hasIncompleteVariation) {
+      setSaveError('Preencha o nome e ao menos um valor em cada variação.')
       return
     }
     if (!window.confirm('Confirma que as informações do evento foram verificadas?')) return
@@ -100,13 +129,53 @@ export function EventForm({ event, layout, onCancel, onSave, title }: EventFormP
         status: event?.status,
         title: draft.title.trim(),
         description: draft.description.trim(),
+        variations: draft.kind === 'product'
+          ? draft.variations
+            .map((variation) => ({
+              ...variation,
+              name: variation.name.trim(),
+              options: variation.options.map((option) => option.trim()).filter(Boolean),
+            }))
+            .filter((variation) => variation.name && variation.options.length > 0)
+          : [],
         gallery: photos,
+        prizeImage: prizePhoto,
       })
     } catch {
       setSaveError('Não foi possível salvar o evento.')
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const handlePrizeImage = async (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
+    const file = changeEvent.target.files?.[0]
+    changeEvent.target.value = ''
+    if (!file) return
+    const previewUrl = URL.createObjectURL(file)
+    if (createdPrizeUrl.current) URL.revokeObjectURL(createdPrizeUrl.current)
+    createdPrizeUrl.current = previewUrl
+    setPrizePhoto({ key: crypto.randomUUID(), file, previewUrl })
+    setIsPrizeCompressing(true)
+    try {
+      const compressedFile = await compressImage(file)
+      setPrizePhoto((current) => current?.previewUrl === previewUrl ? { ...current, file: compressedFile } : current)
+    } catch {
+      URL.revokeObjectURL(previewUrl)
+      if (createdPrizeUrl.current === previewUrl) createdPrizeUrl.current = null
+      setPrizePhoto((current) => current?.previewUrl === previewUrl ? null : current)
+      setSaveError('Não foi possível processar a imagem do prêmio.')
+    } finally {
+      setIsPrizeCompressing(false)
+    }
+  }
+
+  const removePrizeImage = () => {
+    if (prizePhoto?.previewUrl === createdPrizeUrl.current) {
+      URL.revokeObjectURL(createdPrizeUrl.current)
+      createdPrizeUrl.current = null
+    }
+    setPrizePhoto(null)
   }
 
   const generalSection = (
@@ -214,7 +283,7 @@ export function EventForm({ event, layout, onCancel, onSave, title }: EventFormP
             className={fieldClasses}
           />
         </FormField>
-        <div className="hidden desk:block">
+        <div>
           <FormField htmlFor={`${formId}-discount-price`} label="Preço com desconto (R$)">
             <input
               id={`${formId}-discount-price`}
@@ -225,7 +294,7 @@ export function EventForm({ event, layout, onCancel, onSave, title }: EventFormP
             />
           </FormField>
         </div>
-        <div className="hidden desk:block">
+        <div>
           <FormField htmlFor={`${formId}-discount-minimum`} label="Qtd. mínima p/ desconto">
             <input
               id={`${formId}-discount-minimum`}
@@ -237,56 +306,49 @@ export function EventForm({ event, layout, onCancel, onSave, title }: EventFormP
           </FormField>
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <FormField htmlFor={`${formId}-variation-name`} label="Nome da variação">
-          <input
-            id={`${formId}-variation-name`}
-            value={draft.variationName}
-            onChange={(changeEvent) => setField('variationName', changeEvent.target.value)}
-            placeholder="Tamanho"
-            className={fieldClasses}
-          />
-        </FormField>
-        <label htmlFor={`${formId}-variation-options`} className="block min-w-0 font-medium">
-          <span className="mb-1 block text-sm">Valores</span>
-          <span
-            className={`${fieldClasses} flex h-auto min-h-11 flex-wrap items-center gap-1 py-1 ${
-              isPanel ? 'min-h-8' : ''
-            }`}
-          >
-            {variationOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() =>
-                  setField(
-                    'variationOptions',
-                    variationOptions.filter((item) => item !== option).join(', '),
-                  )
-                }
-                aria-label={`Remover opção ${option}`}
-                className="rounded-md bg-marca px-2 py-1 text-sm text-marca-escura"
+      <div className="mt-4 space-y-3">
+        {draft.variations.map((variation, index) => (
+          <div key={variation.id} className="grid grid-cols-2 gap-3 rounded-2xl bg-cinza-claro p-3 text-cinza-escuro dark:bg-cinza-medio dark:text-cinza-claro">
+            <FormField htmlFor={`${formId}-variation-${variation.id}`} label="Nome da variação">
+              <input
+                id={`${formId}-variation-${variation.id}`}
+                value={variation.name}
+                onChange={(changeEvent) => updateVariation(variation.id, { name: changeEvent.target.value })}
+                placeholder={index === 0 ? 'Tamanho' : 'Cor'}
+                className={fieldClasses}
+              />
+            </FormField>
+            <FormField htmlFor={`${formId}-variation-values-${variation.id}`} label="Valores">
+              <input
+                id={`${formId}-variation-values-${variation.id}`}
+                value={variation.options.join(', ')}
+                onChange={(changeEvent) => updateVariation(variation.id, {
+                  options: changeEvent.target.value.split(',').map((option) => option.trimStart()),
+                })}
+                placeholder="P, M, G"
+                aria-describedby={`${formId}-variation-values-help-${variation.id}`}
+                className={fieldClasses}
+              />
+              <span id={`${formId}-variation-values-help-${variation.id}`} className="mt-1 block text-xs font-normal">
+                Separe os valores por vírgulas.
+              </span>
+            </FormField>
+            {draft.variations.length > 1 && (
+              <Action
+                onClick={() => setField('variations', draft.variations.filter((item) => item.id !== variation.id))}
+                icon="trash-solid"
+                size="small"
+                variant="neutral-adaptive"
+                className="col-span-2 justify-self-end px-3 py-2"
               >
-                {option}
-              </button>
-            ))}
-            <input
-              id={`${formId}-variation-options`}
-              value={newVariationOption}
-              onChange={(changeEvent) => setNewVariationOption(changeEvent.target.value)}
-              onKeyDown={(keyEvent) => {
-                if (keyEvent.key !== 'Enter') return
-                keyEvent.preventDefault()
-                addVariationOption()
-              }}
-              aria-label="Nova opção"
-              className="min-w-12 flex-1 bg-transparent outline-none"
-            />
-          </span>
-        </label>
+                Remover opção
+              </Action>
+            )}
+          </div>
+        ))}
       </div>
       <Action
-        onClick={addVariationOption}
+        onClick={addVariation}
         icon="plus-circle-solid"
         size="small"
         variant="primary-adaptive"
@@ -334,44 +396,33 @@ export function EventForm({ event, layout, onCancel, onSave, title }: EventFormP
       <div className="mt-4">
         <h4 className={`${isPanel ? 'text-base' : 'text-2xl'} font-medium`}>Prêmios</h4>
         <div className="mt-3 flex gap-4">
-          <div className={isPanel ? 'w-20' : 'w-32'}>
-            <div className="relative aspect-square overflow-hidden rounded-2xl bg-cinza-claro dark:bg-cinza-medio">
-              <Icon
-                name="pata"
-                className="absolute top-1/2 left-1/2 size-9 -translate-1/2 text-cinza-medio dark:text-cinza-claro"
-              />
-              {photos[0] && (
-                <img
-                  src={photos[0].previewUrl}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              )}
+          {draft.prize && (
+            <div className={isPanel ? 'w-20' : 'w-32'}>
+              <div className="relative aspect-square overflow-hidden rounded-2xl bg-cinza-claro dark:bg-cinza-medio">
+                <Icon name="pata" className="absolute top-1/2 left-1/2 size-9 -translate-1/2 text-cinza-medio dark:text-cinza-claro" />
+                {prizePhoto && <img src={prizePhoto.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+              </div>
+              <p className="mt-1 truncate text-sm">{draft.prize}</p>
+              <Action
+                onClick={() => {
+                  setPrizeDraft(draft.prize)
+                  setIsPrizeDialogOpen(true)
+                }}
+                icon="edit-pencil"
+                size="small"
+                variant="neutral-adaptive"
+                className="mt-2 px-3"
+              >
+                Editar
+              </Action>
             </div>
-            <label htmlFor={`${formId}-prize`} className="sr-only">
-              Nome do prêmio
-            </label>
-            <input
-              id={`${formId}-prize`}
-              value={draft.prize}
-              onChange={(changeEvent) => setField('prize', changeEvent.target.value)}
-              placeholder="Nome do prêmio"
-              required={draft.kind === 'raffle'}
-              className="mt-1 w-full truncate bg-transparent text-sm outline-none"
-            />
-            <Action
-              onClick={() => document.getElementById(`${formId}-prize`)?.focus()}
-              icon="edit-pencil"
-              size="small"
-              variant="neutral-adaptive"
-              className="mt-2 px-3"
-            >
-              Editar
-            </Action>
-          </div>
+          )}
           <button
             type="button"
-            onClick={() => document.getElementById(`${formId}-photos`)?.click()}
+            onClick={() => {
+              setPrizeDraft('')
+              setIsPrizeDialogOpen(true)
+            }}
             className={`${isPanel ? 'w-20' : 'w-32'} flex flex-col gap-2 text-left font-medium`}
           >
             <span className="flex aspect-square w-full items-center justify-center rounded-2xl bg-cinza-medio text-cinza-escuro">
@@ -480,7 +531,7 @@ export function EventForm({ event, layout, onCancel, onSave, title }: EventFormP
           type="submit"
           size="small"
           variant="primary-adaptive"
-          disabled={isCompressing || isSaving}
+          disabled={isCompressing || isPrizeCompressing || isSaving}
           className="min-w-0 flex-1"
         >
           {isSaving ? 'Salvando...' : 'Salvar Evento'}
@@ -490,36 +541,118 @@ export function EventForm({ event, layout, onCancel, onSave, title }: EventFormP
   )
 
   const detailsSection = draft.kind === 'product' ? productSection : raffleSection
+  const prizeDialog = (
+    <Dialog
+      ariaLabel="Prêmio"
+      onClose={() => setIsPrizeDialogOpen(false)}
+      className="w-full max-w-[30rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised"
+    >
+      <h2 className="text-3xl font-medium text-marca">Prêmio</h2>
+      <h3 className="mt-2 text-2xl font-medium">Seção</h3>
+      <div className="mt-3 flex items-center gap-3">
+        <div className="relative size-40 overflow-hidden rounded-3xl bg-cinza-claro dark:bg-cinza-medio">
+          <Icon name="pata" className="absolute top-1/2 left-1/2 size-10 -translate-1/2 text-cinza-medio dark:text-cinza-claro" />
+          {prizePhoto && <img src={prizePhoto.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        </div>
+        <div className="flex flex-col gap-3">
+          <Action
+            onClick={() => {
+              document.getElementById(`${formId}-prize-image`)?.click()
+            }}
+            disabled={isPrizeCompressing}
+            icon="edit-pencil"
+            size="small"
+            variant="neutral-adaptive"
+            className="px-4 py-2"
+          >
+            Editar
+          </Action>
+          <Action
+            onClick={removePrizeImage}
+            icon="trash-solid"
+            size="small"
+            variant="neutral-adaptive"
+            className="px-4 py-2"
+          >
+            Remover
+          </Action>
+        </div>
+      </div>
+      <input
+        id={`${formId}-prize-image`}
+        type="file"
+        accept={ACCEPTED_UPLOAD_IMAGE_TYPES.join(',')}
+        disabled={isPrizeCompressing}
+        onChange={handlePrizeImage}
+        className="sr-only"
+      />
+      {isPrizeCompressing && <p role="status" className="mt-2 text-sm">Processando imagem...</p>}
+      <label htmlFor={`${formId}-prize-name`} className="mt-5 block font-medium">
+        Nome do Prêmio
+      </label>
+      <input
+        id={`${formId}-prize-name`}
+        value={prizeDraft}
+        onChange={(changeEvent) => setPrizeDraft(changeEvent.target.value)}
+        className={`${fieldClasses} mt-1`}
+      />
+      <div className="mt-5 flex gap-4">
+        <Action onClick={() => setIsPrizeDialogOpen(false)} size="small" variant="secondary-adaptive" className="w-24 shrink-0">
+          Cancelar
+        </Action>
+        <Action
+          onClick={() => {
+            const normalizedPrize = prizeDraft.trim()
+            if (!normalizedPrize) return
+            setField('prize', normalizedPrize)
+            setIsPrizeDialogOpen(false)
+          }}
+          disabled={!prizeDraft.trim() || !prizePhoto || isPrizeCompressing}
+          size="small"
+          variant="primary-adaptive"
+          className="min-w-0 flex-1"
+        >
+          Salvar Prêmio
+        </Action>
+      </div>
+    </Dialog>
+  )
 
   if (isPanel) {
     return (
-      <form onSubmit={handleSubmit} className="grid grid-cols-[14rem_minmax(0,1fr)] items-start gap-6">
-        <div>
-          <h2 className="text-3xl font-medium text-marca">{title}</h2>
-          <div className="mt-4">{imagesSection}</div>
-        </div>
-        <div className="space-y-3">
-          {generalSection}
-          {objectivesSection}
-          {detailsSection}
-          {paymentSection}
-          {buttonsRow}
-        </div>
-      </form>
+      <>
+        <form onSubmit={handleSubmit} className="grid grid-cols-[14rem_minmax(0,1fr)] items-start gap-6">
+          <div>
+            <h2 className="text-3xl font-medium text-marca">{title}</h2>
+            <div className="mt-4">{imagesSection}</div>
+          </div>
+          <div className="space-y-3">
+            {generalSection}
+            {objectivesSection}
+            {detailsSection}
+            {paymentSection}
+            {buttonsRow}
+          </div>
+        </form>
+        {isPrizeDialogOpen && prizeDialog}
+      </>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2 className="text-4xl font-medium text-marca">{title}</h2>
-      <div className="mt-5 space-y-4">
-        {generalSection}
-        {objectivesSection}
-        {detailsSection}
-        {paymentSection}
-        {imagesSection}
-      </div>
-      {buttonsRow}
-    </form>
+    <>
+      <form onSubmit={handleSubmit}>
+        <h2 className="text-4xl font-medium text-marca">{title}</h2>
+        <div className="mt-5 space-y-4">
+          {generalSection}
+          {objectivesSection}
+          {detailsSection}
+          {paymentSection}
+          {imagesSection}
+        </div>
+        {buttonsRow}
+      </form>
+      {isPrizeDialogOpen && prizeDialog}
+    </>
   )
 }

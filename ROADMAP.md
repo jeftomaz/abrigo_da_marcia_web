@@ -31,7 +31,7 @@
 1. Listagem pública e fluxos responsivos de produto e rifa (cards, seleções, checkout e confirmação) — `done` (dados temporários; Pix demonstrativo)
 2. Schema, views públicas, RLS e verificação de dados reais — `todo`
 3. Persistência da reserva com Pix real e expiração automática — `todo`
-4. CRUD admin — `doing` (listagem, estados e formulário responsivo de produto/rifa usam dados temporários; persistência, reservas e sorteio pendentes)
+4. CRUD admin — `doing` (listagem e formulário responsivos, gestão local de reservas com quatro estados, confirmações do ciclo do evento, CSV e sorteio demonstrativo usam dados temporários; persistência, cancelamento automático, envio da cópia na exclusão e sorteio definitivo pendentes)
 
 O CRUD de produtos deve permitir um único formato de guia de medidas por produto: tabela preenchida manualmente ou imagem enviada pelo admin.
 

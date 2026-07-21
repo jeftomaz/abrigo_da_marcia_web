@@ -3,7 +3,14 @@ import productImage from '../../../public/src/assets/evento_camiseta.jpg'
 import raffleImage from '../../../public/src/assets/evento_rifa.jpg'
 
 export type EventKind = 'product' | 'raffle'
-export type EventStatus = 'draft' | 'active' | 'ended'
+export type EventStatus = 'active' | 'archived' | 'draft' | 'ended'
+export type ReservationStatus = 'canceled' | 'delivered' | 'paid' | 'reserved'
+
+export type ProductVariation = {
+  id: string
+  name: string
+  options: string[]
+}
 
 export type FundraisingEvent = {
   city: string
@@ -22,42 +29,59 @@ export type FundraisingEvent = {
   productDiscountPrice: string
   productPrice: string
   prize: string
+  prizeImage: string
   raffleNumberPrice: string
   raffleTotalNumbers: string
   receiptFolderUrl: string
   startDate: string
   status: EventStatus
   title: string
-  variationName: string
-  variationOptions: string
+  variations: ProductVariation[]
 }
 
-export type EventDraft = Omit<FundraisingEvent, 'gallery' | 'id' | 'status'> & {
+export type EventDraft = Omit<FundraisingEvent, 'gallery' | 'id' | 'prizeImage' | 'status'> & {
   gallery: EditablePhoto[]
   id?: string
+  prizeImage: EditablePhoto | null
   status?: EventStatus
+}
+
+export type EventReservation = {
+  contact: string
+  eventId: string
+  id: string
+  name: string
+  numbers: number[]
+  productOptions: Record<string, string>
+  productQuantity: number
+  receiptSaved: boolean
+  status: ReservationStatus
+}
+
+export type ReservationDraft = Omit<EventReservation, 'eventId' | 'id' | 'receiptSaved' | 'status'> & {
+  id?: string
 }
 
 export const TEMPORARY_EVENTS: FundraisingEvent[] = [
   {
     id: 'event-1',
-    kind: 'product',
+    kind: 'raffle',
     status: 'active',
-    title: 'Camiseta da Copa',
-    description: 'Camiseta especial do Abrigo para celebrar a Copa e ajudar nossos cães.',
-    startDate: '2026-07-19',
-    endDate: '2026-08-31',
-    fundraisingGoal: '10000',
-    maxItemsPerReservation: '5',
-    gallery: [productImage],
-    productPrice: '59,90',
-    productDiscountPrice: '54,90',
-    productDiscountMinimum: '3',
-    variationName: 'Tamanho',
-    variationOptions: 'P, M, G, GG',
-    raffleTotalNumbers: '',
-    raffleNumberPrice: '',
-    prize: '',
+    title: 'Rifa da Copa',
+    description: 'Rifa beneficente com um kit especial para os torcedores.',
+    startDate: '2026-06-16',
+    endDate: '2026-06-30',
+    fundraisingGoal: '1000',
+    maxItemsPerReservation: '10',
+    gallery: [raffleImage],
+    productPrice: '',
+    productDiscountPrice: '',
+    productDiscountMinimum: '',
+    variations: [],
+    raffleTotalNumbers: '100',
+    raffleNumberPrice: '10,00',
+    prize: 'Kit Chopp dia de jogo',
+    prizeImage: raffleImage,
     paymentKey: 'abrigodamarcia@gmail.com',
     city: 'Ribeirão Preto',
     paymentReceiver: 'Márcia Câmara Barbosa',
@@ -79,11 +103,11 @@ export const TEMPORARY_EVENTS: FundraisingEvent[] = [
     productPrice: '39,90',
     productDiscountPrice: '',
     productDiscountMinimum: '',
-    variationName: 'Cor',
-    variationOptions: 'Branca, Vermelha',
+    variations: [{ id: 'event-2-color', name: 'Cor', options: ['Branca', 'Vermelha'] }],
     raffleTotalNumbers: '',
     raffleNumberPrice: '',
     prize: '',
+    prizeImage: '',
     paymentKey: 'abrigodamarcia@gmail.com',
     city: 'Ribeirão Preto',
     paymentReceiver: 'Márcia Câmara Barbosa',
@@ -95,7 +119,7 @@ export const TEMPORARY_EVENTS: FundraisingEvent[] = [
     id: 'event-3',
     kind: 'raffle',
     status: 'ended',
-    title: 'Rifa da Copa',
+    title: 'Rifa Extra para Teste de Nomes Muito Longos',
     description: 'Rifa beneficente com um kit especial para os torcedores.',
     startDate: '2026-05-15',
     endDate: '2026-06-15',
@@ -105,17 +129,53 @@ export const TEMPORARY_EVENTS: FundraisingEvent[] = [
     productPrice: '',
     productDiscountPrice: '',
     productDiscountMinimum: '',
-    variationName: '',
-    variationOptions: '',
+    variations: [],
     raffleTotalNumbers: '1000',
     raffleNumberPrice: '10,00',
     prize: 'Kit Chopp dia de jogo',
+    prizeImage: raffleImage,
     paymentKey: 'abrigodamarcia@gmail.com',
     city: 'Ribeirão Preto',
     paymentReceiver: 'Márcia Câmara Barbosa',
     pixCode: '',
     postPaymentInstructions: 'Envie o comprovante pelo WhatsApp do Abrigo.',
     receiptFolderUrl: '',
+  },
+]
+
+export const TEMPORARY_RESERVATIONS: EventReservation[] = [
+  {
+    id: 'reservation-1',
+    eventId: 'event-1',
+    name: 'João da Silva Sauro',
+    contact: '#5ga13c94',
+    numbers: [14, 17, 22, 30, 31, 49, 65, 88, 93, 97],
+    productQuantity: 0,
+    productOptions: {},
+    receiptSaved: false,
+    status: 'reserved',
+  },
+  {
+    id: 'reservation-2',
+    eventId: 'event-1',
+    name: 'Maria Joaquina Timelo',
+    contact: '#4tn35c65',
+    numbers: [5, 10, 11, 15, 23],
+    productQuantity: 0,
+    productOptions: {},
+    receiptSaved: true,
+    status: 'paid',
+  },
+  {
+    id: 'reservation-3',
+    eventId: 'event-1',
+    name: 'João Paulo',
+    contact: '(16) 99999-8888',
+    numbers: [2, 28, 32],
+    productQuantity: 0,
+    productOptions: {},
+    receiptSaved: false,
+    status: 'paid',
   },
 ]
 

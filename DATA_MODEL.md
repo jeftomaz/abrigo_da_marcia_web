@@ -5,7 +5,7 @@ Fonte de verdade do banco. O schema base e Histórias estão materializados e va
 ## Imagens no Storage
 
 - Todo arquivo passa por `compressImage` de `packages/shared` no client antes do upload; somente JPG, PNG e WebP com até 500.000 bytes seguem ao Storage.
-- Cães e Histórias usam o bucket público `dog-photos` (limite 500.000 bytes; JPG, PNG e WebP); cada tabela persiste os caminhos em `photos` e o CRUD remove objetos descartados. Eventos, Produtos e guias de medidas devem reutilizar o mesmo utilitário.
+- Cães e Histórias usam o bucket público `dog-photos` (limite 500.000 bytes; JPG, PNG e WebP); cada tabela persiste os caminhos em `photos` e o CRUD remove objetos descartados. Eventos, Produtos, prêmios e guias de medidas devem reutilizar o mesmo utilitário.
 
 ## DER
 
@@ -45,6 +45,7 @@ erDiagram
     integer default_max_raffle_numbers
     integer default_max_product_units
     interval default_reservation_ttl
+    text event_export_email
     timestamptz updated_at
   }
   EVENTOS {
@@ -58,14 +59,25 @@ erDiagram
     interval reservation_ttl "nullable; override"
     timestamptz activated_at
     timestamptz ended_at
+    timestamptz archived_at
     timestamptz created_at
     timestamptz updated_at
+  }
+  EVENT_DELETION_AUDIT {
+    uuid id PK
+    uuid event_id
+    text event_name
+    uuid deleted_by "FK auth.users"
+    text export_email
+    timestamptz export_sent_at
+    timestamptz deleted_at
   }
   RIFAS {
     uuid event_id PK,FK
     integer total_numbers
     integer number_price_cents
     text prize
+    text prize_photo
     integer winning_number "nullable"
     text winner_name "nullable"
   }
@@ -108,8 +120,11 @@ erDiagram
     text customer_name "nullable após limpeza"
     text customer_contact "nullable após limpeza"
     bigint total_cents
+    boolean receipt_saved
     timestamptz expires_at
     timestamptz paid_at "nullable"
+    timestamptz canceled_at "nullable"
+    timestamptz delivered_at "nullable"
     timestamptz personal_data_deleted_at "nullable"
     timestamptz created_at
     timestamptz updated_at
@@ -231,8 +246,8 @@ Cada evento é exclusivamente `rifa` ou `produtos`. Pode existir no máximo um e
 ### Enums
 
 - `evento_tipo`: `rifa | produtos`.
-- `evento_status`: `rascunho | ativo | encerrado | cancelado`.
-- `reserva_status`: `pendente | paga | expirada | cancelada`.
+- `evento_status`: `rascunho | ativo | encerrado | arquivado`.
+- `reserva_status`: `pendente | paga | cancelada | entregue`.
 
 ### `event_settings`
 
@@ -244,6 +259,7 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `default_max_raffle_numbers` | `integer` | not null; `> 0`; máximo padrão de números por reserva de rifa |
 | `default_max_product_units` | `integer` | not null; `> 0`; máximo padrão de unidades, somando todos os produtos da reserva |
 | `default_reservation_ttl` | `interval` | not null; `> interval '0'`; prazo padrão de expiração |
+| `event_export_email` | `text` | not null; e-mail das Configurações que recebe a cópia antes da exclusão definitiva de evento ocorrido |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
 ### `eventos`
@@ -259,11 +275,30 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `max_items_per_reservation` | `integer` | nullable; `> 0`; substitui o padrão correspondente ao tipo do evento |
 | `reservation_ttl` | `interval` | nullable; `> interval '0'`; substitui `default_reservation_ttl` |
 | `activated_at` | `timestamptz` | nullable; preenchido ao ativar |
-| `ended_at` | `timestamptz` | nullable; preenchido ao encerrar ou cancelar |
+| `ended_at` | `timestamptz` | nullable; preenchido ao encerrar |
+| `archived_at` | `timestamptz` | nullable; preenchido ao arquivar; eventos arquivados não aparecem nas views públicas |
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
 Índice unique parcial em `status = 'ativo'` garante um único evento ativo. A ativação valida foto, configuração específica do tipo e ao menos um produto no evento de produtos.
+
+Eventos encerrados precisam ser arquivados antes da exclusão definitiva. Rascunhos podem ser excluídos diretamente. A exclusão de um evento ocorrido gera a cópia enviada a `event_settings.event_export_email` e o registro de auditoria antes de apagar os dados do domínio.
+
+### `event_deletion_audit`
+
+Auditoria mínima preservada após a exclusão, sem os dados operacionais do evento. `event_id` não possui FK para permitir a remoção da linha original.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `uuid` | PK; default `gen_random_uuid()` |
+| `event_id` | `uuid` | not null; identificador do evento removido, sem FK |
+| `event_name` | `text` | not null; snapshot para identificação administrativa |
+| `deleted_by` | `uuid` | not null; FK → `auth.users.id`; preenchido com `auth.uid()` |
+| `export_email` | `text` | not null; snapshot do destinatário configurado |
+| `export_sent_at` | `timestamptz` | not null; instante em que o envio da cópia foi confirmado |
+| `deleted_at` | `timestamptz` | not null; default `now()` |
+
+A exclusão ocorre por fluxo administrativo, nunca por `DELETE` direto do client. Para evento arquivado, uma função de servidor autenticada gera e envia a cópia; somente após a confirmação do envio, a função de banco registra `auth.uid()` na auditoria e apaga evento, reservas e itens na mesma transação. Falha no envio mantém o evento arquivado e permite nova tentativa.
 
 ### `rifas`
 
@@ -275,6 +310,7 @@ Relação 1:1 obrigatória apenas quando `eventos.type = 'rifa'`. Os números po
 | `total_numbers` | `integer` | not null; `> 0`; quantidade definida pelo admin |
 | `number_price_cents` | `integer` | not null; `> 0`; preço igual para todos os números |
 | `prize` | `text` | not null |
+| `prize_photo` | `text` | not null; caminho da imagem comprimida do prêmio no Storage |
 | `winning_number` | `integer` | nullable; entre `1` e `total_numbers` |
 | `winner_name` | `text` | nullable; informação pública após o resultado |
 
@@ -337,13 +373,16 @@ Cabeçalho comum a reservas de rifa e de produtos.
 | `customer_name` | `text` | not null na criação; torna-se null na limpeza pós-evento |
 | `customer_contact` | `text` | not null na criação; telefone ou e-mail; torna-se null na limpeza pós-evento |
 | `total_cents` | `bigint` | not null; `> 0`; calculado no banco |
+| `receipt_saved` | `boolean` | not null; default `false`; controle administrativo de que o comprovante foi salvo no destino externo |
 | `expires_at` | `timestamptz` | not null; criação + prazo efetivo do evento |
 | `paid_at` | `timestamptz` | nullable; preenchido quando o admin confirma pagamento |
+| `canceled_at` | `timestamptz` | nullable; preenchido no cancelamento automático por falta de pagamento ou no cancelamento administrativo |
+| `delivered_at` | `timestamptz` | nullable; preenchido quando o admin confirma a entrega do prêmio ao ganhador |
 | `personal_data_deleted_at` | `timestamptz` | nullable; registra a limpeza dos dados pessoais após o evento |
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-O limite efetivo é resolvido no momento da reserva: override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` ou `default_max_product_units`. Reservas pendentes expiram via `pg_cron`; reservas pagas não expiram. Cancelamento ou expiração libera números da rifa. Os valores e rótulos selecionados ficam registrados como snapshots para preservar o histórico mesmo se o catálogo mudar.
+O limite efetivo é resolvido no momento da reserva: override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` ou `default_max_product_units`. Reservas pendentes que ultrapassam `expires_at` passam automaticamente para `cancelada` via `pg_cron`; reservas pagas não expiram. Cancelamento libera números da rifa. O estado `entregue` só pode suceder `paga` na reserva que contém o número ganhador, após o encerramento da rifa. Os valores e rótulos selecionados ficam registrados como snapshots para preservar o histórico mesmo se o catálogo mudar. `receipt_saved` não representa upload nem valida pagamento; apenas registra a conferência administrativa do destino externo.
 
 ### `reserva_produtos` e `reserva_produto_opcoes`
 
@@ -360,15 +399,15 @@ Cada linha de `reserva_produtos` representa uma unidade, permitindo que unidades
 | `raffle_id` | `uuid` | not null; FK → `rifas.event_id` |
 | `number` | `integer` | not null; entre `1` e `rifas.total_numbers` |
 | `price_cents` | `integer` | not null; snapshot de `number_price_cents` |
-| `released_at` | `timestamptz` | nullable; preenchido ao expirar ou cancelar |
+| `released_at` | `timestamptz` | nullable; preenchido ao cancelar |
 
 Índice unique parcial em (`raffle_id`, `number`) onde `released_at is null` impede duas reservas simultâneas do mesmo número e permite reutilizá-lo após liberação. A criação da reserva e a alocação dos números ocorrem em uma única transação; conflito devolve indisponibilidade sem reserva parcial.
 
 ### Exposição, RLS e funções
 
 - Todas as tabelas do domínio têm RLS habilitada; `anon` não lê nem escreve tabelas diretamente.
-- Views públicas expõem eventos `ativo|encerrado`, produtos, variações, opções e disponibilidade dos números, sem dados pessoais ou identificadores de sessão. Rascunhos e cancelados não aparecem.
+- Views públicas expõem eventos `ativo|encerrado`, produtos, variações, opções e disponibilidade dos números, sem dados pessoais ou identificadores de sessão. Rascunhos e arquivados não aparecem.
 - `anon` cria a sessão e a reserva apenas por funções `security definer` com `search_path` fixo. As funções validam status/tipo do evento, intervalo da sessão, limites, opções, disponibilidade, preços, descontos e prazo no servidor.
 - Alterações de preço ou configuração não afetam reservas existentes porque totais, preços unitários e seleções são snapshots.
-- Admin autenticado gerencia catálogo, confirma pagamento e cancela reserva; as policies dependem do modelo de Auth/MFA e serão definidas na migration.
-- `pg_cron` expira reservas pendentes vencidas, libera seus números e limpa sessões antigas. A limpeza pós-evento remove `customer_name` e `customer_contact`, preservando apenas dados não pessoais e totais históricos.
+- Admin autenticado gerencia catálogo, confirma pagamento, cancela reserva e marca a entrega ao ganhador; as policies dependem do modelo de Auth/MFA e serão definidas na migration.
+- `pg_cron` cancela reservas pendentes vencidas, libera seus números e limpa sessões antigas. A limpeza pós-evento remove `customer_name` e `customer_contact`, preservando apenas dados não pessoais e totais históricos.

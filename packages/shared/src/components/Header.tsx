@@ -15,7 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Adoção', kind: 'route', to: '/adocao' },
   { label: 'Doação', kind: 'anchor', href: '/#doacao' },
   { label: 'Histórias', kind: 'route', to: '/historias' },
-  { label: 'Recãopensa', kind: 'route', to: '/eventos' },
+  { label: 'Eventos', kind: 'route', to: '/eventos' },
   { label: 'Sobre nós', kind: 'anchor', href: '/#sobre-nos' },
   { label: 'Voluntários', kind: 'anchor', href: '/#voluntarios' },
 ]
