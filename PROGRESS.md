@@ -1,5 +1,8 @@
 # PROGRESS.md
 
+- Landing agora mostra no preview somente o evento ativo retornado por `eventos_public`, com foto, título e descrição reais; sem evento publicável, nenhum card é renderizado. Assets e Pix demonstrativos sem uso foram removidos.
+- Header público agora navega para Doação, Sobre nós e Voluntários pelo Router e respeita o `basename` do GitHub Pages; a Landing rola para a âncora após a troca de rota.
+- Validação integrada entre admin e site público iniciada; as novas correções observadas foram consolidadas nas pendências P1 do `ROADMAP.md`.
 - Configurações agora resume dinamicamente cada campo editável por card, sem agrupar valores distintos. Segurança exibe o e-mail da sessão administrativa e descreve corretamente o encerramento após sete dias sem atividade.
 - Fluxo real de convite corrigido: o Supabase hospedado preenche `invited_at` após criar o usuário, então a promoção passou a cobrir também essa atualização e retroagiu para o convite atual. Cadastro exige senha forte e depois TOTP/AAL2; três migrations alinhadas, 53 testes locais/remotos, build e lint aprovados; conclusão do smoke no navegador pendente.
 - Supabase hospedado de homologação vinculado e migrado sem seed: 17 migrations alinhadas e lint sem erros. Bucket, policies de Storage, `pg_cron` e Auth/TOTP foram verificados; `site-do-abrigo` permanece intocado até a auditoria de produção.

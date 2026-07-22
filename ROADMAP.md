@@ -20,15 +20,18 @@
 
 ### P1 — Landing, Header e conteúdo público
 
-- `todo` Fazer Doação, Sobre nós e Voluntários abrirem a âncora correta da Landing também quando acionados em outra rota.
-- `todo` Substituir o card fixo “Camiseta Copa 2026” e sua descrição placeholder pelo evento ativo real, com estado alternativo quando não houver evento.
-- `todo` Dar efeito real aos seletores de valor/recorrência da doação no destino configurado ou removê-los; hoje só alteram estado visual, mesmo sem CTA, e o link abre sempre a mesma URL.
+- `done` Fazer Doação, Sobre nós e Voluntários abrirem a âncora correta da Landing também quando acionados em outra rota.
+- `done` Remover o card mockado “Camiseta Copa 2026” e renderizar o preview de Eventos somente com dados reais; sem evento cadastrado/publicável, nenhum card de evento deve aparecer.
+- `todo` Implementar doação por modalidade e valor: doação única aceita valores predefinidos ou livre e gera o Pix correspondente; recorrente abre o link PagSeguro específico de cada valor, persistido na tela de Configurações. Não manter seletores apenas visuais nem um destino único para todas as opções.
+- `todo` Definir largura e altura mínimas para o card de História na Landing em desktops menores, preservando a leitura e mantendo “Conheça essa história” dentro do botão.
 - `todo` Revisar com o Abrigo textos, fotos, contato, localização e créditos finais; corrigir a descrição duplicada de vacinação em “Tratamento contra carrapatos” e o símbolo/ano fixo `® 2026` do Footer.
-- `todo` Remover recursos demonstrativos sem consumidor após integrar o preview: `evento_camiseta.jpg`, `evento_rifa.jpg` e `DEMO_PIX_CODE`.
+- `done` Remover recursos demonstrativos sem consumidor após integrar o preview: `evento_camiseta.jpg`, `evento_rifa.jpg` e `DEMO_PIX_CODE`.
 
 ### P1 — Adoção e Gestão de Cães
 
 - `todo` Usar fundo da marca e logo isolada nos cards/diálogos sem foto, em vez da pata genérica.
+- `todo` Centralizar a única imagem do card público de adoção; aplicar o alinhamento lateral de carrossel somente quando houver mais imagens.
+- `todo` Manter os filtros da página dedicada de Adoção recolhidos em uma pílula e expandi-los sob clique/toque, com estado e foco acessíveis.
 - `todo` Confirmar Adotado/Falecido e permitir que a opção ativa retorne o cão a Disponível.
 - `todo` Trocar a remoção nativa por `Dialog`, sugerindo Adotado/Falecido e oferecendo essas ações antes da exclusão definitiva.
 - `todo` Ampliar a galeria do formulário desktop para a largura interna do card, mantendo o recuo das demais seções.
@@ -37,7 +40,7 @@
 ### P1 — Histórias e gestões compartilhadas
 
 - `todo` Manter rascunhos de Histórias/Eventos no topo e ordenar os demais registros alfabeticamente; as queries atuais usam criação ou ordem não explícita.
-- `todo` Organizar as ações dos cards de Histórias em duas colunas alinhadas à esquerda.
+- `todo` Corrigir o componente/layout das ações dos cards de Histórias para manter duas colunas alinhadas à esquerda nos breakpoints previstos; a gestão ainda as apresenta em uma única coluna.
 - `todo` Ampliar as miniaturas da galeria de Histórias para facilitar toque/arraste e afastar a ação de remoção.
 - `todo` Padronizar os `window.confirm` restantes com o `Dialog` de Eventos: Cães, Histórias, publicação/verificação de Eventos, limpeza de links e remoção de MFA.
 - `todo` Exibir mensagens de validação por campo em Cães e Histórias; entradas inválidas por normalização hoje podem apenas impedir o envio sem explicar o motivo.

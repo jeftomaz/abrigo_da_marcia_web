@@ -1,7 +1,17 @@
-import { Action, CompactCard, FeatureSection } from '@abrigo/shared'
+import {
+  Action,
+  CompactCard,
+  FeatureSection,
+  getEventPhotoUrl,
+  usePublicEvents,
+} from '@abrigo/shared'
 import eventosPhoto from '../assets/landing_eventos.jpg'
 
 export function RecaopensaPreview() {
+  const { data: events = [] } = usePublicEvents()
+  const activeEvent = events.find((event) => event.status === 'active')
+  const activeEventPhoto = activeEvent?.gallery[0]
+
   return (
     <FeatureSection
       tone="contrast"
@@ -24,18 +34,22 @@ export function RecaopensaPreview() {
         personalizados.
       </p>
 
-      <CompactCard
-        className="mt-12"
-        orientation="horizontal"
-        image={{ src: eventosPhoto, alt: 'Camiseta Copa 2026' }}
-        title="Camiseta Copa 2026"
-        description="Aqui vem o início de um texto descrevendo um cão ou um produto, depende do contexto. Pode ser possível encaixar mais, devido ao formato horizontal."
-        action={
-          <Action to="/eventos" size="compact">
-            Reserve a sua
-          </Action>
-        }
-      />
+      {activeEvent && (
+        <CompactCard
+          className="mt-12"
+          orientation="horizontal"
+          image={activeEventPhoto
+            ? { src: getEventPhotoUrl(activeEventPhoto), alt: activeEvent.title }
+            : undefined}
+          title={activeEvent.title}
+          description={activeEvent.description}
+          action={
+            <Action to="/eventos" size="compact">
+              Quero participar
+            </Action>
+          }
+        />
+      )}
 
       <div className="mt-20 flex justify-center">
         <Action to="/eventos" icon="calendar">

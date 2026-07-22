@@ -8,16 +8,16 @@ import { useTheme } from '../theme/ThemeProvider'
 const SCROLL_DIRECTION_THRESHOLD = 8
 
 type NavItem =
-  | { label: string; kind: 'anchor'; href: string }
+  | { label: string; kind: 'anchor'; hash: string }
   | { label: string; kind: 'route'; to: string }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Adoção', kind: 'route', to: '/adocao' },
-  { label: 'Doação', kind: 'anchor', href: '/#doacao' },
+  { label: 'Doação', kind: 'anchor', hash: '#doacao' },
   { label: 'Histórias', kind: 'route', to: '/historias' },
   { label: 'Eventos', kind: 'route', to: '/eventos' },
-  { label: 'Sobre nós', kind: 'anchor', href: '/#sobre-nos' },
-  { label: 'Voluntários', kind: 'anchor', href: '/#voluntarios' },
+  { label: 'Sobre nós', kind: 'anchor', hash: '#sobre-nos' },
+  { label: 'Voluntários', kind: 'anchor', hash: '#voluntarios' },
 ]
 
 export function Header() {
@@ -88,7 +88,12 @@ export function Header() {
                 {item.label}
               </Action>
             ) : (
-              <Action key={item.label} href={item.href} variant={variant} className="shrink-0 text-sm">
+              <Action
+                key={item.label}
+                to={{ pathname: '/', hash: item.hash }}
+                variant={variant}
+                className="shrink-0 text-sm"
+              >
                 {item.label}
               </Action>
             )

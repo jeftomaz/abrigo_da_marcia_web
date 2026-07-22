@@ -8,9 +8,20 @@ import { Eventos } from './pages/Eventos'
 import { Footer } from './components/Footer'
 
 function ScrollToTop() {
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
 
-  useEffect(() => window.scrollTo(0, 0), [pathname])
+  useEffect(() => {
+    if (!hash) {
+      window.scrollTo(0, 0)
+      return
+    }
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView()
+    })
+
+    return () => window.cancelAnimationFrame(animationFrame)
+  }, [pathname, hash])
 
   return null
 }
