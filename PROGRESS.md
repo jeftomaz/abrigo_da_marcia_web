@@ -90,3 +90,4 @@
 - Confirmações nativas foram eliminadas: publicação/verificação de Eventos, limpeza de links e remoção de MFA usam `Dialog` compartilhado. “Tratamento contra carrapatos” ganhou descrição própria e o Footer usa copyright/ano corrente; conteúdo final ainda depende de aprovação do Abrigo.
 - Conteúdo público atual foi aprovado pelo Abrigo. Exportação anterior à exclusão de evento arquivado foi automatizada em Edge Function autenticada com Resend; cadastro dos secrets e deploy hospedado permanecem pendentes.
 - Domínio próprio e `RESEND_FROM_EMAIL` de produção foram adiados para a publicação final; durante o desenvolvimento, o Resend poderá usar `onboarding@resend.dev` somente para o e-mail da conta.
+- P2 visual iniciado: ações do Header ganharam altura/tipografia maiores; logo e redes do Footer foram ampliados com hover/foco; “Conheça o abrigo” recebeu respiro vertical mobile.

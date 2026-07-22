@@ -8,7 +8,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-5xl grid-cols-2 px-6 py-8 lg:min-h-52 lg:gap-8 lg:px-16 lg:pt-8 lg:pb-4">
         <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:justify-between">
           <div className="col-start-1 row-start-1">
-            <Logo className="h-6 w-auto lg:h-12" />
+            <Logo className="h-10 w-auto lg:h-14" />
           </div>
 
           <address className="col-span-2 row-start-2 mt-8 flex flex-col gap-1.5 text-footer-copy not-italic lg:mt-6 lg:gap-2">
@@ -33,13 +33,13 @@ export function Footer() {
             {(socialLinks?.facebook || socialLinks?.instagram) && (
               <div className="mt-3 flex justify-end gap-3 lg:mt-4 lg:gap-4">
                 {socialLinks.facebook && (
-                  <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                    <Icon name="facebook-tag" className="h-6 w-6 lg:h-12 lg:w-12" />
+                  <a href={socialLinks.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                    <Icon name="facebook-tag" className="h-9 w-9 lg:h-14 lg:w-14" />
                   </a>
                 )}
                 {socialLinks.instagram && (
-                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-                    <Icon name="instagram" className="h-6 w-6 lg:h-12 lg:w-12" />
+                  <a href={socialLinks.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+                    <Icon name="instagram" className="h-9 w-9 lg:h-14 lg:w-14" />
                   </a>
                 )}
               </div>

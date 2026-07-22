@@ -57,8 +57,8 @@
 
 ### P2 — Design system e acabamento visual
 
-- `todo` Aumentar altura/tipografia das ações do Header e ampliar logo/ícones sociais do Footer.
-- `todo` Aumentar o respiro vertical das seções da Landing no mobile, especialmente “Conheça o abrigo”.
+- `done` Aumentar altura/tipografia das ações do Header e ampliar logo/ícones sociais do Footer.
+- `done` Aumentar o respiro vertical das seções da Landing no mobile, especialmente “Conheça o abrigo”.
 - `todo` Fazer a passada final claro/escuro e mobile/desktop em Landing, Adoção, Histórias, Eventos, Admin, autenticação e Configurações.
 - `todo` Padronizar estados hover, foco, ativo, desabilitado, carregando, vazio, erro e sucesso de todos os controles interativos.
 

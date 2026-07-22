@@ -42,7 +42,7 @@ const LAYOUT_CLASSES: Record<
   },
   compact: {
     container:
-      'gap-0 px-10 py-4 lg:gap-x-12 lg:px-6 lg:py-12',
+      'gap-0 px-10 py-12 lg:gap-x-12 lg:px-6 lg:py-12',
     desktopImage: 'hidden w-11/12 justify-self-end lg:block',
     mobileImage: 'mx-auto mt-6 mb-4 w-full max-w-md lg:hidden',
   },
