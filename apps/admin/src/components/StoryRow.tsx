@@ -1,4 +1,4 @@
-import { Action, Icon, getStoryPhotoUrl } from '@abrigo/shared'
+import { Action, ImagePlaceholder, getStoryPhotoUrl } from '@abrigo/shared'
 import type { Story } from '@abrigo/shared'
 import { AdminListRow } from './AdminListRow'
 import { StatusBadge } from './StatusBadge'
@@ -18,14 +18,15 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
       className="flex min-w-0 items-center gap-3 rounded-2xl p-3"
     >
       <div className="relative shrink-0">
-        <div className="flex size-14 items-center justify-center overflow-hidden rounded-xl bg-cinza-claro dark:bg-cinza-medio sm:size-16">
-          <Icon name="pata" className="size-7 text-cinza-medio dark:text-cinza-claro sm:size-8" />
-          {story.photos[0] && (
+        <div className="size-14 overflow-hidden rounded-xl sm:size-16">
+          {story.photos[0] ? (
             <img
               src={getStoryPhotoUrl(story.photos[0])}
               alt=""
               className="absolute inset-0 h-full w-full rounded-xl object-cover"
             />
+          ) : (
+            <ImagePlaceholder label={`Sem foto de ${story.name}`} className="h-full w-full" />
           )}
         </div>
         {!story.published && (

@@ -1,4 +1,4 @@
-import { Action, Icon, STATUS_LABELS, getDogPhotoUrl } from '@abrigo/shared'
+import { Action, ImagePlaceholder, STATUS_LABELS, getDogPhotoUrl } from '@abrigo/shared'
 import type { Dog, DogStatus } from '@abrigo/shared'
 import { AdminListRow } from './AdminListRow'
 import { OptionToggle } from './OptionToggle'
@@ -28,14 +28,15 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetStatus }: DogRow
       className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] items-start gap-3 rounded-2xl p-3 min-[28rem]:grid-cols-[4rem_minmax(0,1fr)_13.5rem] min-[28rem]:items-center"
     >
       <div className="flex w-12 shrink-0 flex-col items-start gap-2 min-[28rem]:w-16 min-[28rem]:relative min-[28rem]:block">
-        <div className="relative flex size-12 items-center justify-center overflow-hidden rounded-xl bg-cinza-claro dark:bg-cinza-medio min-[28rem]:size-16">
-          <Icon name="pata" className="size-7 text-cinza-medio dark:text-cinza-claro sm:size-8" />
-          {dog.photos[0] && (
+        <div className="relative size-12 overflow-hidden rounded-xl min-[28rem]:size-16">
+          {dog.photos[0] ? (
             <img
               src={getDogPhotoUrl(dog.photos[0])}
               alt=""
               className="absolute inset-0 h-full w-full rounded-xl object-cover"
             />
+          ) : (
+            <ImagePlaceholder label={`Sem foto de ${dog.name}`} className="h-full w-full" />
           )}
         </div>
         <StatusBadge tone={STATUS_TONE[dog.status]} size="sm" className="min-[28rem]:absolute min-[28rem]:-bottom-2 min-[28rem]:left-0">
@@ -51,15 +52,17 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetStatus }: DogRow
           size="compact"
           first={{
             label: 'Adotado',
+            accessibleLabel: dog.status === 'adotado' ? `Retornar ${dog.name} para Disponível` : `Marcar ${dog.name} como Adotado`,
             icon: 'home-simple-door',
-            onClick: () => onSetStatus('adotado'),
+            onClick: () => onSetStatus(dog.status === 'adotado' ? 'disponivel' : 'adotado'),
             active: dog.status === 'adotado',
             disabled: dog.status === 'falecido',
           }}
           second={{
             label: 'Falecido',
+            accessibleLabel: dog.status === 'falecido' ? `Retornar ${dog.name} para Disponível` : `Marcar ${dog.name} como Falecido`,
             icon: 'eye-closed',
-            onClick: () => onSetStatus('falecido'),
+            onClick: () => onSetStatus(dog.status === 'falecido' ? 'disponivel' : 'falecido'),
             active: dog.status === 'falecido',
             disabled: dog.status === 'adotado',
           }}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Action, Icon, formatReservationContact } from '@abrigo/shared'
+import { Action, Icon, ImagePlaceholder, formatReservationContact } from '@abrigo/shared'
 import type { EventReservation, FundraisingEvent, ReservationStatus } from '../events/events'
 import { getEventPhotoUrl } from '../events/events'
 import { StatusBadge } from './StatusBadge'
@@ -106,7 +106,7 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
         <>
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
-              {event.gallery[0] ? <img src={getEventPhotoUrl(event.gallery[0])} alt="" className="size-20 shrink-0 rounded-2xl object-cover" /> : <span className="flex size-20 items-center justify-center rounded-2xl bg-cinza-claro"><Icon name="pata" className="size-8" /></span>}
+              {event.gallery[0] ? <img src={getEventPhotoUrl(event.gallery[0])} alt="" className="size-20 shrink-0 rounded-2xl object-cover" /> : <ImagePlaceholder label={`Sem foto de ${event.title}`} className="size-20 shrink-0 rounded-2xl" />}
               <div className="min-w-0"><h2 className="truncate text-3xl font-medium">{event.title}</h2><StatusBadge tone={eventStatus.tone} size="sm" className="mt-2 px-5">{eventStatus.label}</StatusBadge></div>
             </div>
             <Action onClick={exportCsv} icon="upload" size="small" variant="neutral-adaptive" className="px-4 py-2 text-xs">Exportar CSV</Action>

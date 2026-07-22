@@ -14,6 +14,8 @@ import { DogRow } from '../components/DogRow'
 import { StatCards } from '../components/StatCards'
 import { useIsDesktop } from '../hooks/useIsDesktop'
 
+type StatusConfirmation = { dog: Dog; status: DogStatus }
+
 export function Caes() {
   const { data: dogs = [], isLoading, error } = useAdminDogs()
   const saveDog = useSaveDog()
@@ -22,6 +24,7 @@ export function Caes() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<DogStatus | ''>('')
   const [editingTarget, setEditingTarget] = useState<Dog | null | undefined>(undefined)
+  const [statusConfirmation, setStatusConfirmation] = useState<StatusConfirmation | null>(null)
   const [operationError, setOperationError] = useState('')
   const isDesktop = useIsDesktop()
   const isEditing = editingTarget !== undefined
@@ -61,13 +64,23 @@ export function Caes() {
     }
   }
 
-  const handleSetStatus = async (dog: Dog, status: DogStatus) => {
+  const confirmStatusChange = async () => {
+    if (!statusConfirmation) return
     setOperationError('')
     try {
-      await updateDogStatus.mutateAsync({ id: dog.id, status })
+      await updateDogStatus.mutateAsync({
+        id: statusConfirmation.dog.id,
+        status: statusConfirmation.status,
+      })
+      setStatusConfirmation(null)
     } catch {
       setOperationError('Não foi possível atualizar o status do cão.')
     }
+  }
+
+  const openStatusConfirmation = (dog: Dog, status: DogStatus) => {
+    setOperationError('')
+    setStatusConfirmation({ dog, status })
   }
 
   const formTitle = editingTarget ? 'Editar Cão' : 'Novo Cão'
@@ -148,7 +161,7 @@ export function Caes() {
                 isEditing={editingTarget?.id === dog.id}
                 onEdit={() => setEditingTarget(dog)}
                 onRemove={() => handleRemove(dog)}
-                onSetStatus={(status) => handleSetStatus(dog, status)}
+                onSetStatus={(status) => openStatusConfirmation(dog, status)}
               />
             ))}
             {!isLoading && !error && filteredDogs.length === 0 && (
@@ -185,6 +198,47 @@ export function Caes() {
             onCancel={() => setEditingTarget(undefined)}
             onSave={handleSave}
           />
+        </Dialog>
+      )}
+
+      {statusConfirmation && (
+        <Dialog
+          ariaLabel={statusConfirmation.status === 'disponivel' ? 'Retornar cão para Disponível' : `Marcar cão como ${statusConfirmation.status === 'adotado' ? 'Adotado' : 'Falecido'}`}
+          onClose={() => setStatusConfirmation(null)}
+          className="w-full max-w-[34rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised"
+        >
+          <h2 className="text-3xl font-medium text-marca">
+            {statusConfirmation.status === 'disponivel'
+              ? 'Retornar para Disponível'
+              : `Marcar como ${statusConfirmation.status === 'adotado' ? 'Adotado' : 'Falecido'}`}
+          </h2>
+          <h3 className="mt-5 text-2xl font-medium">{statusConfirmation.dog.name}</h3>
+          <p className="mt-3">
+            {statusConfirmation.status === 'disponivel'
+              ? 'O cão voltará a aparecer no catálogo público de adoção.'
+              : 'O cão deixará de aparecer no catálogo público de adoção.'}
+          </p>
+          {operationError && <p role="alert" className="mt-4 text-sm font-medium text-marca">{operationError}</p>}
+          <div className="mt-8 flex gap-4">
+            <Action
+              onClick={() => setStatusConfirmation(null)}
+              disabled={updateDogStatus.isPending}
+              size="small"
+              variant="secondary-adaptive"
+              className="w-28 shrink-0"
+            >
+              Cancelar
+            </Action>
+            <Action
+              onClick={() => void confirmStatusChange()}
+              disabled={updateDogStatus.isPending}
+              size="small"
+              variant="primary-adaptive"
+              className="min-w-0 flex-1"
+            >
+              {updateDogStatus.isPending ? 'Salvando...' : 'Confirmar alteração'}
+            </Action>
+          </div>
         </Dialog>
       )}
     </main>

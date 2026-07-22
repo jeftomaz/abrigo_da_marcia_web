@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Action,
   CompactCard,
@@ -44,6 +44,7 @@ export function Adocao() {
   const [gender, setGender] = useState('')
   const [size, setSize] = useState('')
   const [order, setOrder] = useState('')
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
   const selectedDog = availableDogs.find((dog) => dog.id === selectedDogId) ?? null
 
@@ -74,6 +75,14 @@ export function Adocao() {
     order ? `Ordem: ${ORDER_LABELS[order]}` : null,
   ].filter((filter): filter is string => filter !== null)
 
+  useEffect(() => {
+    if (!filtersExpanded) return
+    const animationFrame = window.requestAnimationFrame(() => {
+      document.getElementById('gender')?.focus()
+    })
+    return () => window.cancelAnimationFrame(animationFrame)
+  }, [filtersExpanded])
+
   return (
     <main className="min-h-screen bg-cinza-claro px-10 pt-10 pb-20 text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro lg:px-6 lg:pt-4">
       <div className="mx-auto max-w-2xl">
@@ -86,41 +95,56 @@ export function Adocao() {
           </p>
         </header>
 
-        <section
-          aria-label="Filtros dos cães"
-          className="mt-6 rounded-3xl bg-surface-raised p-6 text-on-surface-raised lg:mt-5 lg:p-4"
-        >
-          <div className="grid gap-4 lg:grid-cols-3 lg:gap-10">
-            <SelectField id="gender" label="Gênero" value={gender} onChange={setGender} variant="filter">
-              <option value="">Selecionar</option>
-              <option value="macho">Macho</option>
-              <option value="femea">Fêmea</option>
-            </SelectField>
-            <SelectField id="size" label="Porte" value={size} onChange={setSize} variant="filter">
-              <option value="">Selecionar</option>
-              <option value="pequeno">Pequeno</option>
-              <option value="medio">Médio</option>
-              <option value="grande">Grande</option>
-            </SelectField>
-            <SelectField id="order" label="Ordenar" value={order} onChange={setOrder} variant="filter">
-              <option value="">Selecionar</option>
-              <option value="age-asc">Mais novos</option>
-              <option value="age-desc">Mais velhos</option>
-              <option value="name">Nome</option>
-            </SelectField>
-          </div>
-          <div className="mt-5 flex justify-center lg:justify-end">
-            <Action
-              onClick={clearFilters}
-              variant="secondary-adaptive"
-              size="small"
-              icon="refresh-circle"
-              disabled={activeFilters.length === 0}
-            >
-              Limpar filtros
-            </Action>
-          </div>
-        </section>
+        <div className="mt-6 flex justify-center lg:mt-5">
+          <Action
+            onClick={() => setFiltersExpanded((expanded) => !expanded)}
+            variant="neutral-adaptive"
+            size="small"
+            aria-expanded={filtersExpanded}
+            aria-controls="dog-filters"
+          >
+            Filtros{activeFilters.length ? ` (${activeFilters.length})` : ''}
+          </Action>
+        </div>
+
+        {filtersExpanded && (
+          <section
+            id="dog-filters"
+            aria-label="Filtros dos cães"
+            className="mt-3 rounded-3xl bg-surface-raised p-6 text-on-surface-raised lg:p-4"
+          >
+            <div className="grid gap-4 lg:grid-cols-3 lg:gap-10">
+              <SelectField id="gender" label="Gênero" value={gender} onChange={setGender} variant="filter">
+                <option value="">Selecionar</option>
+                <option value="macho">Macho</option>
+                <option value="femea">Fêmea</option>
+              </SelectField>
+              <SelectField id="size" label="Porte" value={size} onChange={setSize} variant="filter">
+                <option value="">Selecionar</option>
+                <option value="pequeno">Pequeno</option>
+                <option value="medio">Médio</option>
+                <option value="grande">Grande</option>
+              </SelectField>
+              <SelectField id="order" label="Ordenar" value={order} onChange={setOrder} variant="filter">
+                <option value="">Selecionar</option>
+                <option value="age-asc">Mais novos</option>
+                <option value="age-desc">Mais velhos</option>
+                <option value="name">Nome</option>
+              </SelectField>
+            </div>
+            <div className="mt-5 flex justify-center lg:justify-end">
+              <Action
+                onClick={clearFilters}
+                variant="secondary-adaptive"
+                size="small"
+                icon="refresh-circle"
+                disabled={activeFilters.length === 0}
+              >
+                Limpar filtros
+              </Action>
+            </div>
+          </section>
+        )}
 
         <div
           className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm"

@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react'
-import { Dialog, getEventPhotoUrl, parseCurrencyToCents, useRaffleNumbers, useReserveRaffle } from '@abrigo/shared'
+import { Dialog, ImagePlaceholder, getEventPhotoUrl, parseCurrencyToCents, useRaffleNumbers, useReserveRaffle } from '@abrigo/shared'
 import type { FundraisingEvent, ReservationResult } from '@abrigo/shared'
 import { ReservationCheckoutDialog, ReservationConfirmationDialog } from './ReservationDialogs'
 import { ReservationBar } from './ReservationBar'
@@ -111,7 +111,9 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-16 sm:px-8 lg:px-10">
           <div className="grid grid-cols-[minmax(7rem,32%)_1fr] gap-5 lg:grid-cols-[30%_1fr] lg:gap-12">
             <div>
-              {event.gallery[0] && <img src={getEventPhotoUrl(event.gallery[0])} alt={event.title} className="aspect-square w-full object-cover" />}
+              {event.gallery[0]
+                ? <img src={getEventPhotoUrl(event.gallery[0])} alt={event.title} className="aspect-square w-full object-cover" />
+                : <ImagePlaceholder label={`Sem foto de ${event.title}`} className="aspect-square w-full" />}
               <div className="mt-4 flex flex-col gap-2 text-center text-xs sm:text-sm">
                 {event.prizes.map((prize, index) => (
                   <div key={prize.id} className="rounded-md bg-marca px-2 py-2 text-marca-clara">

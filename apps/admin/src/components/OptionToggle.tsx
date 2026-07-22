@@ -5,6 +5,7 @@ import { Icon } from '@abrigo/shared'
 // segunda em neutro escuro; divisória sutil e cantos arredondados só por fora.
 type ToggleOption = {
   label: string
+  accessibleLabel?: string
   icon?: string
   onClick: () => void
   active?: boolean
@@ -39,6 +40,7 @@ function Half({
     <button
       type="button"
       onClick={option.onClick}
+      aria-label={option.accessibleLabel}
       aria-pressed={option.active}
       disabled={option.disabled}
       className={`${HALF_BASE} ${HALF_SIZE[size]} ${option.active ? 'z-10 font-semibold shadow-status-active' : ''} ${extra}`}

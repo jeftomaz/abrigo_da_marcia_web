@@ -1,5 +1,9 @@
 # PROGRESS.md
 
+- Gestão de Cães confirma toda mudança de status em `Dialog`; tocar novamente em Adotado/Falecido retorna o cão a Disponível, com rótulo acessível e efeito no catálogo explicitado.
+- Imagens ausentes foram padronizadas com fundo coral e logo isolada no site público e nas gestões de Cães, Histórias e Eventos; ações de adicionar foto preservam seu ícone funcional.
+- Página de Adoção mantém os filtros recolhidos em uma pílula com contador ativo; expansão expõe estado aos leitores de tela e move o foco ao primeiro campo, sem ocultar o resumo aplicado.
+- Card expandido de Adoção agora ocupa toda a galeria com uma única foto; largura lateral, snap e arraste de carrossel permanecem exclusivos para múltiplas imagens.
 - Landing agora mostra no preview somente o evento ativo retornado por `eventos_public`, com foto, título e descrição reais; sem evento publicável, nenhum card é renderizado. Assets e Pix demonstrativos sem uso foram removidos.
 - Header público agora navega para Doação, Sobre nós e Voluntários pelo Router e respeita o `basename` do GitHub Pages; a Landing rola para a âncora após a troca de rota.
 - Validação integrada entre admin e site público iniciada; as novas correções observadas foram consolidadas nas pendências P1 do `ROADMAP.md`.

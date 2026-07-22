@@ -4,6 +4,7 @@ import {
   Action,
   Dialog,
   Icon,
+  ImagePlaceholder,
   Switch,
   compressImage,
   getEventErrorMessage,
@@ -890,8 +891,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
         <div className="mt-3 flex flex-wrap gap-4">
           {draft.prizes.map((prize, prizeIndex) => (
             <div key={prize.id} className={isPanel ? 'w-20' : 'w-32'}>
-              <div className="relative aspect-square overflow-hidden rounded-2xl bg-cinza-claro dark:bg-cinza-medio">
-                <Icon name="pata" className="absolute top-1/2 left-1/2 size-9 -translate-1/2 text-cinza-medio dark:text-cinza-claro" />
+              <div className="relative aspect-square overflow-hidden rounded-2xl">
+                <ImagePlaceholder label={`Sem foto de ${prize.name || 'prêmio'}`} className="h-full w-full" />
                 <img src={prize.image.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
               </div>
               <p className="mt-1 truncate text-sm">{prize.name}</p>
@@ -1075,9 +1076,10 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       </h2>
       <h3 className="mt-2 text-2xl font-medium">Seção</h3>
       <div className="mt-3 flex items-center gap-3">
-        <div className="relative size-40 overflow-hidden rounded-3xl bg-cinza-claro dark:bg-cinza-medio">
-          <Icon name="pata" className="absolute top-1/2 left-1/2 size-10 -translate-1/2 text-cinza-medio dark:text-cinza-claro" />
-          {prizePhoto && <img src={prizePhoto.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+        <div className="relative size-40 overflow-hidden rounded-3xl">
+          {prizePhoto
+            ? <img src={prizePhoto.previewUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            : <ImagePlaceholder label="Prêmio sem foto" className="h-full w-full" />}
         </div>
         <div className="flex flex-col gap-3">
           <Action

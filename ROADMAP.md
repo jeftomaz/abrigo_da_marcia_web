@@ -29,10 +29,10 @@
 
 ### P1 — Adoção e Gestão de Cães
 
-- `todo` Usar fundo da marca e logo isolada nos cards/diálogos sem foto, em vez da pata genérica.
-- `todo` Centralizar a única imagem do card público de adoção; aplicar o alinhamento lateral de carrossel somente quando houver mais imagens.
-- `todo` Manter os filtros da página dedicada de Adoção recolhidos em uma pílula e expandi-los sob clique/toque, com estado e foco acessíveis.
-- `todo` Confirmar Adotado/Falecido e permitir que a opção ativa retorne o cão a Disponível.
+- `done` Padronizar imagens ausentes com fundo da marca e logo isolada em cards, diálogos, gestões e formulários.
+- `done` Centralizar a única imagem do card público de adoção; aplicar o alinhamento lateral de carrossel somente quando houver mais imagens.
+- `done` Manter os filtros da página dedicada de Adoção recolhidos em uma pílula e expandi-los sob clique/toque, com estado e foco acessíveis.
+- `done` Confirmar Adotado/Falecido e permitir que a opção ativa retorne o cão a Disponível.
 - `todo` Trocar a remoção nativa por `Dialog`, sugerindo Adotado/Falecido e oferecendo essas ações antes da exclusão definitiva.
 - `todo` Ampliar a galeria do formulário desktop para a largura interna do card, mantendo o recuo das demais seções.
 - `todo` Implementar explicação acessível para o ícone de informação de “Destacar no catálogo” ou remover o ícone sem função.

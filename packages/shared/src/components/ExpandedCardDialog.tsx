@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Action } from './Action'
 import { Dialog } from './Dialog'
 import { ImageLightbox } from './ImageLightbox'
-import { Icon } from './Icon'
+import { ImagePlaceholder } from './ImagePlaceholder'
 
 type ExpandedCardDialogAction = {
   label: string
@@ -123,6 +123,9 @@ export function ExpandedCardDialog({
   }
 
   const isCarousel = images.length > 1
+  const imageClasses = variant === 'adoption' && !isCarousel
+    ? 'h-full w-full flex-shrink-0 object-cover'
+    : IMAGE_CLASSES[variant]
 
   return (
     <Dialog
@@ -147,7 +150,7 @@ export function ExpandedCardDialog({
                 key={`${src}-${index}`}
                 type="button"
                 aria-label={`Ampliar ${title} - foto ${index + 1}`}
-                className={`${IMAGE_CLASSES[variant]} cursor-zoom-in`}
+                className={`${imageClasses} cursor-zoom-in`}
                 onClick={() => {
                   if (didDrag.current) {
                     didDrag.current = false
@@ -169,18 +172,15 @@ export function ExpandedCardDialog({
                 src={src}
                 alt={`${title} - foto ${index + 1}`}
                 draggable={false}
-                className={IMAGE_CLASSES[variant]}
+                className={imageClasses}
               />
             )
           ))
         ) : (
-          <div
-            role="img"
-            aria-label={`Sem foto de ${title}`}
-            className="flex h-full w-full flex-shrink-0 items-center justify-center bg-cinza-claro text-cinza-medio dark:bg-cinza-medio dark:text-cinza-claro"
-          >
-            <Icon name="pata" className="size-20" />
-          </div>
+          <ImagePlaceholder
+            label={`Sem foto de ${title}`}
+            className="h-full w-full flex-shrink-0"
+          />
         )}
       </div>
 

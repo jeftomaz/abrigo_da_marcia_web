@@ -1,4 +1,4 @@
-import { Action, Icon } from '@abrigo/shared'
+import { Action, ImagePlaceholder } from '@abrigo/shared'
 import { getEventPhotoUrl } from '../events/events'
 import type { EventStatus, FundraisingEvent } from '../events/events'
 import { AdminListRow } from './AdminListRow'
@@ -45,10 +45,11 @@ export function EventRow({
       className="grid min-w-0 grid-cols-[5rem_minmax(0,1fr)] items-start gap-4 rounded-3xl p-4 min-[28rem]:grid-cols-[5rem_minmax(0,1fr)_12rem] min-[28rem]:items-center min-[28rem]:gap-3 sm:grid-cols-[6rem_minmax(0,1fr)_17rem] sm:gap-4 sm:p-6 desk:grid-cols-[5rem_minmax(0,1fr)_12.5rem] desk:gap-3 desk:rounded-2xl desk:p-4"
     >
       <div className="flex w-20 shrink-0 flex-col gap-2 sm:w-24 desk:w-20">
-        <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-xl bg-cinza-claro sm:size-24 desk:size-20 dark:bg-cinza-medio">
-          <Icon name="pata" className="size-8 text-cinza-medio dark:text-cinza-claro" />
-          {event.gallery[0] && (
+        <div className="relative size-20 overflow-hidden rounded-xl sm:size-24 desk:size-20">
+          {event.gallery[0] ? (
             <img src={getEventPhotoUrl(event.gallery[0])} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            <ImagePlaceholder label={`Sem foto de ${event.title || 'evento'}`} className="h-full w-full" />
           )}
         </div>
         <StatusBadge tone={status.tone} className="w-full justify-center">

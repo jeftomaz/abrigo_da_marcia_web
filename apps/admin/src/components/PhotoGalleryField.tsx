@@ -4,6 +4,7 @@ import {
   ACCEPTED_UPLOAD_IMAGE_TYPES,
   Icon,
   ImageLightbox,
+  ImagePlaceholder,
   compressImages,
 } from '@abrigo/shared'
 import type { EditablePhoto } from '@abrigo/shared'
@@ -198,9 +199,7 @@ export function PhotoGalleryField({
             }}
             className="relative aspect-square overflow-hidden rounded-xl bg-cinza-claro dark:bg-cinza-medio"
           >
-            <div className="flex h-full w-full items-center justify-center">
-              <Icon name="pata" className="size-8 text-cinza-medio dark:text-cinza-claro" />
-            </div>
+            <ImagePlaceholder label={`Sem foto de ${subjectLabel}`} className="h-full w-full" />
             <button
               type="button"
               draggable

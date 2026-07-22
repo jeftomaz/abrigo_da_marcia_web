@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Icon } from './Icon'
+import { ImagePlaceholder } from './ImagePlaceholder'
 
 type CompactCardOrientation = 'horizontal' | 'responsive' | 'vertical'
 type CompactCardImageAspect = 'landscape' | 'square'
@@ -62,13 +62,10 @@ export function CompactCard({
           className={`${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
         />
       ) : (
-        <div
-          role="img"
-          aria-label={`Sem foto de ${title}`}
-          className={`flex items-center justify-center bg-cinza-claro text-cinza-medio dark:bg-cinza-medio dark:text-cinza-claro ${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
-        >
-          <Icon name="pata" className="size-12" />
-        </div>
+        <ImagePlaceholder
+          label={`Sem foto de ${title}`}
+          className={`${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
+        />
       )}
 
       <div className="flex flex-1 flex-col gap-2 p-3">
