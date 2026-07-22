@@ -166,7 +166,7 @@ export function PhotoGalleryField({
             ? 'grid-cols-3'
             : isCompact
               ? 'grid-cols-[repeat(4,3.25rem)]'
-              : 'grid-cols-[repeat(4,4rem)]'
+              : 'grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]'
         }`}
       >
         {photos.length < MAX_PHOTOS && (
@@ -237,9 +237,9 @@ export function PhotoGalleryField({
               type="button"
               onClick={() => removePhoto(photo)}
               aria-label={`Remover foto ${index + 1}`}
-              className="absolute top-1 right-1 rounded-full bg-cinza-escuro/70 p-1 text-cinza-claro"
+              className="absolute top-1.5 right-1.5 rounded-full bg-cinza-escuro/80 p-1.5 text-cinza-claro"
             >
-              <Icon name="xmark-circle-solid" className="size-4" />
+              <Icon name="xmark-circle-solid" className="size-5" />
             </button>
           </div>
         ))}

@@ -38,7 +38,7 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
 
       <p className="min-w-0 flex-1 text-base leading-tight font-medium sm:text-lg">{story.name}</p>
 
-      <div className="flex min-w-0 max-w-[13rem] shrink flex-wrap justify-end gap-2">
+      <div className="grid w-[13.5rem] min-w-0 shrink grid-cols-2 justify-items-start gap-2">
         <Action
           onClick={onTogglePublished}
           size="small"

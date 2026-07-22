@@ -39,11 +39,11 @@
 
 ### P1 — Histórias e gestões compartilhadas
 
-- `todo` Manter rascunhos de Histórias/Eventos no topo e ordenar os demais registros alfabeticamente; as queries atuais usam criação ou ordem não explícita.
-- `todo` Corrigir o componente/layout das ações dos cards de Histórias para manter duas colunas alinhadas à esquerda nos breakpoints previstos; a gestão ainda as apresenta em uma única coluna.
-- `todo` Ampliar as miniaturas da galeria de Histórias para facilitar toque/arraste e afastar a ação de remoção.
+- `done` Manter rascunhos de Histórias/Eventos no topo e ordenar os demais registros alfabeticamente.
+- `done` Corrigir o componente/layout das ações dos cards de Histórias para manter duas colunas alinhadas à esquerda nos breakpoints previstos.
+- `done` Ampliar as miniaturas da galeria de Histórias para facilitar toque/arraste e afastar a ação de remoção.
 - `todo` Padronizar os `window.confirm` restantes com o `Dialog` de Eventos: Cães, Histórias, publicação/verificação de Eventos, limpeza de links e remoção de MFA.
-- `todo` Exibir mensagens de validação por campo em Cães e Histórias; entradas inválidas por normalização hoje podem apenas impedir o envio sem explicar o motivo.
+- `done` Exibir mensagens de validação por campo em Cães e Histórias; entradas inválidas por normalização agora explicam o motivo.
 
 ### P1 — Eventos e reservas
 

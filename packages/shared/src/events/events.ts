@@ -457,7 +457,12 @@ function composeEventRelationRows(rows: EventRelationRows, preferDraftPayload = 
 }
 
 async function loadEventRelations(publicOnly: boolean) {
-  return composeEventRelationRows(await loadEventRelationRows(publicOnly))
+  const events = composeEventRelationRows(await loadEventRelationRows(publicOnly))
+  return publicOnly ? events : events.sort((a, b) => {
+    if (a.status === 'draft' && b.status !== 'draft') return -1
+    if (a.status !== 'draft' && b.status === 'draft') return 1
+    return a.title.localeCompare(b.title, 'pt-BR')
+  })
 }
 
 async function resolvePhotos(prefix: string, photos: EditablePhoto[]) {

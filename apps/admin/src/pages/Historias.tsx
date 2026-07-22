@@ -23,6 +23,7 @@ export function Historias() {
   const [publicationFilter, setPublicationFilter] = useState<'published' | 'draft' | ''>('')
   const [editingTarget, setEditingTarget] = useState<Story | null | undefined>(undefined)
   const [operationError, setOperationError] = useState('')
+  const [confirmation, setConfirmation] = useState<{ action: 'publish' | 'remove'; story: Story } | null>(null)
   const isDesktop = useIsDesktop()
   const isEditing = editingTarget !== undefined
 
@@ -42,22 +43,15 @@ export function Historias() {
     setEditingTarget(undefined)
   }
 
-  const handleRemove = async (story: Story) => {
-    if (!window.confirm(`Remover a história de ${story.name}?`)) return
+  const confirmAction = async () => {
+    if (!confirmation) return
     setOperationError('')
     try {
-      await deleteStory.mutateAsync(story)
+      if (confirmation.action === 'remove') await deleteStory.mutateAsync(confirmation.story)
+      else await updateStoryPublished.mutateAsync({ id: confirmation.story.id, published: !confirmation.story.published })
+      setConfirmation(null)
     } catch {
-      setOperationError('Não foi possível remover a história.')
-    }
-  }
-
-  const handleTogglePublished = async (story: Story) => {
-    setOperationError('')
-    try {
-      await updateStoryPublished.mutateAsync({ id: story.id, published: !story.published })
-    } catch {
-      setOperationError('Não foi possível atualizar a publicação da história.')
+      setOperationError('Não foi possível concluir a ação.')
     }
   }
 
@@ -131,8 +125,8 @@ export function Historias() {
                 story={story}
                 isEditing={editingTarget?.id === story.id}
                 onEdit={() => setEditingTarget(story)}
-                onRemove={() => handleRemove(story)}
-                onTogglePublished={() => handleTogglePublished(story)}
+                onRemove={() => setConfirmation({ action: 'remove', story })}
+                onTogglePublished={() => setConfirmation({ action: 'publish', story })}
               />
             ))}
             {!isLoading && !error && filteredStories.length === 0 && (
@@ -169,6 +163,17 @@ export function Historias() {
             onCancel={() => setEditingTarget(undefined)}
             onSave={handleSave}
           />
+        </Dialog>
+      )}
+      {confirmation && (
+        <Dialog ariaLabel="Confirmar ação na história" onClose={() => setConfirmation(null)} className="w-full max-w-[34rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised">
+          <h2 className="text-3xl font-medium text-marca">{confirmation.action === 'remove' ? 'Excluir história' : confirmation.story.published ? 'Mover para rascunhos' : 'Publicar história'}</h2>
+          <p className="mt-4 text-lg">{confirmation.story.name}</p>
+          <p className="mt-3">{confirmation.action === 'remove' ? 'A história e suas imagens serão removidas definitivamente.' : confirmation.story.published ? 'A história deixará de aparecer no site público.' : 'A história passará a aparecer no site público.'}</p>
+          <div className="mt-8 flex gap-4">
+            <Action onClick={() => setConfirmation(null)} size="small" variant="secondary-adaptive" className="w-28">Cancelar</Action>
+            <Action onClick={() => void confirmAction()} disabled={deleteStory.isPending || updateStoryPublished.isPending} size="small" variant="primary-adaptive" className="flex-1">Confirmar</Action>
+          </div>
         </Dialog>
       )}
     </main>

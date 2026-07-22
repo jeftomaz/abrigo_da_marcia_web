@@ -22,6 +22,7 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
   const [isCompressing, setIsCompressing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<{ description?: string; name?: string }>({})
   const isPanel = layout === 'panel'
   const fieldClasses = `${
     isPanel ? 'h-8 px-3 text-sm' : 'h-10 px-4'
@@ -32,12 +33,12 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
     event.preventDefault()
     const normalizedName = name.trim()
     const normalizedDescription = description.trim()
-    if (
-      !normalizedName ||
-      normalizedName.length > MAX_NAME_LENGTH ||
-      !normalizedDescription ||
-      normalizedDescription.length > MAX_DESCRIPTION_LENGTH
-    ) return
+    const errors = {
+      ...(!normalizedName ? { name: 'Informe o nome da história.' } : {}),
+      ...(!normalizedDescription ? { description: 'Conte a história antes de salvar.' } : {}),
+    }
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) return
     if (photos.length === 0) {
       setSaveError('Adicione ao menos uma imagem.')
       return
@@ -73,8 +74,11 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
         placeholder="Ex: Doguinho"
         maxLength={MAX_NAME_LENGTH}
         required
+        aria-invalid={Boolean(fieldErrors.name)}
+        aria-describedby={fieldErrors.name ? `${formId}-name-error` : undefined}
         className={fieldClasses}
       />
+      {fieldErrors.name && <p id={`${formId}-name-error`} role="alert" className="mt-1 text-xs font-medium text-marca">{fieldErrors.name}</p>}
 
       <div className={`${isPanel ? 'mt-2 text-sm' : 'mt-3'} flex items-center justify-between gap-2`}>
         <label htmlFor={`${formId}-description`} className="font-medium">
@@ -94,11 +98,13 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
         onChange={(event) => setDescription(event.target.value)}
         placeholder="Conte a trajetória do cão até o novo lar."
         maxLength={MAX_DESCRIPTION_LENGTH}
-        aria-describedby={`${formId}-description-count`}
+        aria-invalid={Boolean(fieldErrors.description)}
+        aria-describedby={`${formId}-description-count${fieldErrors.description ? ` ${formId}-description-error` : ''}`}
         rows={isPanel ? 4 : 5}
         required
         className={`mt-1 w-full resize-y rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50 ${isPanel ? 'px-3 py-2 text-sm' : 'px-4 py-3'}`}
       />
+      {fieldErrors.description && <p id={`${formId}-description-error`} role="alert" className="mt-1 text-xs font-medium text-marca">{fieldErrors.description}</p>}
     </section>
   )
 
