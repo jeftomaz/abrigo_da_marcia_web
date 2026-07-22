@@ -43,15 +43,20 @@ export function HistoriasPreview() {
         e cheio de amor.
       </p>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="mt-8 grid grid-cols-2 gap-4 lg:auto-rows-fr lg:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]">
         {stories.slice(0, 3).map((story) => (
           <CompactCard
             key={story.id}
+            className="lg:min-h-[22rem]"
             image={{ src: getStoryPhotoUrl(story.photos[0]), alt: story.name }}
             title={story.name}
             description={story.description}
             action={
-              <Action onClick={() => setSelectedStoryId(story.id)} size="compact">
+              <Action
+                onClick={() => setSelectedStoryId(story.id)}
+                size="compact"
+                className="w-full whitespace-normal px-3 leading-tight"
+              >
                 Conheça essa história
               </Action>
             }
