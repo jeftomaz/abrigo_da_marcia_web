@@ -15,6 +15,7 @@
 - `doing` Homologação `banco_site_abrigo` ativa, migrada e validada com bucket, Auth/TOTP, fallback de sessão do plano Free e `pg_cron`; auditoria da produção, URLs e variáveis finais pendentes.
 - `doing` Onboarding hospedado por convite implementado (senha → TOTP → `aal2`); recebimento e abertura do e-mail confirmados, conclusão do cadastro no navegador e smoke de RLS, Storage, reservas, expiração e sorteio em andamento.
 - `doing` Publicar os apps público e admin no GitHub Pages (bases, admin em `/admin/`, workflow e fallback `404.html` prontos; configuração do Pages, variáveis e publicação pendentes).
+- `todo` Comprar/verificar o domínio no Resend e configurar `RESEND_FROM_EMAIL` de produção; até lá, testes de envio ficam restritos ao remetente `onboarding@resend.dev` e ao e-mail da conta Resend.
 - `todo` Carregar configurações, cães, histórias, eventos e fotos reais; o `seed.sql` continua exclusivamente fictício e não deve abastecer produção.
 - `todo` Sanitizar EXIF/GPS e otimizar as fotos versionadas antes da publicação; há assets com metadados de aparelho, data e localização.
 
@@ -50,7 +51,7 @@
 - `done` Corrigir rótulos provisórios do formulário: “Nova Variação” e “Prêmio da rifa”.
 - `done` Disponibilizar “Exportar CSV” também na gestão mobile de reservas.
 - `done` Exibir carregamento e erro das reservas no admin, da disponibilidade de números no público e das reservas usadas pela tela de sorteio.
-- `doing` Automatizar o envio da exportação com Resend antes da exclusão: Edge Function implementada; secrets e deploy hospedado pendentes.
+- `doing` Automatizar o envio da exportação com Resend antes da exclusão: Edge Function implementada; remetente de teste, deploy/smoke hospedado e domínio final pendentes.
 - `done` Exibir dados persistidos: meta/arrecadado na gestão, identificação Pix na confirmação pública e imagens dos prêmios no detalhe público.
 - `done` Revisar os estados de atualização das reservas (salvando, erro e bloqueio por linha) para impedir comandos concorrentes sem retorno visual.
 
