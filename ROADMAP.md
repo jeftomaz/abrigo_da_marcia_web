@@ -34,8 +34,8 @@
 - `done` Manter os filtros da página dedicada de Adoção recolhidos em uma pílula e expandi-los sob clique/toque, com estado e foco acessíveis.
 - `done` Confirmar Adotado/Falecido e permitir que a opção ativa retorne o cão a Disponível.
 - `done` Trocar a remoção nativa por `Dialog`, sugerindo Adotado/Falecido e oferecendo essas ações antes da exclusão definitiva.
-- `todo` Ampliar a galeria do formulário desktop para a largura interna do card, mantendo o recuo das demais seções.
-- `todo` Implementar explicação acessível para o ícone de informação de “Destacar no catálogo” ou remover o ícone sem função.
+- `done` Ampliar a galeria do formulário desktop para a largura interna do card, mantendo o recuo das demais seções.
+- `done` Remover o ícone de informação sem função de “Destacar no catálogo”.
 
 ### P1 — Histórias e gestões compartilhadas
 

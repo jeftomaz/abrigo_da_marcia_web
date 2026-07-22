@@ -28,6 +28,12 @@ const CURRENT_YEAR = new Date().getFullYear()
 const MIN_BIRTH_YEAR = 1990
 const MAX_APPROX_AGE = CURRENT_YEAR - MIN_BIRTH_YEAR
 
+type DogField = 'approxAge' | 'birthYear' | 'description' | 'gender' | 'name' | 'size'
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  return message ? <p id={id} role="alert" className="mt-1 text-xs font-medium text-marca">{message}</p> : null
+}
+
 function parseBoundedInteger(value: string, min: number, max: number) {
   const number = Number(value)
   return Number.isInteger(number) && number >= min && number <= max ? number : null
@@ -49,6 +55,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   const [isCompressing, setIsCompressing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<DogField, string>>>({})
   const isPanel = layout === 'panel'
   const fieldClasses =
     'mt-1 h-8 w-full rounded-lg border-2 border-cinza-medio bg-transparent px-3 text-sm text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50'
@@ -81,16 +88,17 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
     const normalizedDescription = description.trim()
     const validBirthYear = parseBoundedInteger(birthYear, MIN_BIRTH_YEAR, CURRENT_YEAR)
     const validApproxAge = parseBoundedInteger(approxAge, 0, MAX_APPROX_AGE)
-    if (
-      !normalizedName ||
-      normalizedName.length > MAX_NAME_LENGTH ||
-      !normalizedDescription ||
-      normalizedDescription.length > MAX_DESCRIPTION_LENGTH ||
-      !gender ||
-      !size ||
-      validBirthYear === null ||
-      validApproxAge === null
-    ) return
+    const errors: Partial<Record<DogField, string>> = {}
+    if (!normalizedName) errors.name = 'Informe o nome do cão.'
+    else if (normalizedName.length > MAX_NAME_LENGTH) errors.name = `Use no máximo ${MAX_NAME_LENGTH} caracteres.`
+    if (!normalizedDescription) errors.description = 'Informe uma descrição.'
+    else if (normalizedDescription.length > MAX_DESCRIPTION_LENGTH) errors.description = `Use no máximo ${MAX_DESCRIPTION_LENGTH} caracteres.`
+    if (!gender) errors.gender = 'Selecione o gênero.'
+    if (!size) errors.size = 'Selecione o porte.'
+    if (validBirthYear === null) errors.birthYear = `Informe um ano entre ${MIN_BIRTH_YEAR} e ${CURRENT_YEAR}.`
+    if (validApproxAge === null) errors.approxAge = `Informe uma idade entre 0 e ${MAX_APPROX_AGE}.`
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0 || !gender || !size || validBirthYear === null) return
 
     setIsSaving(true)
     setSaveError('')
@@ -126,8 +134,11 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         placeholder="Ex: Doguinho"
         maxLength={MAX_NAME_LENGTH}
         required
+        aria-invalid={Boolean(fieldErrors.name)}
+        aria-describedby={fieldErrors.name ? `${formId}-name-error` : undefined}
         className={fieldClasses}
       />
+      <FieldError id={`${formId}-name-error`} message={fieldErrors.name} />
 
       <div className={fieldGridClasses}>
         <div>
@@ -140,6 +151,8 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
               value={gender}
               onChange={(event) => setGender(event.target.value as DogGender)}
               required
+              aria-invalid={Boolean(fieldErrors.gender)}
+              aria-describedby={fieldErrors.gender ? `${formId}-gender-error` : undefined}
               className={selectClasses}
             >
               <option value="" disabled>
@@ -153,6 +166,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
               className={`pointer-events-none absolute top-1/2 -translate-y-1/2 ${isPanel ? 'right-3 size-3' : 'right-4 size-4'}`}
             />
           </div>
+          <FieldError id={`${formId}-gender-error`} message={fieldErrors.gender} />
         </div>
         <div>
           <label htmlFor={`${formId}-size`} className={nestedLabelClasses}>
@@ -164,6 +178,8 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
               value={size}
               onChange={(event) => setSize(event.target.value as DogSize)}
               required
+              aria-invalid={Boolean(fieldErrors.size)}
+              aria-describedby={fieldErrors.size ? `${formId}-size-error` : undefined}
               className={selectClasses}
             >
               <option value="" disabled>
@@ -178,6 +194,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
               className={`pointer-events-none absolute top-1/2 -translate-y-1/2 ${isPanel ? 'right-3 size-3' : 'right-4 size-4'}`}
             />
           </div>
+          <FieldError id={`${formId}-size-error`} message={fieldErrors.size} />
         </div>
       </div>
 
@@ -196,8 +213,11 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
             max={CURRENT_YEAR}
             step={1}
             required
+            aria-invalid={Boolean(fieldErrors.birthYear)}
+            aria-describedby={fieldErrors.birthYear ? `${formId}-birth-year-error` : undefined}
             className={fieldClasses}
           />
+          <FieldError id={`${formId}-birth-year-error`} message={fieldErrors.birthYear} />
         </div>
         <span className={`${isPanel ? 'pb-1.5' : 'pb-1'} text-sm font-medium`}>Ou</span>
         <div>
@@ -214,8 +234,11 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
             max={MAX_APPROX_AGE}
             step={1}
             required
+            aria-invalid={Boolean(fieldErrors.approxAge)}
+            aria-describedby={fieldErrors.approxAge ? `${formId}-approx-age-error` : undefined}
             className={fieldClasses}
           />
+          <FieldError id={`${formId}-approx-age-error`} message={fieldErrors.approxAge} />
         </div>
       </div>
 
@@ -237,11 +260,13 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         onChange={(event) => setDescription(event.target.value)}
         placeholder="Ex: Doguinho é um cachorro animado e querido por todo o abrigo, recém-chegado. Ele gosta de correr e brincar com os outros cães."
         maxLength={MAX_DESCRIPTION_LENGTH}
-        aria-describedby={`${formId}-description-count`}
+        aria-invalid={Boolean(fieldErrors.description)}
+        aria-describedby={`${formId}-description-count${fieldErrors.description ? ` ${formId}-description-error` : ''}`}
         rows={2}
         required
         className="mt-1 w-full resize-y rounded-lg border-2 border-cinza-medio bg-transparent px-3 py-2 text-sm text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50"
       />
+      <FieldError id={`${formId}-description-error`} message={fieldErrors.description} />
     </section>
   )
 
@@ -271,10 +296,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       <div
         className={`${isPanel ? 'flex-row items-center justify-between' : 'flex-col items-start'} mt-2 flex gap-2`}
       >
-        <span className="flex items-center gap-2 text-sm font-medium">
-          Destacar no catálogo
-          <Icon name="info-circle-solid" className="size-4 opacity-60" aria-hidden="true" />
-        </span>
+        <span className="text-sm font-medium">Destacar no catálogo</span>
         <Switch checked={featured} onChange={setFeatured} className="origin-left scale-75" />
       </div>
     </section>
@@ -317,11 +339,11 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   if (layout === 'panel') {
     return (
       <form onSubmit={handleSubmit} className="grid items-start gap-6 sm:grid-cols-[13rem_minmax(0,1fr)]">
-        <div>
+        <div className="sm:col-span-2">
           <h2 className="text-3xl font-medium text-marca">{title}</h2>
           <div className="mt-4">{imagensSection}</div>
         </div>
-        <div>
+        <div className="sm:col-start-2">
           {dadosSection}
           {adocaoSection}
           {buttonsRow}
