@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Auditoria integral de rotas, telas, ações, dados e recursos concluída; todas as lacunas comprovadas foram centralizadas e priorizadas em `ROADMAP.md`, incluindo publicação, conteúdo dinâmico, controles apenas visuais, estados ausentes, assets e cobertura de testes.
 - Configurações admin concluída na branch `feat/configuracoes-admin`: Landing, redes, formulário global de adoção e padrões de Eventos persistem e revalidam seus consumidores; CTAs sem link são ocultados com confirmação. Login por senha, TOTP obrigatório, expiração por 7 dias de inatividade e RLS `admin+aal2` foram validados com 50 testes pgTAP, smoke test real de Auth, builds e lints.
 - Reservas de Eventos: checkout público ganhou toggle Telefone/E-mail, máscara e mensagens específicas. Contatos são normalizados e validados também por trigger no banco, cobrindo chamadas públicas, inserções diretas e um futuro cadastro administrativo; 38 testes pgTAP aprovados.
 - Gestão de Eventos: tocar fora do editor salva qualquer formulário iniciado como rascunho parcial no banco. A publicação agora valida campos com mensagens específicas, exige Pix copia-e-cola e preserva a mensagem retornada pelo Supabase; 30 testes pgTAP, builds, lints e schema aprovados.
