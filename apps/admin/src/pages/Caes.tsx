@@ -25,6 +25,7 @@ export function Caes() {
   const [statusFilter, setStatusFilter] = useState<DogStatus | ''>('')
   const [editingTarget, setEditingTarget] = useState<Dog | null | undefined>(undefined)
   const [statusConfirmation, setStatusConfirmation] = useState<StatusConfirmation | null>(null)
+  const [deletionTarget, setDeletionTarget] = useState<Dog | null>(null)
   const [operationError, setOperationError] = useState('')
   const isDesktop = useIsDesktop()
   const isEditing = editingTarget !== undefined
@@ -54,13 +55,25 @@ export function Caes() {
     setEditingTarget(undefined)
   }
 
-  const handleRemove = async (dog: Dog) => {
-    if (!window.confirm(`Remover ${dog.name}?`)) return
+  const confirmDeletion = async () => {
+    if (!deletionTarget) return
     setOperationError('')
     try {
-      await deleteDog.mutateAsync(dog)
+      await deleteDog.mutateAsync(deletionTarget)
+      setDeletionTarget(null)
     } catch {
       setOperationError('Não foi possível remover o cão.')
+    }
+  }
+
+  const archiveInstead = async (status: Exclude<DogStatus, 'disponivel'>) => {
+    if (!deletionTarget) return
+    setOperationError('')
+    try {
+      await updateDogStatus.mutateAsync({ id: deletionTarget.id, status })
+      setDeletionTarget(null)
+    } catch {
+      setOperationError('Não foi possível atualizar o status do cão.')
     }
   }
 
@@ -160,7 +173,7 @@ export function Caes() {
                 dog={dog}
                 isEditing={editingTarget?.id === dog.id}
                 onEdit={() => setEditingTarget(dog)}
-                onRemove={() => handleRemove(dog)}
+                onRemove={() => { setOperationError(''); setDeletionTarget(dog) }}
                 onSetStatus={(status) => openStatusConfirmation(dog, status)}
               />
             ))}
@@ -237,6 +250,64 @@ export function Caes() {
               className="min-w-0 flex-1"
             >
               {updateDogStatus.isPending ? 'Salvando...' : 'Confirmar alteração'}
+            </Action>
+          </div>
+        </Dialog>
+      )}
+
+      {deletionTarget && (
+        <Dialog
+          ariaLabel={`Remover ${deletionTarget.name}`}
+          onClose={() => setDeletionTarget(null)}
+          className="w-full max-w-[36rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised"
+        >
+          <h2 className="text-3xl font-medium text-marca">Remover cão</h2>
+          <h3 className="mt-5 text-2xl font-medium">{deletionTarget.name}</h3>
+          <p className="mt-3">
+            Se o cão foi adotado ou faleceu, preserve seu cadastro alterando o status. A exclusão definitiva também remove suas fotos e não pode ser desfeita.
+          </p>
+          {operationError && <p role="alert" className="mt-4 text-sm font-medium text-marca">{operationError}</p>}
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <Action
+              onClick={() => void archiveInstead('adotado')}
+              disabled={deletionTarget.status === 'adotado' || updateDogStatus.isPending || deleteDog.isPending}
+              size="small"
+              variant="neutral-adaptive"
+              icon="home-simple-door"
+              className="w-full px-4"
+            >
+              Marcar como Adotado
+            </Action>
+            <Action
+              onClick={() => void archiveInstead('falecido')}
+              disabled={deletionTarget.status === 'falecido' || updateDogStatus.isPending || deleteDog.isPending}
+              size="small"
+              variant="neutral-adaptive"
+              icon="eye-closed"
+              className="w-full px-4"
+            >
+              Marcar como Falecido
+            </Action>
+          </div>
+          <div className="mt-8 flex gap-4">
+            <Action
+              onClick={() => setDeletionTarget(null)}
+              disabled={updateDogStatus.isPending || deleteDog.isPending}
+              size="small"
+              variant="secondary-adaptive"
+              className="w-28 shrink-0"
+            >
+              Cancelar
+            </Action>
+            <Action
+              onClick={() => void confirmDeletion()}
+              disabled={updateDogStatus.isPending || deleteDog.isPending}
+              size="small"
+              variant="primary-adaptive"
+              icon="trash-solid"
+              className="min-w-0 flex-1 px-4"
+            >
+              {deleteDog.isPending ? 'Excluindo...' : 'Excluir definitivamente'}
             </Action>
           </div>
         </Dialog>

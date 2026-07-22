@@ -33,7 +33,7 @@
 - `done` Centralizar a única imagem do card público de adoção; aplicar o alinhamento lateral de carrossel somente quando houver mais imagens.
 - `done` Manter os filtros da página dedicada de Adoção recolhidos em uma pílula e expandi-los sob clique/toque, com estado e foco acessíveis.
 - `done` Confirmar Adotado/Falecido e permitir que a opção ativa retorne o cão a Disponível.
-- `todo` Trocar a remoção nativa por `Dialog`, sugerindo Adotado/Falecido e oferecendo essas ações antes da exclusão definitiva.
+- `done` Trocar a remoção nativa por `Dialog`, sugerindo Adotado/Falecido e oferecendo essas ações antes da exclusão definitiva.
 - `todo` Ampliar a galeria do formulário desktop para a largura interna do card, mantendo o recuo das demais seções.
 - `todo` Implementar explicação acessível para o ícone de informação de “Destacar no catálogo” ou remover o ícone sem função.
 

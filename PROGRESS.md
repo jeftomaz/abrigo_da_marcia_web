@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Remoção de cães agora usa `Dialog`, recomenda preservar o cadastro como Adotado/Falecido e oferece ambas as mudanças de status antes da exclusão definitiva de registro e fotos.
 - Preview de Histórias da Landing passou a distribuir duas ou três colunas conforme o espaço real em desktops, com largura mínima de 10rem, altura mínima uniforme e ação contida no card.
 - Doações da Landing agora são funcionais por modalidade e valor: a opção única gera Pix copia-e-cola para valores predefinidos ou livre; a recorrente abre o link PagSeguro específico configurado para cada valor. Configurações persiste chave/recebedor/cidade e seis links mensais; migration, 57 testes pgTAP, lint do schema, builds e lints aprovados.
 - Gestão de Cães confirma toda mudança de status em `Dialog`; tocar novamente em Adotado/Falecido retorna o cão a Disponível, com rótulo acessível e efeito no catálogo explicitado.
