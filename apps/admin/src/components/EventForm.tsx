@@ -154,6 +154,7 @@ function FormField({ children, htmlFor, label, wide = false }: FieldProps) {
 
 export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function EventForm({ event, layout, onAutoSave, onCancel, onSave, title }, ref) {
   const formId = useId()
+  const today = new Date().toISOString().slice(0, 10)
   const { data: eventSettings } = useEventSettings()
   const initial: EventDraft = event ? toEditableEventDraft(event) : emptyEvent(eventSettings)
   const [draft, setDraft] = useState<EventDraft>(initial)
@@ -172,6 +173,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const [prizePhoto, setPrizePhoto] = useState<EditablePhoto | null>(null)
   const [isPrizeCompressing, setIsPrizeCompressing] = useState(false)
   const createdPrizeUrls = useRef(new Set<string>())
+  const appliedPaymentDefaults = useRef(false)
   const isPanel = layout === 'panel'
   const fieldClasses = `${isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'} w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50`
   const sectionClasses = 'border-t border-cinza-medio pt-3 dark:border-cinza-claro'
@@ -182,15 +184,16 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   }, [])
 
   useEffect(() => {
-    if (event || !eventSettings) return
-    setDraft((current) => hasDraftContent(current, []) ? current : {
+    if (event || !eventSettings || appliedPaymentDefaults.current) return
+    appliedPaymentDefaults.current = true
+    setDraft((current) => ({
       ...current,
-      paymentKey: eventSettings.defaultPixKey,
-      city: eventSettings.defaultPixCity,
-      paymentReceiver: eventSettings.defaultPixReceiver,
-      pixCode: eventSettings.defaultPixCopyPaste,
-      postPaymentInstructions: eventSettings.defaultPostPaymentInstructions,
-    })
+      paymentKey: current.paymentKey || eventSettings.defaultPixKey,
+      city: current.city || eventSettings.defaultPixCity,
+      paymentReceiver: current.paymentReceiver || eventSettings.defaultPixReceiver,
+      pixCode: current.pixCode || eventSettings.defaultPixCopyPaste,
+      postPaymentInstructions: current.postPaymentInstructions || eventSettings.defaultPostPaymentInstructions,
+    }))
   }, [event, eventSettings])
 
   const setField = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {
@@ -272,9 +275,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const validateDraft = (): ValidationIssue | null => {
     if (!draft.title.trim()) return { fieldId: `${formId}-title`, message: 'Preencha o título do evento.' }
     if (!draft.description.trim()) return { fieldId: `${formId}-description`, message: 'Preencha a descrição do evento.' }
-    if (!draft.startDate) return { fieldId: `${formId}-start-date`, message: 'Informe a data de início.' }
     if (!draft.endDate) return { fieldId: `${formId}-end-date`, message: 'Informe a data de fim.' }
-    if (draft.startDate > draft.endDate) return { fieldId: `${formId}-end-date`, message: 'A data de fim não pode ser anterior à data de início.' }
+    if ((draft.startDate || today) > draft.endDate) return { fieldId: `${formId}-end-date`, message: 'A data de fim não pode ser anterior à data de início.' }
     if (parseCurrencyToCents(draft.fundraisingGoal) <= 0) return { fieldId: `${formId}-goal`, message: 'Informe uma meta de arrecadação maior que zero.' }
     if (draft.maxItemsPerReservation && !isPositiveInteger(draft.maxItemsPerReservation)) {
       return { fieldId: `${formId}-max-items`, message: 'O máximo por reserva deve ser um número inteiro maior que zero.' }
@@ -426,6 +428,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
         status: event?.status,
         title: draft.title.trim(),
         description: draft.description.trim(),
+        startDate: draft.startDate || today,
         products: draft.kind === 'product' ? draft.products.map((product) => ({
           ...product,
           name: product.name.trim(),
@@ -587,7 +590,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           <input
             id={`${formId}-start-date`}
             type="date"
-            value={draft.startDate}
+            value={draft.startDate || today}
             onChange={(changeEvent) => setField('startDate', changeEvent.target.value)}
             required
             className={fieldClasses}
