@@ -6,6 +6,7 @@ import {
   FeatureSection,
   getDogPhotoUrl,
   usePublicDogs,
+  usePublicSiteSettings,
 } from '@abrigo/shared'
 import type { Dog } from '@abrigo/shared'
 import { Tag } from './Tag'
@@ -32,6 +33,7 @@ function getDogTags(dog: Dog) {
 
 export function AdocaoPreview() {
   const { data: availableDogs = [], isLoading, error } = usePublicDogs()
+  const { data: siteSettings } = usePublicSiteSettings()
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
   const selectedDog = availableDogs.find((dog) => dog.id === selectedDogId) ?? null
   const dogs = availableDogs.slice(0, 3)
@@ -58,7 +60,7 @@ export function AdocaoPreview() {
             ))}
             images={selectedDog.photos.map(getDogPhotoUrl)}
             expandableImages
-            primaryAction={{ label: 'Adote-me', href: selectedDog.adoptionFormUrl }}
+            primaryAction={siteSettings ? { label: 'Adote-me', href: siteSettings.adoptionFormUrl } : undefined}
             onClose={() => setSelectedDogId(null)}
             variant="adoption"
           />

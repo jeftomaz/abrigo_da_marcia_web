@@ -13,7 +13,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - **Monorepo:** pnpm workspaces — `apps/public`, `apps/admin`, `packages/shared`.
 - **Dev local do banco:** `supabase start` (requer Docker) sobe o stack; `supabase db reset` aplica `supabase/migrations/` + `supabase/seed.sql`. Studio em `localhost:54323`.
 - **Bootstrap local removível:** `./scripts/dev-local.sh` inicia Supabase, público (`5173`) e admin (`5174`). O arquivo não participa de build/deploy.
-- **Admin local sem Auth:** até a etapa de Auth/MFA, somente o `seed.sql` concede CRUD de cães/Storage a `anon`, condicionado ao Origin local. Nunca levar essa exceção para migrations ou projeto hospedado.
+- **Admin:** login por e-mail e senha, TOTP obrigatório e RLS condicionada a `app_metadata.role = admin` + `aal2`. Cadastro público permanece desabilitado; contas são criadas/convidadas pelo Dashboard ou Admin API.
 
 ## Regras específicas
 
@@ -35,7 +35,8 @@ Uma página por vez, nesta ordem (estrutura/funcionalidade primeiro, design fiel
 3. Adoção (público + admin)
 4. Histórias (público + admin)
 5. Eventos/arrecadação (público + admin + reservas com expiração)
-6. Passada de design system (fidelidade aos mockups)
+6. Configurações admin
+7. Passada de design system (fidelidade aos mockups)
 
 Status detalhado: `ROADMAP.md`.
 
@@ -46,7 +47,10 @@ Status detalhado: `ROADMAP.md`.
 - **Adoção:** catálogo de cards expansíveis; ordenação por porte/idade; botão → Google Forms. Admin: CRUD de cães; status `disponivel|adotado|falecido` (≠ disponível some do público).
 - **Histórias:** exibição de adoções concluídas. Admin: CRUD e publicação/rascunho.
 - **Eventos:** 1 evento ativo + histórico. Usuário reserva produto/número de rifa → recebe código Pix → envia comprovante fora do site (WhatsApp/Instagram) → admin marca como pago. Reserva expira automaticamente (prazo definido pelo admin) e item volta ao catálogo. Admin: CRUD de eventos, produtos, rifas, prazos.
+- **Configurações:** valores padrão compartilhados pelas gestões; links públicos e segurança/MFA entram conforme seus modelos de dados forem implementados.
 
 ## Sessão admin
 
-Refresh token longo (padrão Supabase). Exigir novo desafio MFA (`aal2`) apenas se sessão expirou ou inatividade > N dias (checagem via `last_activity_at`).
+Refresh token longo (padrão Supabase). A sessão é encerrada após 7 dias sem atividade, controlados por `abrigo-admin-last-activity-at` no navegador e `auth.sessions.inactivity_timeout`; o próximo acesso exige senha e novo desafio TOTP.
+
+Para provisionar um admin local ou hospedado: criar a conta pelo Studio/Dashboard ou Admin API e definir `app_metadata.role` como `admin`. Nenhuma credencial administrativa vive no repositório.

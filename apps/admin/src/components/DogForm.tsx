@@ -1,10 +1,10 @@
 import { useId, useState } from 'react'
 import {
   Action,
-  DEFAULT_ADOPTION_FORM_URL,
   Icon,
   Switch,
   toEditableDogPhotos,
+  useAdminSiteSettings,
 } from '@abrigo/shared'
 import type {
   Dog,
@@ -43,7 +43,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
     dog?.birthYear ? (CURRENT_YEAR - dog.birthYear).toString() : '',
   )
   const [description, setDescription] = useState(dog?.description ?? '')
-  const [adoptionFormUrl, setAdoptionFormUrl] = useState(dog?.adoptionFormUrl ?? DEFAULT_ADOPTION_FORM_URL)
+  const { data: siteSettings } = useAdminSiteSettings()
   const [featured, setFeatured] = useState(dog?.featured ?? false)
   const [photos, setPhotos] = useState(() => toEditableDogPhotos(dog))
   const [isCompressing, setIsCompressing] = useState(false)
@@ -79,7 +79,6 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
     event.preventDefault()
     const normalizedName = name.trim()
     const normalizedDescription = description.trim()
-    const normalizedAdoptionFormUrl = adoptionFormUrl.trim()
     const validBirthYear = parseBoundedInteger(birthYear, MIN_BIRTH_YEAR, CURRENT_YEAR)
     const validApproxAge = parseBoundedInteger(approxAge, 0, MAX_APPROX_AGE)
     if (
@@ -87,7 +86,6 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       normalizedName.length > MAX_NAME_LENGTH ||
       !normalizedDescription ||
       normalizedDescription.length > MAX_DESCRIPTION_LENGTH ||
-      !normalizedAdoptionFormUrl ||
       !gender ||
       !size ||
       validBirthYear === null ||
@@ -105,7 +103,6 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         birthYear: validBirthYear,
         description: normalizedDescription,
         status: dog?.status ?? 'disponivel',
-        adoptionFormUrl: normalizedAdoptionFormUrl,
         featured,
         photos,
       })
@@ -257,22 +254,19 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       }`}
     >
       <h3 className={sectionHeadingClasses}>Adoção</h3>
-      <label
-        htmlFor={`${formId}-form-url`}
-        className="mt-2 flex items-center gap-2 text-sm font-medium"
-      >
-        Link do formulário de adoção
-        <Icon name="info-circle-solid" className="size-4 opacity-60" aria-hidden="true" />
-      </label>
-      <input
-        id={`${formId}-form-url`}
-        value={adoptionFormUrl}
-        onChange={(event) => setAdoptionFormUrl(event.target.value)}
-        placeholder="https://forms.gle/..."
-        type="url"
-        required
-        className={fieldClasses}
-      />
+      <p className="mt-2 text-sm">
+        O formulário global é definido em Configurações.
+        {siteSettings && (
+          <a
+            href={siteSettings.adoptionFormUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 block break-all text-marca underline"
+          >
+            {siteSettings.adoptionFormUrl}
+          </a>
+        )}
+      </p>
 
       <div
         className={`${isPanel ? 'flex-row items-center justify-between' : 'flex-col items-start'} mt-2 flex gap-2`}

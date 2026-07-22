@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Action, Icon, Logo, useTheme } from '@abrigo/shared'
+import { useAdminAuth } from '../auth/AdminAuthContext'
 
 type NavItem = {
   label: string
@@ -10,7 +12,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Cães', to: '/' },
   { label: 'Histórias', to: '/historias' },
   { label: 'Eventos', to: '/eventos' },
-  { label: 'Configurações' },
+  { label: 'Configurações', to: '/configuracoes' },
 ]
 
 const ADMIN_THEME_ICON_CLASSES =
@@ -23,7 +25,18 @@ const DISABLED_NAV_ITEM_CLASSES =
 
 export function AdminHeader() {
   const { theme, toggleTheme } = useTheme()
+  const { signOut } = useAdminAuth()
   const { pathname } = useLocation()
+  const navRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const nav = navRef.current
+    const activeItem = nav?.querySelector<HTMLElement>('[aria-current="page"]')
+    if (!nav || !activeItem) return
+    nav.scrollTo({
+      left: activeItem.offsetLeft - (nav.clientWidth - activeItem.offsetWidth) / 2,
+    })
+  }, [pathname])
 
   return (
     <header className="sticky top-0 z-40 overflow-hidden bg-surface-raised text-on-surface-raised">
@@ -33,7 +46,7 @@ export function AdminHeader() {
           <span className="text-xl font-medium sm:text-2xl">Admin</span>
         </Link>
 
-        <nav className="order-2 flex min-w-0 basis-full gap-3 overflow-x-auto desk:basis-auto desk:flex-1 desk:justify-center">
+        <nav ref={navRef} className="order-2 flex min-w-0 basis-full gap-3 overflow-x-auto desk:basis-auto desk:flex-1 desk:justify-center">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.to
 
@@ -75,7 +88,7 @@ export function AdminHeader() {
             />
           </button>
           <Action
-            disabled
+            onClick={() => void signOut()}
             variant="neutral-adaptive"
             size="small"
             className={`h-8 px-3 desk:h-10 desk:px-5 ${DISABLED_NAV_ITEM_CLASSES}`}

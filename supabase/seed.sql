@@ -1,221 +1,39 @@
--- Dados de validação local. Roda no `supabase db reset` (bypassa RLS via role de seed).
+-- Dados fictícios de validação local. Roda após as migrations no `supabase db reset`.
 
--- Redes sociais: ambas sem URL → social_links_public deve retornar 0 linhas.
 insert into public.social_links (network, url, display_order) values
   ('facebook', null, 1),
-  ('instagram', null, 2);
+  ('instagram', null, 2)
+on conflict (network) do update set url = excluded.url, display_order = excluded.display_order;
+
+update public.site_settings set
+  donation_url = null,
+  volunteer_form_url = null,
+  adoption_form_url = 'https://forms.gle/nLSjXJyeLGUJXZj27'
+where singleton;
 
 update public.event_settings set
   default_max_raffle_numbers = 10,
   default_max_product_units = 10,
   default_reservation_ttl = interval '30 minutes',
-  event_export_email = null
+  event_export_email = null,
+  default_pix_key = null,
+  default_pix_receiver = null,
+  default_pix_city = null,
+  default_pix_copy_paste = null,
+  default_post_payment_instructions = null
 where singleton;
 
--- Cães: mistura de portes/gêneros/idades. Inclui adotado e falecido,
--- que NÃO devem aparecer em caes_public.
 insert into public.caes (
-  name,
-  description,
-  birth_year,
-  gender,
-  size,
-  status,
-  photos,
-  adoption_form_url,
-  featured
+  name, description, birth_year, gender, size, status, photos, featured
 ) values
-  ('Negão',    'Cão dócil resgatado da rua.',         2018, 'macho', 'grande',  'disponivel', '{}', 'https://forms.gle/nLSjXJyeLGUJXZj27', true),
-  ('Dentinho', 'Brincalhão, se dá bem com crianças.', 2021, 'macho', 'medio',   'disponivel', '{}', 'https://forms.gle/nLSjXJyeLGUJXZj27', true),
-  ('Doguinho', 'Filhote cheio de energia.',           2023, 'macho', 'pequeno', 'disponivel', '{}', 'https://forms.gle/nLSjXJyeLGUJXZj27', true),
-  ('Mel',      'Calma e companheira.',                2019, 'femea', 'medio',   'disponivel', '{}', 'https://forms.gle/nLSjXJyeLGUJXZj27', false),
-  ('Bidu',     'Já encontrou um lar.',                2020, 'macho', 'grande',  'adotado',    '{}', 'https://forms.gle/nLSjXJyeLGUJXZj27', false),
-  ('Fumaça',   'Em memória.',                         2012, 'femea', 'pequeno', 'falecido',   '{}', 'https://forms.gle/nLSjXJyeLGUJXZj27', false);
+  ('Negão',    'Cão dócil resgatado da rua.',         2018, 'macho', 'grande',  'disponivel', '{}', true),
+  ('Dentinho', 'Brincalhão, se dá bem com crianças.', 2021, 'macho', 'medio',   'disponivel', '{}', true),
+  ('Doguinho', 'Filhote cheio de energia.',           2023, 'macho', 'pequeno', 'disponivel', '{}', true),
+  ('Mel',      'Calma e companheira.',                2019, 'femea', 'medio',   'disponivel', '{}', false),
+  ('Bidu',     'Já encontrou um lar.',                2020, 'macho', 'grande',  'adotado',    '{}', false),
+  ('Fumaça',   'Em memória.',                         2012, 'femea', 'pequeno', 'falecido',   '{}', false);
 
--- Histórias são registros independentes e não exigem os atributos do catálogo.
 insert into public.historias (name, description, photos, published) values
   ('Maia',     'Do resgate à chegada em seu novo lar.', '{historias/maia-1.jpg,historias/maia-2.jpg}', false),
   ('Clarinha', 'Uma recuperação cercada de cuidado.',   '{historias/clarinha-1.jpg}', true),
   ('Moleque',  'A história de uma adoção muito feliz.', '{historias/moleque-1.jpg}', false);
-
--- Acesso temporário apenas no stack local, enquanto Auth/MFA não foi implementado.
--- `seed.sql` não é aplicado por `supabase db push` em projetos hospedados.
-grant select, insert, update, delete on public.caes to anon;
-grant select, insert, update, delete on public.historias to anon;
-grant select, insert, update, delete on public.event_settings to anon;
-grant select, insert, update, delete on public.eventos to anon;
-grant select, insert, update, delete on public.rifas to anon;
-grant select, insert, update, delete on public.rifa_premios to anon;
-grant select, insert, update, delete on public.produtos to anon;
-grant select, insert, update, delete on public.produto_variacoes to anon;
-grant select, insert, update, delete on public.produto_variacao_opcoes to anon;
-grant select, insert, update, delete on public.reservas to anon;
-grant select, insert, update, delete on public.reserva_produtos to anon;
-grant select, insert, update, delete on public.reserva_produto_opcoes to anon;
-grant select, insert, update, delete on public.reserva_numeros to anon;
-grant select on public.event_deletion_audit to anon;
-grant execute on function public.draw_raffle_prize(uuid) to anon;
-grant execute on function public.delete_archived_event(uuid, timestamptz) to anon;
-
-create policy "Local admin reads dogs"
-  on public.caes
-  for select
-  to anon
-  using (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin creates dogs"
-  on public.caes
-  for insert
-  to anon
-  with check (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin updates dogs"
-  on public.caes
-  for update
-  to anon
-  using (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  )
-  with check (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin deletes dogs"
-  on public.caes
-  for delete
-  to anon
-  using (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin reads stories"
-  on public.historias
-  for select
-  to anon
-  using (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin creates stories"
-  on public.historias
-  for insert
-  to anon
-  with check (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin updates stories"
-  on public.historias
-  for update
-  to anon
-  using (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  )
-  with check (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin deletes stories"
-  on public.historias
-  for delete
-  to anon
-  using (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin manages event settings"
-  on public.event_settings
-  for all
-  to anon
-  using (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  )
-  with check (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-do $$
-declare
-  table_name text;
-begin
-  foreach table_name in array array[
-    'eventos',
-    'rifas',
-    'rifa_premios',
-    'produtos',
-    'produto_variacoes',
-    'produto_variacao_opcoes',
-    'reservas',
-    'reserva_produtos',
-    'reserva_produto_opcoes',
-    'reserva_numeros'
-  ] loop
-    execute format(
-      'create policy %I on public.%I for all to anon using (
-        coalesce(current_setting(''request.headers'', true), ''{}'')::jsonb ->> ''origin''
-          ~ ''^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$''
-      ) with check (
-        coalesce(current_setting(''request.headers'', true), ''{}'')::jsonb ->> ''origin''
-          ~ ''^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$''
-      )',
-      'Local admin manages ' || table_name,
-      table_name
-    );
-  end loop;
-end;
-$$;
-
-create policy "Local admin reads event deletion audit"
-  on public.event_deletion_audit
-  for select
-  to anon
-  using (
-    coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin uploads media photos"
-  on storage.objects
-  for insert
-  to anon
-  with check (
-    bucket_id = 'dog-photos'
-    and coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin reads media photo objects"
-  on storage.objects
-  for select
-  to anon
-  using (
-    bucket_id = 'dog-photos'
-    and coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );
-
-create policy "Local admin deletes media photos"
-  on storage.objects
-  for delete
-  to anon
-  using (
-    bucket_id = 'dog-photos'
-    and coalesce(current_setting('request.headers', true), '{}')::jsonb ->> 'origin'
-      ~ '^http://(localhost|127\.0\.0\.1|\[::1\])(:[0-9]+)?$'
-  );

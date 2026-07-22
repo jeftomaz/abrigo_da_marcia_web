@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema base, Histórias e Eventos estão materializados e validados em `supabase/migrations/`. Ainda sem projeto hospedado.
+Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eventos estão materializados e validados em `supabase/migrations/`. Ainda sem projeto hospedado.
 
 ## Imagens no Storage
 
@@ -11,6 +11,13 @@ Fonte de verdade do banco. O schema base, Histórias e Eventos estão materializ
 
 ```mermaid
 erDiagram
+  SITE_SETTINGS {
+    boolean singleton PK
+    text donation_url "nullable"
+    text volunteer_form_url "nullable"
+    text adoption_form_url
+    timestamptz updated_at
+  }
   SOCIAL_LINKS {
     text network PK
     text url "nullable"
@@ -26,7 +33,6 @@ erDiagram
     cae_porte size
     cae_status status
     text photos "text[] ordenado; [0]=capa"
-    text adoption_form_url
     boolean featured
     timestamptz created_at
     timestamptz updated_at
@@ -46,6 +52,11 @@ erDiagram
     integer default_max_product_units
     interval default_reservation_ttl
     text event_export_email
+    text default_pix_key "nullable"
+    text default_pix_receiver "nullable"
+    text default_pix_city "nullable"
+    text default_pix_copy_paste "nullable"
+    text default_post_payment_instructions "nullable"
     timestamptz updated_at
   }
   EVENTOS {
@@ -180,6 +191,20 @@ erDiagram
   RIFAS ||--o{ RESERVA_NUMEROS : "aloca"
 ```
 
+## `site_settings`
+
+Configuração singleton compartilhada pelos CTAs públicos e pela gestão de Cães.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `singleton` | `boolean` | PK; sempre `true` |
+| `donation_url` | `text` | nullable; URL HTTPS; CTA de doação é ocultado quando null |
+| `volunteer_form_url` | `text` | nullable; URL HTTPS; CTA de voluntariado é ocultado quando null |
+| `adoption_form_url` | `text` | not null; URL HTTPS; fonte única de todos os CTAs de adoção |
+| `updated_at` | `timestamptz` | not null; atualizado automaticamente |
+
+`site_settings_public` expõe somente os três links. O link de adoção foi migrado de `caes.adoption_form_url`; a coluna por cão foi removida.
+
 ## `social_links`
 
 Links das redes sociais exibidas no site. O frontend identifica o ícone por `network` e usa a URL retornada pelo banco, sem destinos cravados no código.
@@ -191,13 +216,13 @@ Links das redes sociais exibidas no site. O frontend identifica o ícone por `ne
 | `display_order` | `smallint` | not null; unique; ordem no footer |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-Dados iniciais previstos: `facebook` (ordem 1) e `instagram` (ordem 2), ambos sem URL até o admin configurá-los.
+Dados iniciais: `facebook` (ordem 1) e `instagram` (ordem 2), ambos sem URL até o admin configurá-los.
 
 ### Exposição e acesso
 
 - RLS habilitada na tabela; `anon` não acessa a tabela diretamente.
 - View `social_links_public`: expõe `network`, `url` e `display_order`, somente quando `url` não for nula, ordenada por `display_order`.
-- Admin autenticado pode consultar e atualizar as linhas; a condição da policy será definida junto ao modelo de Auth/MFA.
+- Admin com `app_metadata.role = admin` e sessão `aal2` pode consultar e atualizar as linhas.
 - Inserção e exclusão não fazem parte deste escopo inicial.
 
 ## `caes`
@@ -220,7 +245,6 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 | `size` | `cae_porte` | not null |
 | `status` | `cae_status` | not null; default `disponivel` |
 | `photos` | `text[]` | not null; default `'{}'`; 0–5 caminhos ordenados no Storage, `[0]` = capa quando existir |
-| `adoption_form_url` | `text` | not null; URL HTTP(S) usada pelo CTA do cão |
 | `featured` | `boolean` | not null; default `false`; destacados aparecem primeiro na view pública |
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
@@ -228,9 +252,8 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 ### Exposição e acesso
 
 - RLS habilitada na tabela; as migrations não concedem acesso direto a `anon`.
-- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, `adoption_form_url` e `featured`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status`.
-- Enquanto Auth/MFA não existe, `seed.sql` cria policies de CRUD para `anon` condicionadas ao Origin local (`localhost`, `127.0.0.1` ou `::1`). Essas policies não são aplicadas por `supabase db push`.
-- O bucket `dog-photos` é público para leitura; upload/leitura de objetos/exclusão pelo admin anônimo recebem a mesma policy temporária apenas no seed local. Policies definitivas exigirão admin autenticado.
+- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos` e `featured`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status`.
+- CRUD e Storage exigem admin autenticado com `aal2`; `anon` não possui acesso direto.
 
 ## `historias`
 
@@ -250,8 +273,7 @@ Histórias de adoção exibidas na página dedicada e no preview da landing. Sã
 
 - RLS habilitada na tabela; `anon` não acessa a tabela diretamente.
 - View `historias_public`: expõe `id`, `name`, `description` e `photos` apenas quando `published = true`, ordenada por `created_at` desc. A página de Histórias e o preview da landing usam exclusivamente essa view.
-- Admin autenticado poderá inserir, consultar, atualizar e excluir; as policies serão definidas com Auth/MFA.
-- Enquanto Auth/MFA não existe, `seed.sql` concede CRUD de histórias e Storage a `anon` somente para Origin local; as policies não são aplicadas por `supabase db push`.
+- Inserção, consulta, atualização e exclusão exigem admin autenticado com `aal2`.
 
 ## Eventos e reservas
 
@@ -274,6 +296,9 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `default_max_product_units` | `integer` | not null; `> 0`; máximo padrão de unidades, somando todos os produtos da reserva |
 | `default_reservation_ttl` | `interval` | not null; mínimo de 1 minuto e somente minutos inteiros; prazo padrão de expiração |
 | `event_export_email` | `text` | nullable até ser configurado; obrigatório para excluir evento arquivado |
+| `default_pix_key` / `default_pix_receiver` / `default_pix_city` | `text` | nullable; referências preenchidas em novos eventos |
+| `default_pix_copy_paste` | `text` | nullable; código preenchido em novos eventos |
+| `default_post_payment_instructions` | `text` | nullable; instrução preenchida em novos eventos |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
 ### `eventos`
@@ -316,7 +341,7 @@ Auditoria mínima preservada após a exclusão, sem os dados operacionais do eve
 | `id` | `uuid` | PK; default `gen_random_uuid()` |
 | `event_id` | `uuid` | not null; identificador do evento removido, sem FK |
 | `event_name` | `text` | not null; snapshot para identificação administrativa |
-| `deleted_by` | `uuid` | nullable no bootstrap local; FK → `auth.users.id`; será obrigatório após Auth/MFA |
+| `deleted_by` | `uuid` | nullable apenas para compatibilidade histórica; novas exclusões registram `auth.users.id` |
 | `export_email` | `text` | not null; snapshot do destinatário configurado |
 | `export_sent_at` | `timestamptz` | not null; instante em que o envio da cópia foi confirmado |
 | `deleted_at` | `timestamptz` | not null; default `now()` |
@@ -445,6 +470,16 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 - Views públicas expõem eventos `ativo|encerrado`, produtos, variações, opções e disponibilidade dos números, sem dados pessoais ou identificadores de sessão. Rascunhos e arquivados não aparecem.
 - `anon` cria a sessão e a reserva apenas por funções `security definer` com `search_path` fixo. As funções validam status/tipo do evento, intervalo da sessão, limites, opções, disponibilidade, preços, descontos e prazo no servidor.
 - Alterações de preço ou configuração não afetam reservas existentes porque totais, preços unitários e seleções são snapshots.
-- Admin autenticado gerencia catálogo, confirma pagamento, cancela reserva e marca a entrega ao ganhador; as policies dependem do modelo de Auth/MFA e serão definidas na migration.
+- Admin autenticado com `aal2` gerencia catálogo, confirma pagamento, cancela reserva e marca a entrega ao ganhador.
 - `pg_cron` encerra eventos fora do período, cancela reservas pendentes vencidas, libera seus números e limpa sessões antigas. Após 90 dias do encerramento, remove `customer_name` e `customer_contact`, preservando snapshots e totais.
 - Cada número pago pode ganhar no máximo um prêmio por rifa; o índice e a RPC de sorteio aplicam a regra.
+
+## Auth e matriz de acesso administrativo
+
+- Contas administrativas são provisionadas fora do client e recebem `app_metadata.role = admin`; cadastro público está desabilitado.
+- O frontend exige senha, fator TOTP verificado e sessão `aal2`. Sem fator, conduz a ativação por QR Code; com fator e `aal1`, exige novo desafio.
+- `site_settings`, `social_links`, `caes`, `historias`, `event_settings`, `eventos`, `rifas`, `rifa_premios`, `produtos`, variações/opções e reservas usam uma policy permissiva para `is_admin()` e outra policy restritiva exigindo `aal2`, em leitura e escrita.
+- `event_deletion_audit` permite somente `select` e `insert` a admin `aal2`; atualizações e exclusões não são concedidas.
+- `storage.objects` do bucket `dog-photos` permite `select`, `insert` e `delete` somente a admin `aal2`; leitura pública das imagens continua pelo bucket público.
+- `draw_raffle_prize` e `delete_archived_event` são `security invoker`, concedidas apenas a `authenticated`, portanto respeitam RLS e grants.
+- `anon` lê apenas views públicas e executa as RPCs públicas de criação de sessão/reserva. Não há mais policies locais de CRUD anônimo no `seed.sql`.

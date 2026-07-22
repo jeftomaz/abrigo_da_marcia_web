@@ -120,6 +120,11 @@ export type ReservationResult = {
 export type EventSettings = {
   defaultMaxProductUnits: number
   defaultMaxRaffleNumbers: number
+  defaultPixCity: string
+  defaultPixCopyPaste: string
+  defaultPixKey: string
+  defaultPixReceiver: string
+  defaultPostPaymentInstructions: string
   defaultReservationTtlMinutes: number
   eventExportEmail: string
 }
@@ -927,6 +932,11 @@ async function loadEventSettings(): Promise<EventSettings> {
   return {
     defaultMaxProductUnits: data.default_max_product_units,
     defaultMaxRaffleNumbers: data.default_max_raffle_numbers,
+    defaultPixCity: data.default_pix_city ?? '',
+    defaultPixCopyPaste: data.default_pix_copy_paste ?? '',
+    defaultPixKey: data.default_pix_key ?? '',
+    defaultPixReceiver: data.default_pix_receiver ?? '',
+    defaultPostPaymentInstructions: data.default_post_payment_instructions ?? '',
     defaultReservationTtlMinutes: Number(intervalToMinutes(data.default_reservation_ttl)),
     eventExportEmail: data.event_export_email ?? '',
   }
@@ -936,6 +946,11 @@ async function saveEventSettings(settings: EventSettings) {
   const { error } = await supabase.from('event_settings').update({
     default_max_product_units: settings.defaultMaxProductUnits,
     default_max_raffle_numbers: settings.defaultMaxRaffleNumbers,
+    default_pix_city: settings.defaultPixCity.trim() || null,
+    default_pix_copy_paste: settings.defaultPixCopyPaste.trim() || null,
+    default_pix_key: settings.defaultPixKey.trim() || null,
+    default_pix_receiver: settings.defaultPixReceiver.trim() || null,
+    default_post_payment_instructions: settings.defaultPostPaymentInstructions.trim() || null,
     default_reservation_ttl: `${settings.defaultReservationTtlMinutes} minutes`,
     event_export_email: settings.eventExportEmail.trim() || null,
   }).eq('singleton', true)
@@ -1040,7 +1055,10 @@ export function useSaveEventSettings() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: saveEventSettings,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: eventSettingsKey }),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: eventSettingsKey }),
+      invalidateEvents(queryClient),
+    ]),
   })
 }
 

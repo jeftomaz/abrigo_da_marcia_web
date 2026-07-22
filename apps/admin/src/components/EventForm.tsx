@@ -10,7 +10,7 @@ import {
   useEventSettings,
 } from '@abrigo/shared'
 import type { EditablePhoto } from '@abrigo/shared'
-import type { EditableEventProduct, EditableRafflePrize, EventDraft, EventKind, FundraisingEvent, MeasurementTable } from '../events/events'
+import type { EditableEventProduct, EditableRafflePrize, EventDraft, EventKind, EventSettings, FundraisingEvent, MeasurementTable } from '../events/events'
 import { formatCurrencyInput, parseCurrencyToCents, toEditableEventDraft } from '../events/events'
 import { PhotoGalleryField } from './PhotoGalleryField'
 import { TagInput } from './TagInput'
@@ -50,7 +50,7 @@ function emptyProduct(): EditableEventProduct {
   }
 }
 
-function emptyEvent(): EventDraft {
+function emptyEvent(settings?: EventSettings): EventDraft {
   return {
     kind: 'product',
     title: '',
@@ -65,11 +65,11 @@ function emptyEvent(): EventDraft {
     raffleTotalNumbers: '',
     raffleNumberPrice: '',
     prizes: [],
-    paymentKey: '',
-    city: '',
-    paymentReceiver: '',
-    pixCode: '',
-    postPaymentInstructions: '',
+    paymentKey: settings?.defaultPixKey ?? '',
+    city: settings?.defaultPixCity ?? '',
+    paymentReceiver: settings?.defaultPixReceiver ?? '',
+    pixCode: settings?.defaultPixCopyPaste ?? '',
+    postPaymentInstructions: settings?.defaultPostPaymentInstructions ?? '',
     receiptFolderUrl: '',
   }
 }
@@ -153,7 +153,7 @@ function FormField({ children, htmlFor, label, wide = false }: FieldProps) {
 export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function EventForm({ event, layout, onAutoSave, onCancel, onSave, title }, ref) {
   const formId = useId()
   const { data: eventSettings } = useEventSettings()
-  const initial: EventDraft = event ? toEditableEventDraft(event) : emptyEvent()
+  const initial: EventDraft = event ? toEditableEventDraft(event) : emptyEvent(eventSettings)
   const [draft, setDraft] = useState<EventDraft>(initial)
   const [photos, setPhotos] = useState(() => initial.gallery)
   const [expirationUnit, setExpirationUnit] = useState<ExpirationUnit>('minutes')
@@ -178,6 +178,18 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   useEffect(() => () => {
     createdPrizeUrls.current.forEach((url) => URL.revokeObjectURL(url))
   }, [])
+
+  useEffect(() => {
+    if (event || !eventSettings) return
+    setDraft((current) => hasDraftContent(current, []) ? current : {
+      ...current,
+      paymentKey: eventSettings.defaultPixKey,
+      city: eventSettings.defaultPixCity,
+      paymentReceiver: eventSettings.defaultPixReceiver,
+      pixCode: eventSettings.defaultPixCopyPaste,
+      postPaymentInstructions: eventSettings.defaultPostPaymentInstructions,
+    })
+  }, [event, eventSettings])
 
   const setField = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {
     setSaveError('')

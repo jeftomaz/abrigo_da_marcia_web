@@ -7,11 +7,35 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       caes: {
         Row: {
-          adoption_form_url: string
           birth_year: number
           created_at: string
           description: string
@@ -25,7 +49,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          adoption_form_url?: string
           birth_year: number
           created_at?: string
           description: string
@@ -39,7 +62,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          adoption_form_url?: string
           birth_year?: number
           created_at?: string
           description?: string
@@ -88,6 +110,11 @@ export type Database = {
         Row: {
           default_max_product_units: number
           default_max_raffle_numbers: number
+          default_pix_city: string | null
+          default_pix_copy_paste: string | null
+          default_pix_key: string | null
+          default_pix_receiver: string | null
+          default_post_payment_instructions: string | null
           default_reservation_ttl: string
           event_export_email: string | null
           singleton: boolean
@@ -96,6 +123,11 @@ export type Database = {
         Insert: {
           default_max_product_units?: number
           default_max_raffle_numbers?: number
+          default_pix_city?: string | null
+          default_pix_copy_paste?: string | null
+          default_pix_key?: string | null
+          default_pix_receiver?: string | null
+          default_post_payment_instructions?: string | null
           default_reservation_ttl?: string
           event_export_email?: string | null
           singleton?: boolean
@@ -104,6 +136,11 @@ export type Database = {
         Update: {
           default_max_product_units?: number
           default_max_raffle_numbers?: number
+          default_pix_city?: string | null
+          default_pix_copy_paste?: string | null
+          default_pix_key?: string | null
+          default_pix_receiver?: string | null
+          default_post_payment_instructions?: string | null
           default_reservation_ttl?: string
           event_export_email?: string | null
           singleton?: boolean
@@ -698,6 +735,30 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          adoption_form_url: string
+          donation_url: string | null
+          singleton: boolean
+          updated_at: string
+          volunteer_form_url: string | null
+        }
+        Insert: {
+          adoption_form_url: string
+          donation_url?: string | null
+          singleton?: boolean
+          updated_at?: string
+          volunteer_form_url?: string | null
+        }
+        Update: {
+          adoption_form_url?: string
+          donation_url?: string | null
+          singleton?: boolean
+          updated_at?: string
+          volunteer_form_url?: string | null
+        }
+        Relationships: []
+      }
       social_links: {
         Row: {
           display_order: number
@@ -723,7 +784,6 @@ export type Database = {
     Views: {
       caes_public: {
         Row: {
-          adoption_form_url: string | null
           birth_year: number | null
           description: string | null
           featured: boolean | null
@@ -734,7 +794,6 @@ export type Database = {
           size: Database["public"]["Enums"]["cae_porte"] | null
         }
         Insert: {
-          adoption_form_url?: string | null
           birth_year?: number | null
           description?: string | null
           featured?: boolean | null
@@ -745,7 +804,6 @@ export type Database = {
           size?: Database["public"]["Enums"]["cae_porte"] | null
         }
         Update: {
-          adoption_form_url?: string | null
           birth_year?: number | null
           description?: string | null
           featured?: boolean | null
@@ -989,6 +1047,24 @@ export type Database = {
           },
         ]
       }
+      site_settings_public: {
+        Row: {
+          adoption_form_url: string | null
+          donation_url: string | null
+          volunteer_form_url: string | null
+        }
+        Insert: {
+          adoption_form_url?: string | null
+          donation_url?: string | null
+          volunteer_form_url?: string | null
+        }
+        Update: {
+          adoption_form_url?: string | null
+          donation_url?: string | null
+          volunteer_form_url?: string | null
+        }
+        Relationships: []
+      }
       social_links_public: {
         Row: {
           display_order: number | null
@@ -1025,6 +1101,7 @@ export type Database = {
         }[]
       }
       expire_event_reservations: { Args: never; Returns: number }
+      is_admin: { Args: never; Returns: boolean }
       is_valid_measurement_table: { Args: { value: Json }; Returns: boolean }
       is_valid_reservation_contact: {
         Args: { value: string }
@@ -1199,6 +1276,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       cae_genero: ["macho", "femea"],

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Action, FeatureSection, Switch } from '@abrigo/shared'
+import { Action, FeatureSection, Switch, usePublicSiteSettings } from '@abrigo/shared'
 import doacaoPhoto from '../assets/landing_doacao.jpg'
 
 const AMOUNTS = [10, 20, 30, 50, 100, 150]
@@ -7,6 +7,7 @@ const AMOUNTS = [10, 20, 30, 50, 100, 150]
 export function Doacao() {
   const [recurring, setRecurring] = useState(true)
   const [amount, setAmount] = useState<number | null>(null)
+  const { data: settings } = usePublicSiteSettings()
 
   return (
     <FeatureSection
@@ -65,9 +66,13 @@ export function Doacao() {
         </div>
       </div>
 
-      <div className="mt-8 flex justify-center">
-        <Action icon="donate">Realizar doação</Action>
-      </div>
+      {settings?.donationUrl && (
+        <div className="mt-8 flex justify-center">
+          <Action href={settings.donationUrl} target="_blank" rel="noopener noreferrer" icon="donate">
+            Realizar doação
+          </Action>
+        </div>
+      )}
     </FeatureSection>
   )
 }

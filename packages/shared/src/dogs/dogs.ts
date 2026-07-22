@@ -21,7 +21,6 @@ export type Dog = {
   birthYear: number
   description: string
   status: DogStatus
-  adoptionFormUrl: string
   featured: boolean
   photos: string[]
 }
@@ -39,8 +38,6 @@ export const STATUS_LABELS: Record<DogStatus, string> = {
   falecido: 'Falecido',
 }
 
-export const DEFAULT_ADOPTION_FORM_URL = 'https://forms.gle/nLSjXJyeLGUJXZj27'
-
 const adminDogsKey = ['dogs', 'admin'] as const
 const publicDogsKey = ['dogs', 'public'] as const
 
@@ -53,7 +50,6 @@ function mapDog(row: Tables<'caes'>): Dog {
     birthYear: row.birth_year,
     description: row.description,
     status: row.status,
-    adoptionFormUrl: row.adoption_form_url,
     featured: row.featured,
     photos: row.photos,
   }
@@ -66,8 +62,7 @@ function mapPublicDog(row: Tables<'caes_public'>): Dog {
     !row.gender ||
     !row.size ||
     row.birth_year === null ||
-    !row.description ||
-    !row.adoption_form_url
+    !row.description
   ) {
     throw new Error('O banco retornou um cão público incompleto.')
   }
@@ -80,7 +75,6 @@ function mapPublicDog(row: Tables<'caes_public'>): Dog {
     birthYear: row.birth_year,
     description: row.description,
     status: 'disponivel',
-    adoptionFormUrl: row.adoption_form_url,
     featured: row.featured ?? false,
     photos: row.photos ?? [],
   }
@@ -131,7 +125,6 @@ async function saveDog(draft: DogDraft) {
     birth_year: draft.birthYear,
     description: draft.description,
     status: draft.status,
-    adoption_form_url: draft.adoptionFormUrl,
     featured: draft.featured,
     photos,
   }

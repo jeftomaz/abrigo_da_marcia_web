@@ -12,9 +12,9 @@ export { SelectField } from './components/SelectField'
 export { Dialog } from './components/Dialog'
 export { ImageLightbox } from './components/ImageLightbox'
 export { DataProvider } from './data/DataProvider'
+export { supabase } from './supabase/client'
 export type { Database, Tables, TablesInsert, TablesUpdate } from './database.types'
 export {
-  DEFAULT_ADOPTION_FORM_URL,
   STATUS_LABELS,
   getDogPhotoUrl,
   toEditableDogPhotos,
@@ -80,6 +80,15 @@ export {
   useUpdateEventReservation,
   useUpdateEventStatus,
 } from './events/events'
+export {
+  useAdminSiteSettings,
+  useAdminSocialLinks,
+  usePublicSiteSettings,
+  usePublicSocialLinks,
+  useSaveSiteSettings,
+  useSaveSocialLinks,
+} from './settings/settings'
+export type { SiteSettings, SocialLinks } from './settings/settings'
 export type {
   EditableEventProduct,
   EditableRafflePrize,

@@ -1,7 +1,9 @@
-import { Action, FeatureSection } from '@abrigo/shared'
+import { Action, FeatureSection, usePublicSiteSettings } from '@abrigo/shared'
 import voluntariosPhoto from '../assets/landing_voluntario.jpg'
 
 export function Voluntarios() {
+  const { data: settings } = usePublicSiteSettings()
+
   return (
     <FeatureSection
       id="voluntarios"
@@ -31,11 +33,20 @@ export function Voluntarios() {
         </p>
       </div>
 
-      <div className="mt-8 flex justify-center">
-        <Action icon="user-love" size="compact" className="py-2">
-          Ser um voluntário
-        </Action>
-      </div>
+      {settings?.volunteerFormUrl && (
+        <div className="mt-8 flex justify-center">
+          <Action
+            href={settings.volunteerFormUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            icon="user-love"
+            size="compact"
+            className="py-2"
+          >
+            Ser um voluntário
+          </Action>
+        </div>
+      )}
     </FeatureSection>
   )
 }
