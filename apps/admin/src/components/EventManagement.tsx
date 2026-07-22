@@ -38,6 +38,7 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | ''>('')
   const [actionError, setActionError] = useState('')
+  const [pendingReservationIds, setPendingReservationIds] = useState<Set<string>>(new Set())
   const isPanel = layout === 'panel'
   const eventStatus = event.status === 'active'
     ? { label: 'Ativo', tone: 'verde' as const }
@@ -54,11 +55,15 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
   const activeReservations = reservations.filter((reservation) => reservation.status === 'reserved' || reservation.status === 'paid').length
 
   const updateReservation = async (id: string, changes: { receiptSaved?: boolean; status?: ReservationStatus }) => {
+    if (pendingReservationIds.has(id)) return
     setActionError('')
+    setPendingReservationIds((current) => new Set(current).add(id))
     try {
       await onUpdateReservation(id, changes)
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Não foi possível atualizar a reserva.')
+    } finally {
+      setPendingReservationIds((current) => { const next = new Set(current); next.delete(id); return next })
     }
   }
 
@@ -114,6 +119,7 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
           <div className="mt-3 border-t border-cinza-medio pt-2 dark:border-cinza-claro">
             <h3 className="text-lg font-medium">Resumo</h3>
             <p className="text-sm text-cinza-medio dark:text-cinza-claro">{formatDate(event.startDate)} até {formatDate(event.endDate)} • reservas expiram em {event.reservationTtlMinutes || 'prazo padrão'} min</p>
+            <p className="mt-1 text-sm">Meta: {event.fundraisingGoal || 'não definida'} • arrecadado: {formatMoney(paidTotal)}</p>
           </div>
           <div className="mt-3">{statCards}</div>
         </>
@@ -141,6 +147,7 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
       <div className={`${isPanel ? 'mt-3' : 'mt-5'} flex flex-col gap-3`}>
         {filteredReservations.map((reservation) => {
           const status = RESERVATION_STATUS[reservation.status]
+          const isPending = pendingReservationIds.has(reservation.id)
           return (
             <article key={reservation.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-3xl bg-surface-raised p-5 text-on-surface-raised desk:grid-cols-[minmax(8rem,1fr)_minmax(11rem,1.5fr)_8rem] desk:items-center desk:rounded-2xl desk:border-4 desk:border-cinza-claro desk:p-3 dark:desk:border-cinza-medio">
               <div className="min-w-0"><h4 className="line-clamp-2 text-xl leading-tight font-medium desk:text-sm">{reservation.name}</h4><p className="mt-2 truncate text-sm text-cinza-medio dark:text-cinza-claro desk:text-xs">{formatReservationContact(reservation.contact)}</p><p className="mt-1 text-xs">Expira: {new Date(reservation.expiresAt).toLocaleString('pt-BR')}</p></div>
@@ -149,13 +156,13 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
               </div>
               <div className="col-start-2 row-span-2 row-start-1 flex flex-col items-end gap-2 desk:col-start-3 desk:row-span-1 desk:items-center">
                 <label className="relative"><span className={`block rounded-lg px-4 py-1 text-sm font-medium ${status.classes}`}>{status.label}</span>
-                  <select value={reservation.status} disabled={reservation.status === 'canceled' || reservation.status === 'delivered'} onChange={(event) => void updateReservation(reservation.id, { status: event.target.value as ReservationStatus })} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0">
+                  <select value={reservation.status} disabled={isPending || reservation.status === 'canceled' || reservation.status === 'delivered'} onChange={(event) => void updateReservation(reservation.id, { status: event.target.value as ReservationStatus })} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0">
                     <option value={reservation.status}>{status.label}</option>
                     {reservation.status === 'reserved' && <><option value="paid">Pago</option><option value="canceled">Cancelado</option></>}
                     {reservation.status === 'paid' && <><option value="canceled">Cancelado</option>{event.status !== 'active' && <option value="delivered">Entregue</option>}</>}
                   </select>
                 </label>
-                <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={reservation.receiptSaved} onChange={(event) => void updateReservation(reservation.id, { receiptSaved: event.target.checked })} className="accent-marca" />Comprovante salvo</label>
+                <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={reservation.receiptSaved} disabled={isPending} onChange={(event) => void updateReservation(reservation.id, { receiptSaved: event.target.checked })} className="accent-marca" />{isPending ? 'Salvando...' : 'Comprovante salvo'}</label>
                 <strong className="text-sm">{formatMoney(reservation.totalCents)}</strong>
               </div>
             </article>

@@ -156,6 +156,9 @@ export function ProductReservationFlow({ event, onClose }: ProductReservationFlo
     <ReservationConfirmationDialog
       expiresAt={result.expiresAt}
       pixCode={result.pixCode}
+      pixCity={event.city}
+      pixKey={event.paymentKey}
+      pixReceiver={event.paymentReceiver}
       postPaymentInstructions={result.postPaymentInstructions}
       onClose={onClose}
     >

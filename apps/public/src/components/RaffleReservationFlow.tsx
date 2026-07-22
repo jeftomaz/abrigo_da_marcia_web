@@ -88,6 +88,9 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
     <ReservationConfirmationDialog
       expiresAt={result.expiresAt}
       pixCode={result.pixCode}
+      pixCity={event.city}
+      pixKey={event.paymentKey}
+      pixReceiver={event.paymentReceiver}
       postPaymentInstructions={result.postPaymentInstructions}
       onClose={onClose}
     >
@@ -117,6 +120,7 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
               <div className="mt-4 flex flex-col gap-2 text-center text-xs sm:text-sm">
                 {event.prizes.map((prize, index) => (
                   <div key={prize.id} className="rounded-md bg-marca px-2 py-2 text-marca-clara">
+                    {prize.image && <img src={getEventPhotoUrl(prize.image)} alt={`Prêmio ${index + 1}: ${prize.name}`} className="mb-2 aspect-square w-full rounded-md object-cover" />}
                     <p>Prêmio {index + 1}: {prize.name}</p>
                     {prize.winningNumber && <p className="mt-1">Nº {formatNumber(prize.winningNumber, numberDigits)} — {prize.winnerName}</p>}
                   </div>

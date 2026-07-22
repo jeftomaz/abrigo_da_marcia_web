@@ -50,9 +50,9 @@
 - `done` Corrigir rótulos provisórios do formulário: “Nova Variação” e “Prêmio da rifa”.
 - `done` Disponibilizar “Exportar CSV” também na gestão mobile de reservas.
 - `done` Exibir carregamento e erro das reservas no admin, da disponibilidade de números no público e das reservas usadas pela tela de sorteio.
-- `todo` Automatizar o envio da exportação antes de excluir evento arquivado após escolher um provedor de e-mail; até lá, corrigir a Configuração que afirma que exportações já são “enviadas”.
-- `todo` Definir e implementar onde aparecem os dados já persistidos mas sem consumidor final: meta/progresso de arrecadação, chave/recebedor/cidade Pix e imagens dos prêmios.
-- `todo` Revisar os estados de atualização das reservas (salvando, erro e bloqueio por linha) para impedir comandos concorrentes sem retorno visual.
+- `doing` Automatizar o envio da exportação após escolher um provedor de e-mail; Configurações já explicita que o envio atual é manual.
+- `done` Exibir dados persistidos: meta/arrecadado na gestão, identificação Pix na confirmação pública e imagens dos prêmios no detalhe público.
+- `done` Revisar os estados de atualização das reservas (salvando, erro e bloqueio por linha) para impedir comandos concorrentes sem retorno visual.
 
 ### P2 — Design system e acabamento visual
 

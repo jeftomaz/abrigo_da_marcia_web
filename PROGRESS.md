@@ -86,3 +86,4 @@
 - Tailwind v4 usa `@theme` CSS-first e precisa de `@source "../../../packages/shared/src"` para incluir classes do pacote compartilhado. Paleta e tipografia fluida vivem em `apps/public/src/index.css`.
 - Histórias e Eventos ordenam rascunhos primeiro e os demais por nome; cards de Histórias usam ações em duas colunas, galeria com alvos maiores, validação por campo e `Dialog` para publicação/rascunho/exclusão.
 - Eventos corrigiu rótulos de variação/prêmio, levou Exportar CSV ao mobile e passou a distinguir carregamento/erro de reservas no admin, números públicos e sorteio.
+- Gestão de reservas bloqueia comandos concorrentes por linha e mostra “Salvando...”/erro; resumo exibe meta e total pago, e o detalhe público da rifa passou a mostrar as imagens dos prêmios.

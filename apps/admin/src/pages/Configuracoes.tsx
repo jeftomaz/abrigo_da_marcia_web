@@ -104,7 +104,7 @@ export function Configuracoes() {
     `Cidade do Pix: ${configurationStatus(eventSettings.defaultPixCity)}`,
     `Pix copia-e-cola: ${configurationStatus(eventSettings.defaultPixCopyPaste)}`,
     `Instrução pós-pagamento: ${configurationStatus(eventSettings.defaultPostPaymentInstructions)}`,
-    `E-mail para cópia das exportações: ${configurationStatus(eventSettings.eventExportEmail)}`,
+    `E-mail de referência para envio manual: ${configurationStatus(eventSettings.eventExportEmail)}`,
   ] : ['Limites, pagamento, expiração e auditoria das reservas']
 
   const editorContent = editor === 'events' && eventSettings ? (

@@ -24,6 +24,9 @@ type ReservationConfirmationDialogProps = {
   expiresAt: string
   onClose: () => void
   pixCode: string
+  pixCity: string
+  pixKey: string
+  pixReceiver: string
   postPaymentInstructions: string
 }
 
@@ -153,6 +156,9 @@ export function ReservationConfirmationDialog({
   expiresAt,
   onClose,
   pixCode,
+  pixCity,
+  pixKey,
+  pixReceiver,
   postPaymentInstructions,
 }: ReservationConfirmationDialogProps) {
   const [pixCopied, setPixCopied] = useState(false)
@@ -176,6 +182,7 @@ export function ReservationConfirmationDialog({
       <p className="mt-5 text-sm">{postPaymentInstructions}</p>
       <div className="mt-6 rounded-2xl bg-cinza-claro p-4 text-cinza-escuro dark:bg-cinza-medio dark:text-cinza-claro">
         <p className="text-sm font-medium">Pix copia e cola</p>
+        {(pixReceiver || pixKey || pixCity) && <p className="mt-2 text-xs">Recebedor: {pixReceiver || 'não informado'}{pixCity ? ` • ${pixCity}` : ''}<br />Chave: {pixKey || 'não informada'}</p>}
         <code className="mt-2 block max-h-28 overflow-auto break-all text-xs">{pixCode}</code>
         <Action onClick={copyPixCode} className="mt-4 flex w-full" size="small">
           {pixCopied ? 'Código copiado' : 'Copiar código PIX'}
