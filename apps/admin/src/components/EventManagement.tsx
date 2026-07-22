@@ -129,6 +129,8 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
         </div>
       </div>
 
+      {!isPanel && <Action onClick={exportCsv} icon="upload" size="small" variant="neutral-adaptive" className="mt-3 w-full px-4 py-2 text-xs">Exportar CSV</Action>}
+
       {!isPanel && <div className="mt-5">{statCards}</div>}
       <div className="relative mt-4 min-w-0">
         <Icon name="search" className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 opacity-60" />

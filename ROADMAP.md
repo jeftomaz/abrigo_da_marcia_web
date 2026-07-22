@@ -47,9 +47,9 @@
 
 ### P1 — Eventos e reservas
 
-- `todo` Corrigir rótulos provisórios do formulário: “Nova Opção” cria uma nova variação e o diálogo de prêmio ainda exibe o título genérico “Seção”.
-- `todo` Disponibilizar “Exportar CSV” também na gestão mobile de reservas.
-- `todo` Exibir carregamento e erro das reservas no admin, da disponibilidade de números no público e das reservas usadas pela tela de sorteio; falhas hoje parecem listas vazias.
+- `done` Corrigir rótulos provisórios do formulário: “Nova Variação” e “Prêmio da rifa”.
+- `done` Disponibilizar “Exportar CSV” também na gestão mobile de reservas.
+- `done` Exibir carregamento e erro das reservas no admin, da disponibilidade de números no público e das reservas usadas pela tela de sorteio.
 - `todo` Automatizar o envio da exportação antes de excluir evento arquivado após escolher um provedor de e-mail; até lá, corrigir a Configuração que afirma que exportações já são “enviadas”.
 - `todo` Definir e implementar onde aparecem os dados já persistidos mas sem consumidor final: meta/progresso de arrecadação, chave/recebedor/cidade Pix e imagens dos prêmios.
 - `todo` Revisar os estados de atualização das reservas (salvando, erro e bloqueio por linha) para impedir comandos concorrentes sem retorno visual.

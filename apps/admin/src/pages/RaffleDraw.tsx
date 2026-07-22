@@ -24,7 +24,7 @@ function randomIndex(length: number) {
 export function RaffleDraw() {
   const { eventId = '' } = useParams()
   const { data: events = [], isLoading } = useAdminEvents()
-  const { data: reservations = [] } = useEventReservations(eventId)
+  const { data: reservations = [], error: reservationsError, isLoading: isLoadingReservations } = useEventReservations(eventId)
   const drawPrize = useDrawRafflePrize(eventId)
   const event = events.find((item) => item.id === eventId)
   const timeoutRef = useRef<number | null>(null)
@@ -49,6 +49,8 @@ export function RaffleDraw() {
   }, [event])
 
   if (isLoading) return <main className="min-h-screen bg-marca p-8 text-marca-clara">Carregando rifa...</main>
+  if (isLoadingReservations) return <main className="min-h-screen bg-marca p-8 text-marca-clara">Carregando reservas...</main>
+  if (reservationsError) return <main className="min-h-screen bg-marca p-8 text-marca-clara">Não foi possível carregar as reservas do sorteio.</main>
   if (!event || event.kind !== 'raffle') {
     return <main className="flex min-h-screen flex-col items-start gap-8 bg-marca p-6 text-marca-clara"><Action to="/eventos" icon="arrow-left-circle-solid" size="small" variant="primary-on-brand">Voltar</Action><h1 className="text-5xl font-medium">Rifa não encontrada</h1></main>
   }

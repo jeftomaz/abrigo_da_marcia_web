@@ -724,7 +724,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                   </div>
                 ))}
               </div>
-              <Action onClick={() => addVariation(product)} icon="plus-circle-solid" size="small" variant="primary-adaptive" className="mt-3 px-3">Nova Opção</Action>
+              <Action onClick={() => addVariation(product)} icon="plus-circle-solid" size="small" variant="primary-adaptive" className="mt-3 px-3">Nova Variação</Action>
 
               <div className="mt-4 border-t border-cinza-medio pt-3 dark:border-cinza-claro">
                 <label htmlFor={`${formId}-measurement-kind-${product.id}`} className="text-sm font-medium">Guia de medidas</label>
@@ -1074,7 +1074,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       <h2 className="text-3xl font-medium text-marca">
         {editingPrizeId ? 'Editar Prêmio' : 'Adicionar Prêmio'}
       </h2>
-      <h3 className="mt-2 text-2xl font-medium">Seção</h3>
+      <h3 className="mt-2 text-2xl font-medium">Prêmio da rifa</h3>
       <div className="mt-3 flex items-center gap-3">
         <div className="relative size-40 overflow-hidden rounded-3xl">
           {prizePhoto

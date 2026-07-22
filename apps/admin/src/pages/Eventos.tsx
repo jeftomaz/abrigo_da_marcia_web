@@ -164,7 +164,7 @@ export function Eventos() {
             ))}
             {!isLoading && events.length === 0 && <p className="py-6 text-center">Nenhum evento cadastrado.</p>}
           </div>
-          {managingEvent && !isDesktop && <EventManagement event={managingEvent} layout="mobile" reservations={reservationsQuery.data ?? []} onUpdateReservation={updateManagedReservation} />}
+          {managingEvent && !isDesktop && (reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="mobile" reservations={reservationsQuery.data ?? []} onUpdateReservation={updateManagedReservation} />)}
         </section>
 
         {hasDetail && isDesktop && (
@@ -172,7 +172,7 @@ export function Eventos() {
             {isEditing ? (
               <EventForm ref={eventFormRef} key={editingTarget?.id ?? 'new'} event={editingTarget ?? null} layout="panel" title={formTitle} onAutoSave={handleAutoSave} onCancel={() => setEditingTarget(undefined)} onSave={handleSave} />
             ) : managingEvent ? (
-              <EventManagement event={managingEvent} layout="panel" reservations={reservationsQuery.data ?? []} onUpdateReservation={updateManagedReservation} />
+              reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="panel" reservations={reservationsQuery.data ?? []} onUpdateReservation={updateManagedReservation} />
             ) : null}
           </aside>
         )}

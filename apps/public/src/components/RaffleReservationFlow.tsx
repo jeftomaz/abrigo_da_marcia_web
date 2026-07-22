@@ -146,7 +146,7 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
 
               <section className="mx-auto mt-6 max-w-2xl pb-4" aria-labelledby={`${titleId}-numbers`}>
                 <h3 id={`${titleId}-numbers`} className="text-center text-2xl font-medium">Escolha seus números</h3>
-                {numbersQuery.isLoading ? <p className="mt-5 text-center">Carregando números...</p> : (
+                {numbersQuery.isLoading ? <p className="mt-5 text-center">Carregando números...</p> : numbersQuery.error ? <p role="alert" className="mt-5 text-center text-marca">Não foi possível carregar os números disponíveis.</p> : (
                   <div className="mt-5 grid grid-cols-8 gap-2 sm:gap-3 lg:grid-cols-10">
                     {numberStates.map(({ number, available }) => {
                       const selected = selectedNumbers.includes(number)
