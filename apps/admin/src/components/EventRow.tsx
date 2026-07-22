@@ -56,7 +56,7 @@ export function EventRow({
         </StatusBadge>
       </div>
 
-      <p className="min-w-0 self-center text-base leading-tight font-medium sm:text-lg desk:text-base">{event.title}</p>
+      <p className="min-w-0 self-center text-base leading-tight font-medium sm:text-lg desk:text-base">{event.title || 'Evento sem título'}</p>
 
       <div className="col-span-2 grid min-w-0 grid-cols-2 gap-2 min-[28rem]:col-span-1 min-[28rem]:col-start-3 min-[28rem]:row-start-1">
         {event.status !== 'draft' && (

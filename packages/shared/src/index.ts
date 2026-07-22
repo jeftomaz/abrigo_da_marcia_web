@@ -48,9 +48,20 @@ export type {
 } from './stories/stories'
 export type { EditablePhoto } from './images/storagePhotos'
 export {
+  formatBrazilPhoneInput,
+  formatReservationContact,
+  getReservationContactError,
+  normalizeReservationContact,
+} from './events/reservationContact'
+export type { ReservationContactType } from './events/reservationContact'
+export {
   formatCentsForInput,
+  formatCurrencyInput,
+  getEventErrorMessage,
   getEventPhotoUrl,
+  getEventPublicationError,
   parseCurrencyToCents,
+  toEditableEventDraft,
   toEditableEventPhotos,
   toEditableProduct,
   toEditableRafflePrizes,
@@ -64,6 +75,7 @@ export {
   useReserveProducts,
   useReserveRaffle,
   useSaveEvent,
+  useSaveEventDraft,
   useSaveEventSettings,
   useUpdateEventReservation,
   useUpdateEventStatus,

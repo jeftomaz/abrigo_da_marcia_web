@@ -16,7 +16,6 @@ type PhotoGalleryFieldProps = {
   onProcessingChange: (isProcessing: boolean) => void
   photos: EditablePhoto[]
   setPhotos: Dispatch<SetStateAction<EditablePhoto[]>>
-  showCoverPreview?: boolean
   subjectLabel: string
   title?: string
 }
@@ -37,7 +36,6 @@ export function PhotoGalleryField({
   onProcessingChange,
   photos,
   setPhotos,
-  showCoverPreview = false,
   subjectLabel,
   title = 'Imagens',
 }: PhotoGalleryFieldProps) {
@@ -138,6 +136,8 @@ export function PhotoGalleryField({
 
   return (
     <section
+      id={`${formId}-gallery`}
+      tabIndex={-1}
       className={
         isPanel
           ? ''
@@ -149,29 +149,6 @@ export function PhotoGalleryField({
       >
         {title}
       </h3>
-      {showCoverPreview && (
-        <div className="mt-4 flex flex-col items-center">
-          <p className="font-medium">Capa</p>
-          <button
-            type="button"
-            disabled={!photos[0]}
-            onClick={() => photos[0] && setExpandedPhoto(photos[0])}
-            aria-label={`Ampliar capa de ${subjectLabel}`}
-            className={`relative mt-2 flex items-center justify-center overflow-hidden rounded-3xl bg-cinza-claro dark:bg-cinza-medio ${
-              isPanel ? 'size-28' : 'size-40'
-            }`}
-          >
-            <Icon name="pata" className="size-10 text-cinza-medio dark:text-cinza-claro" />
-            {photos[0] && (
-              <img
-                src={photos[0].previewUrl}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            )}
-          </button>
-        </div>
-      )}
       <p
         className={`${isPanel || isCompact ? 'mt-2' : 'mt-3'} ${isPanel ? 'text-sm' : ''} font-medium`}
       >

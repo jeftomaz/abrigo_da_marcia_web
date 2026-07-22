@@ -272,7 +272,7 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `singleton` | `boolean` | PK; sempre `true`, garantindo uma única linha |
 | `default_max_raffle_numbers` | `integer` | not null; `> 0`; máximo padrão de números por reserva de rifa |
 | `default_max_product_units` | `integer` | not null; `> 0`; máximo padrão de unidades, somando todos os produtos da reserva |
-| `default_reservation_ttl` | `interval` | not null; `> interval '0'`; prazo padrão de expiração |
+| `default_reservation_ttl` | `interval` | not null; mínimo de 1 minuto e somente minutos inteiros; prazo padrão de expiração |
 | `event_export_email` | `text` | nullable até ser configurado; obrigatório para excluir evento arquivado |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
@@ -281,20 +281,21 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `id` | `uuid` | PK; default `gen_random_uuid()` |
-| `name` | `text` | not null |
-| `description` | `text` | not null |
+| `name` | `text` | nullable somente enquanto rascunho; obrigatório para ativar |
+| `description` | `text` | nullable somente enquanto rascunho; obrigatório para ativar |
 | `type` | `evento_tipo` | not null; imutável depois da primeira reserva |
 | `status` | `evento_status` | not null; default `rascunho` |
 | `photos` | `text[]` | not null; default `'{}'`; `[0]` = capa |
-| `start_date` | `date` | not null; início inclusivo; deve ser `<= end_date` |
-| `end_date` | `date` | not null; fim inclusivo; o cron encerra evento ativo após esta data |
-| `fundraising_goal_cents` | `bigint` | not null; `> 0`; meta em centavos |
+| `start_date` | `date` | nullable somente enquanto rascunho; início inclusivo; deve ser `<= end_date` |
+| `end_date` | `date` | nullable somente enquanto rascunho; fim inclusivo; o cron encerra evento ativo após esta data |
+| `fundraising_goal_cents` | `bigint` | nullable somente enquanto rascunho; `> 0`; meta em centavos |
 | `max_items_per_reservation` | `integer` | nullable; `> 0`; substitui o padrão correspondente ao tipo do evento |
-| `reservation_ttl` | `interval` | nullable; `> interval '0'`; substitui `default_reservation_ttl` |
+| `reservation_ttl` | `interval` | nullable; mínimo de 1 minuto e somente minutos inteiros; substitui `default_reservation_ttl` |
 | `pix_key` / `pix_receiver` / `pix_city` | `text` | nullable; referência administrativa do recebedor |
 | `pix_copy_paste` | `text` | nullable em rascunho; obrigatório para ativar e retornado após a reserva |
-| `post_payment_instructions` | `text` | not null; orienta o envio do comprovante |
+| `post_payment_instructions` | `text` | nullable somente enquanto rascunho; orienta o envio do comprovante e é obrigatório para ativar |
 | `receipt_folder_url` | `text` | nullable; atalho HTTPS externo dos comprovantes |
+| `draft_payload` | `jsonb` | nullable; estado integral do formulário parcial, incluindo caminhos de imagens; deve ser removido pela gravação completa antes de ativar |
 | `data_verified_at` | `timestamptz` | nullable em rascunho; obrigatório para ativar; preenchido após a confirmação administrativa |
 | `activated_at` | `timestamptz` | nullable; preenchido ao ativar |
 | `ended_at` | `timestamptz` | nullable; preenchido ao encerrar |
@@ -302,7 +303,7 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-Índice unique parcial em `status = 'ativo'` garante um único evento ativo. A ativação valida foto, configuração específica do tipo e ao menos um produto no evento de produtos.
+Índice unique parcial em `status = 'ativo'` garante um único evento ativo. A ativação rejeita `draft_payload`, exige todos os dados gerais/Pix, foto e configuração específica do tipo. Valores monetários permanecem padronizados em centavos e o TTL em minutos inteiros convertidos para `interval`.
 
 Eventos encerrados precisam ser arquivados antes da exclusão definitiva. Rascunhos podem ser excluídos diretamente. No fluxo atual, o admin exporta o CSV, envia a cópia a `event_settings.event_export_email` e confirma o envio; só então a RPC registra a auditoria e apaga o domínio. Automatizar o envio depende da escolha de um provedor de e-mail.
 
@@ -359,15 +360,15 @@ Produtos são feitos sob demanda, sem estoque. Um evento de produtos pode possui
 | `description` | `text` | not null |
 | `photos` | `text[]` | not null; default `'{}'`; caminhos ordenados |
 | `unit_price_cents` | `integer` | not null; `> 0` |
-| `discount_min_quantity` | `integer` | nullable; `>= 2`; preenchido junto com `discount_unit_price_cents` |
+| `discount_min_quantity` | `integer` | nullable; `>= 2` e `<=` limite efetivo de unidades por reserva; preenchido junto com `discount_unit_price_cents` |
 | `discount_unit_price_cents` | `integer` | nullable; `> 0` e `< unit_price_cents`; preço unitário quando o limiar é atingido |
-| `measurement_table` | `jsonb` | nullable; cabeçalhos e seções/linhas da tabela inserida manualmente pelo admin |
+| `measurement_table` | `jsonb` | nullable; `variationId`, valores da variação e seções/linhas da tabela inserida pelo admin |
 | `measurement_image` | `text` | nullable; caminho da imagem de medidas no Storage |
 | `display_order` | `integer` | not null; unique dentro do evento |
 
-O desconto é calculado separadamente por produto. Se uma reserva alcançar `discount_min_quantity` unidades do mesmo produto, todas as unidades daquele produto usam `discount_unit_price_cents`; quantidades de produtos diferentes não são somadas para atingir o desconto.
+O desconto é calculado separadamente por produto. Se uma reserva alcançar `discount_min_quantity` unidades do mesmo produto, todas as unidades daquele produto usam `discount_unit_price_cents`; quantidades de produtos diferentes não são somadas para atingir o desconto. Triggers impedem salvar um desconto acima do limite efetivo e também impedem reduzir o limite do evento ou o padrão até tornar um desconto existente inalcançável.
 
-O guia de medidas é opcional, mas aceita apenas um formato por produto: `measurement_table` ou `measurement_image`. `is_valid_measurement_table` exige tamanhos, seções, linhas e a mesma quantidade de valores por tamanho. O admin oferece escolha exclusiva e limpa o formato anterior.
+O guia de medidas é opcional, mas aceita apenas um formato por produto: `measurement_table` ou `measurement_image`. `is_valid_measurement_table` exige tamanhos, seções, linhas e a mesma quantidade de valores por tamanho. Na tabela manual, `variationId` identifica a variação que fornece as colunas; o admin oferece escolha exclusiva e limpa o formato anterior.
 
 ### `produto_variacoes` e `produto_variacao_opcoes`
 
@@ -404,7 +405,7 @@ Cabeçalho comum a reservas de rifa e de produtos.
 | `session_id` | `uuid` | not null; FK → `sessoes_reserva.id` |
 | `status` | `reserva_status` | not null; default `pendente` |
 | `customer_name` | `text` | not null na criação; torna-se null na limpeza pós-evento |
-| `customer_contact` | `text` | not null na criação; telefone ou e-mail; torna-se null na limpeza pós-evento |
+| `customer_contact` | `text` | not null na criação; telefone brasileiro válido em `+55...` ou e-mail completo; torna-se null na limpeza pós-evento |
 | `total_cents` | `bigint` | not null; `> 0`; calculado no banco |
 | `receipt_saved` | `boolean` | not null; default `false`; controle administrativo de que o comprovante foi salvo no destino externo |
 | `expires_at` | `timestamptz` | not null; criação + prazo efetivo do evento |
@@ -414,6 +415,8 @@ Cabeçalho comum a reservas de rifa e de produtos.
 | `personal_data_deleted_at` | `timestamptz` | nullable; registra a limpeza dos dados pessoais após o evento |
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
+
+O trigger `reservas_validate_contact` protege inserções e alterações de qualquer origem. Telefones exigem DDD oficial e formato brasileiro de fixo/celular, rejeitam assinantes com dígitos repetidos e são normalizados para `+55...`; e-mails exigem endereço e domínio completos e normalizam o domínio para minúsculas. A validação é de plausibilidade e não comprova titularidade ou existência do contato.
 
 O limite efetivo é resolvido no momento da reserva: override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` ou `default_max_product_units`. Reservas pendentes que ultrapassam `expires_at` passam automaticamente para `cancelada` via `pg_cron`; reservas pagas não expiram. Cancelamento libera números da rifa. `entregue` só sucede `paga` após o encerramento: para produto, em qualquer reserva paga; para rifa, apenas na reserva ganhadora. Os valores e rótulos selecionados ficam registrados como snapshots. `receipt_saved` é somente o controle administrativo do destino externo.
 

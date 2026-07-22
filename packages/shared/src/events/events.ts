@@ -17,6 +17,7 @@ export type ProductOption = { id: string; name: string }
 export type ProductVariation = { id: string; name: string; options: ProductOption[] }
 
 export type MeasurementTable = {
+  variationId?: string
   sizes: string[]
   sections: { title: string; rows: { label: string; values: string[] }[] }[]
 }
@@ -185,6 +186,103 @@ export function formatCentsForInput(value: number | null | undefined) {
   return (value / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+export function formatCurrencyInput(value: string) {
+  const digits = value.replace(/\D/g, '').replace(/^0+(?=\d)/, '')
+  if (!digits) return ''
+  const padded = digits.padStart(3, '0')
+  const integer = padded.slice(0, -2).replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${integer},${padded.slice(-2)}`
+}
+
+export function getEventErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message) return error.message
+  if (typeof error === 'object' && error && 'message' in error && typeof error.message === 'string') {
+    return error.message
+  }
+  return fallback
+}
+
+function isPositiveInteger(value: string) {
+  return /^\d+$/.test(value) && Number(value) > 0
+}
+
+export function getEventPublicationError(
+  event: FundraisingEvent,
+  options: { activeEventId?: string; defaultMaxProductUnits?: number; today?: string } = {},
+) {
+  if (options.activeEventId && options.activeEventId !== event.id) return 'Já existe outro evento ativo. Encerre-o antes de publicar este evento.'
+  if (!event.title.trim()) return 'Preencha o título do evento.'
+  if (!event.description.trim()) return 'Preencha a descrição do evento.'
+  if (!event.startDate) return 'Informe a data de início.'
+  if (!event.endDate) return 'Informe a data de fim.'
+  if (event.startDate > event.endDate) return 'A data de fim não pode ser anterior à data de início.'
+  const today = options.today ?? new Date().toISOString().slice(0, 10)
+  if (today < event.startDate || today > event.endDate) return 'Um evento só pode ser publicado dentro do período informado.'
+  if (parseCurrencyToCents(event.fundraisingGoal) <= 0) return 'Informe uma meta de arrecadação maior que zero.'
+  if (event.maxItemsPerReservation && !isPositiveInteger(event.maxItemsPerReservation)) return 'O máximo por reserva deve ser um número inteiro maior que zero.'
+  if (event.reservationTtlMinutes && !isPositiveInteger(event.reservationTtlMinutes)) return 'O tempo de expiração deve corresponder a pelo menos 1 minuto.'
+  if (event.gallery.length === 0) return 'Adicione ao menos uma imagem à galeria de divulgação do evento.'
+
+  if (event.kind === 'raffle') {
+    if (!isPositiveInteger(event.raffleTotalNumbers) || Number(event.raffleTotalNumbers) > 1000) return 'A quantidade de números da rifa deve ser um inteiro entre 1 e 1.000.'
+    if (parseCurrencyToCents(event.raffleNumberPrice) <= 0) return 'Informe um valor por número maior que zero.'
+    if (event.prizes.length === 0) return 'Adicione ao menos um prêmio à rifa.'
+    const invalidPrizeIndex = event.prizes.findIndex((prize) => !prize.name.trim() || !prize.image)
+    if (invalidPrizeIndex >= 0) return `Prêmio ${invalidPrizeIndex + 1}: preencha o nome e a imagem.`
+  } else {
+    if (event.products.length === 0) return 'Adicione ao menos um produto ao catálogo.'
+    const normalizedNames = event.products.map((product) => product.name.trim().toLocaleLowerCase('pt-BR')).filter(Boolean)
+    if (new Set(normalizedNames).size !== normalizedNames.length) return 'Cada produto do catálogo precisa ter um nome diferente.'
+    const effectiveMaximum = Number(event.maxItemsPerReservation) || options.defaultMaxProductUnits || 10
+
+    for (const [productIndex, product] of event.products.entries()) {
+      const label = `Produto ${productIndex + 1}${product.name.trim() ? ` (${product.name.trim()})` : ''}`
+      if (!product.name.trim()) return `${label}: preencha o nome.`
+      if (!product.description.trim()) return `${label}: preencha a descrição.`
+      if (parseCurrencyToCents(product.price) <= 0) return `${label}: informe um preço maior que zero.`
+      if (product.gallery.length === 0) return `${label}: adicione ao menos uma imagem.`
+      const hasDiscountPrice = parseCurrencyToCents(product.discountPrice) > 0
+      const hasDiscountMinimum = Boolean(product.discountMinimum)
+      if (hasDiscountPrice !== hasDiscountMinimum) return `${label}: preencha juntos o preço com desconto e a quantidade mínima.`
+      if (hasDiscountPrice && parseCurrencyToCents(product.discountPrice) >= parseCurrencyToCents(product.price)) return `${label}: o preço com desconto deve ser menor que o preço normal.`
+      if (hasDiscountMinimum && (!isPositiveInteger(product.discountMinimum) || Number(product.discountMinimum) < 2)) return `${label}: a quantidade mínima para desconto deve ser um inteiro igual ou maior que 2.`
+      if (hasDiscountMinimum && Number(product.discountMinimum) > effectiveMaximum) return `${label}: a quantidade mínima para desconto deve ser igual ou menor que o máximo de ${effectiveMaximum} unidades por reserva.`
+
+      for (const [variationIndex, variation] of product.variations.entries()) {
+        if (!variation.name.trim()) return `${label}: preencha o nome da variação ${variationIndex + 1}.`
+        if (variation.options.length === 0) return `${label}: adicione ao menos um valor à variação “${variation.name}”.`
+      }
+      const variationNames = product.variations.map((variation) => variation.name.trim().toLocaleLowerCase('pt-BR'))
+      if (new Set(variationNames).size !== variationNames.length) return `${label}: cada variação precisa ter um nome diferente.`
+      if (product.measurementGuide?.kind === 'image' && !product.measurementGuide.path) return `${label}: envie a imagem do guia de medidas ou remova o guia.`
+      if (product.measurementGuide?.kind === 'table') {
+        const { table } = product.measurementGuide
+        const hasSourceVariation = product.variations.some((variation) => (
+          variation.options.length > 0 &&
+          (variation.id === table.variationId || (
+            variation.options.length === table.sizes.length &&
+            variation.options.every((option, index) => option.name === table.sizes[index])
+          ))
+        ))
+        if (!hasSourceVariation || table.sizes.length === 0) return `${label}: selecione a variação usada na tabela de medidas.`
+        if (table.sections.length === 0 || table.sections.some((section) => section.rows.length === 0)) return `${label}: adicione ao menos uma medida à tabela.`
+        if (table.sections.some((section) => section.rows.some((row) => !row.label.trim() || row.values.length !== table.sizes.length || row.values.some((value) => !value.trim())))) return `${label}: preencha todos os nomes e valores da tabela de medidas.`
+      }
+    }
+  }
+
+  if (!event.postPaymentInstructions.trim()) return 'Preencha as instruções pós-pagamento.'
+  if (!event.pixCode.trim()) return 'Informe o Pix copia-e-cola antes de publicar.'
+  if (event.receiptFolderUrl) {
+    try {
+      if (new URL(event.receiptFolderUrl).protocol !== 'https:') throw new Error()
+    } catch {
+      return 'O link externo dos comprovantes deve ser uma URL HTTPS válida.'
+    }
+  }
+  return null
+}
+
 function intervalToMinutes(value: string | null | undefined) {
   if (!value) return ''
   const dayMatch = value.match(/(\d+) day/)
@@ -213,9 +311,24 @@ function composeEvents(
   optionRows: OptionRow[],
   raffleRows: RaffleRow[],
   prizeRows: PrizeRow[],
+  preferDraftPayload = true,
 ) {
   return eventRows.map((row): FundraisingEvent => {
     const id = required(row.id, 'Evento sem identificador.')
+    if (
+      preferDraftPayload &&
+      'draft_payload' in row &&
+      row.status === 'rascunho' &&
+      row.draft_payload &&
+      typeof row.draft_payload === 'object' &&
+      !Array.isArray(row.draft_payload)
+    ) {
+      return {
+        ...(row.draft_payload as unknown as FundraisingEvent),
+        id,
+        status: 'draft',
+      }
+    }
     const products = productRows
       .filter((product) => product.event_id === id)
       .sort((a, b) => required(a.display_order, 'Produto sem ordem.') - required(b.display_order, 'Produto sem ordem.'))
@@ -253,10 +366,10 @@ function composeEvents(
       id,
       kind: EVENT_KIND_FROM_DB[required(row.type, 'Evento sem tipo.')],
       status: EVENT_STATUS_FROM_DB[required(row.status, 'Evento sem status.')],
-      title: required(row.name, 'Evento sem nome.'),
-      description: required(row.description, 'Evento sem descrição.'),
-      startDate: required(row.start_date, 'Evento sem data inicial.'),
-      endDate: required(row.end_date, 'Evento sem data final.'),
+      title: row.name ?? '',
+      description: row.description ?? '',
+      startDate: row.start_date ?? '',
+      endDate: row.end_date ?? '',
       fundraisingGoal: formatCentsForInput(row.fundraising_goal_cents),
       maxItemsPerReservation: row.max_items_per_reservation ? String(row.max_items_per_reservation) : '',
       reservationTtlMinutes: 'reservation_ttl' in row
@@ -281,13 +394,22 @@ function composeEvents(
       paymentReceiver: 'pix_receiver' in row ? row.pix_receiver ?? '' : '',
       city: 'pix_city' in row ? row.pix_city ?? '' : '',
       pixCode: row.pix_copy_paste ?? '',
-      postPaymentInstructions: required(row.post_payment_instructions, 'Evento sem instrução de pagamento.'),
+      postPaymentInstructions: row.post_payment_instructions ?? '',
       receiptFolderUrl: 'receipt_folder_url' in row ? row.receipt_folder_url ?? '' : '',
     }
   })
 }
 
-async function loadEventRelations(publicOnly: boolean) {
+type EventRelationRows = {
+  events: EventRow[]
+  options: OptionRow[]
+  prizes: PrizeRow[]
+  products: ProductRow[]
+  raffles: RaffleRow[]
+  variations: VariationRow[]
+}
+
+async function loadEventRelationRows(publicOnly: boolean): Promise<EventRelationRows> {
   const results = publicOnly
     ? await Promise.all([
         supabase.from('eventos_public').select('*'),
@@ -307,14 +429,30 @@ async function loadEventRelations(publicOnly: boolean) {
       ])
   const error = results.find((result) => result.error)?.error
   if (error) throw error
+  return {
+    events: results[0].data as unknown as EventRow[],
+    products: results[1].data as unknown as ProductRow[],
+    variations: results[2].data as unknown as VariationRow[],
+    options: results[3].data as unknown as OptionRow[],
+    raffles: results[4].data as unknown as RaffleRow[],
+    prizes: results[5].data as unknown as PrizeRow[],
+  }
+}
+
+function composeEventRelationRows(rows: EventRelationRows, preferDraftPayload = true) {
   return composeEvents(
-    results[0].data as unknown as EventRow[],
-    results[1].data as unknown as ProductRow[],
-    results[2].data as unknown as VariationRow[],
-    results[3].data as unknown as OptionRow[],
-    results[4].data as unknown as RaffleRow[],
-    results[5].data as unknown as PrizeRow[],
+    rows.events,
+    rows.products,
+    rows.variations,
+    rows.options,
+    rows.raffles,
+    rows.prizes,
+    preferDraftPayload,
   )
+}
+
+async function loadEventRelations(publicOnly: boolean) {
+  return composeEventRelationRows(await loadEventRelationRows(publicOnly))
 }
 
 async function resolvePhotos(prefix: string, photos: EditablePhoto[]) {
@@ -325,9 +463,144 @@ async function resolvePhotos(prefix: string, photos: EditablePhoto[]) {
   }
 }
 
+function eventPhotoPaths(event: FundraisingEvent | undefined) {
+  return event ? [
+    ...event.gallery,
+    ...event.prizes.map((prize) => prize.image),
+    ...event.products.flatMap((product) => [
+      ...product.gallery,
+      ...(product.measurementGuide?.kind === 'image' ? [product.measurementGuide.path] : []),
+    ]),
+  ] : []
+}
+
+async function prepareStoredDraft(
+  id: string,
+  draft: EventDraft,
+  uploadedPaths: string[],
+  retainedPaths: Set<string>,
+): Promise<FundraisingEvent> {
+  const eventPhotos = await resolvePhotos(`eventos/${id}`, draft.gallery)
+  uploadedPaths.push(...eventPhotos.uploaded)
+  eventPhotos.paths.forEach((path) => retainedPaths.add(path))
+
+  const products: EventProduct[] = []
+  for (const product of draft.products) {
+    const photos = await resolvePhotos(`eventos/${id}/produtos/${product.id}`, product.gallery)
+    uploadedPaths.push(...photos.uploaded)
+    photos.paths.forEach((path) => retainedPaths.add(path))
+    let measurementGuide: ProductMeasurementGuide | undefined
+    if (product.measurementGuide?.kind === 'image') {
+      const image = await resolvePhotos(
+        `eventos/${id}/produtos/${product.id}/medidas`,
+        [product.measurementGuide.photo],
+      )
+      uploadedPaths.push(...image.uploaded)
+      retainedPaths.add(image.paths[0])
+      measurementGuide = { kind: 'image', path: image.paths[0] }
+    } else if (product.measurementGuide?.kind === 'table') {
+      measurementGuide = product.measurementGuide
+    }
+    products.push({
+      ...product,
+      gallery: photos.paths,
+      measurementGuide,
+    })
+  }
+
+  const prizes: RafflePrize[] = []
+  for (const prize of draft.prizes) {
+    const image = await resolvePhotos(`eventos/${id}/premios/${prize.id}`, [prize.image])
+    uploadedPaths.push(...image.uploaded)
+    retainedPaths.add(image.paths[0])
+    prizes.push({ ...prize, image: image.paths[0] })
+  }
+
+  return {
+    id,
+    status: 'draft',
+    kind: draft.kind,
+    title: draft.title,
+    description: draft.description,
+    startDate: draft.startDate,
+    endDate: draft.endDate,
+    fundraisingGoal: draft.fundraisingGoal,
+    maxItemsPerReservation: draft.maxItemsPerReservation,
+    reservationTtlMinutes: draft.reservationTtlMinutes,
+    gallery: eventPhotos.paths,
+    products,
+    raffleTotalNumbers: draft.raffleTotalNumbers,
+    raffleNumberPrice: draft.raffleNumberPrice,
+    prizes,
+    paymentKey: draft.paymentKey,
+    paymentReceiver: draft.paymentReceiver,
+    city: draft.city,
+    pixCode: draft.pixCode,
+    postPaymentInstructions: draft.postPaymentInstructions,
+    receiptFolderUrl: draft.receiptFolderUrl,
+  }
+}
+
+async function saveEventDraft(draft: EventDraft) {
+  const id = draft.id ?? crypto.randomUUID()
+  const oldRows = draft.id ? await loadEventRelationRows(false) : undefined
+  const oldEvent = oldRows?.events.some((row) => row.id === id)
+    ? composeEventRelationRows(oldRows).find((event) => event.id === id)
+    : undefined
+  const oldPersistedEvent = oldRows?.events.some((row) => row.id === id)
+    ? composeEventRelationRows(oldRows, false).find((event) => event.id === id)
+    : undefined
+  const uploadedPaths: string[] = []
+  const retainedPaths = new Set<string>()
+
+  try {
+    const storedDraft = await prepareStoredDraft(id, draft, uploadedPaths, retainedPaths)
+    const goal = parseCurrencyToCents(draft.fundraisingGoal)
+    const name = draft.title.trim()
+    const description = draft.description.trim()
+    const maximum = Number(draft.maxItemsPerReservation)
+    const endDate = !draft.startDate || !draft.endDate || draft.startDate <= draft.endDate ? draft.endDate || null : null
+    const values: TablesInsert<'eventos'> = {
+      id,
+      name: name.length >= 1 && name.length <= 80 ? name : null,
+      description: description.length >= 1 && description.length <= 2000 ? description : null,
+      type: EVENT_KIND_TO_DB[draft.kind],
+      status: 'rascunho',
+      photos: storedDraft.gallery,
+      start_date: draft.startDate || null,
+      end_date: endDate,
+      fundraising_goal_cents: Number.isSafeInteger(goal) && goal > 0 ? goal : null,
+      max_items_per_reservation: isPositiveInteger(draft.maxItemsPerReservation) && maximum <= 2_147_483_647 ? maximum : null,
+      reservation_ttl: minutesToInterval(draft.reservationTtlMinutes),
+      pix_key: draft.paymentKey.trim() || null,
+      pix_receiver: draft.paymentReceiver.trim() || null,
+      pix_city: draft.city.trim() || null,
+      pix_copy_paste: draft.pixCode.trim() || null,
+      post_payment_instructions: draft.postPaymentInstructions.trim() || null,
+      receipt_folder_url: /^https:\/\//i.test(draft.receiptFolderUrl.trim()) ? draft.receiptFolderUrl.trim() : null,
+      data_verified_at: null,
+      draft_payload: storedDraft as unknown as Json,
+    }
+    const { error } = await supabase.from('eventos').upsert(values)
+    if (error) throw error
+
+    const previousPaths = new Set([
+      ...eventPhotoPaths(oldEvent),
+      ...eventPhotoPaths(oldPersistedEvent),
+    ])
+    await removeStoredPhotos([...previousPaths].filter((path) => !retainedPaths.has(path)))
+    return (await loadEventRelations(false)).find((event) => event.id === id)
+  } catch (error) {
+    await removeStoredPhotos(uploadedPaths)
+    throw error
+  }
+}
+
 async function saveEvent(draft: EventDraft) {
   const id = draft.id ?? crypto.randomUUID()
-  const oldEvent = draft.id ? (await loadEventRelations(false)).find((event) => event.id === id) : undefined
+  const oldRows = draft.id ? await loadEventRelationRows(false) : undefined
+  const oldEvent = oldRows ? composeEventRelationRows(oldRows).find((event) => event.id === id) : undefined
+  const oldPersistedEvent = oldRows ? composeEventRelationRows(oldRows, false).find((event) => event.id === id) : undefined
   const uploadedPaths: string[] = []
   const retainedPaths = new Set<string>()
 
@@ -355,6 +628,7 @@ async function saveEvent(draft: EventDraft) {
       post_payment_instructions: draft.postPaymentInstructions.trim(),
       receipt_folder_url: draft.receiptFolderUrl.trim() || null,
       data_verified_at: new Date().toISOString(),
+      draft_payload: null,
     }
     const eventRequest = draft.id
       ? supabase.from('eventos').update(values).eq('id', id)
@@ -373,13 +647,13 @@ async function saveEvent(draft: EventDraft) {
       if (raffleError) throw raffleError
 
       const prizeIds = draft.prizes.map((prize) => prize.id)
-      const oldPrizeIds = oldEvent?.prizes.map((prize) => prize.id) ?? []
+      const oldPrizeIds = oldPersistedEvent?.prizes.map((prize) => prize.id) ?? []
       const removedPrizeIds = oldPrizeIds.filter((prizeId) => !prizeIds.includes(prizeId))
       if (removedPrizeIds.length) {
         const { error } = await supabase.from('rifa_premios').delete().in('id', removedPrizeIds)
         if (error) throw error
       }
-      for (const [index, prize] of (oldEvent?.prizes ?? []).entries()) {
+      for (const [index, prize] of (oldPersistedEvent?.prizes ?? []).entries()) {
         const { error } = await supabase.from('rifa_premios').update({ display_order: 30000 + index }).eq('id', prize.id)
         if (error) throw error
       }
@@ -403,13 +677,13 @@ async function saveEvent(draft: EventDraft) {
       const { error: raffleDeleteError } = await supabase.from('rifas').delete().eq('event_id', id)
       if (raffleDeleteError) throw raffleDeleteError
       const productIds = draft.products.map((product) => product.id)
-      const oldProductIds = oldEvent?.products.map((product) => product.id) ?? []
+      const oldProductIds = oldPersistedEvent?.products.map((product) => product.id) ?? []
       const removedProductIds = oldProductIds.filter((productId) => !productIds.includes(productId))
       if (removedProductIds.length) {
         const { error } = await supabase.from('produtos').delete().in('id', removedProductIds)
         if (error) throw error
       }
-      for (const [index, product] of (oldEvent?.products ?? []).entries()) {
+      for (const [index, product] of (oldPersistedEvent?.products ?? []).entries()) {
         const { error } = await supabase.from('produtos').update({ display_order: 30000 + index }).eq('id', product.id)
         if (error) throw error
       }
@@ -447,7 +721,7 @@ async function saveEvent(draft: EventDraft) {
         if (productError) throw productError
 
         const variationIds = product.variations.map((variation) => variation.id)
-        const oldVariations = oldEvent?.products.find((item) => item.id === product.id)?.variations ?? []
+        const oldVariations = oldPersistedEvent?.products.find((item) => item.id === product.id)?.variations ?? []
         const removedVariationIds = oldVariations.map((item) => item.id).filter((item) => !variationIds.includes(item))
         if (removedVariationIds.length) {
           const { error } = await supabase.from('produto_variacoes').delete().in('id', removedVariationIds)
@@ -489,15 +763,11 @@ async function saveEvent(draft: EventDraft) {
       }
     }
 
-    const previousPaths = [
-      ...(oldEvent?.gallery ?? []),
-      ...(oldEvent?.prizes.map((prize) => prize.image) ?? []),
-      ...(oldEvent?.products.flatMap((product) => [
-        ...product.gallery,
-        ...(product.measurementGuide?.kind === 'image' ? [product.measurementGuide.path] : []),
-      ]) ?? []),
-    ]
-    await removeStoredPhotos(previousPaths.filter((path) => !retainedPaths.has(path)))
+    const previousPaths = new Set([
+      ...eventPhotoPaths(oldEvent),
+      ...eventPhotoPaths(oldPersistedEvent),
+    ])
+    await removeStoredPhotos([...previousPaths].filter((path) => !retainedPaths.has(path)))
     return (await loadEventRelations(false)).find((event) => event.id === id)
   } catch (error) {
     await removeStoredPhotos(uploadedPaths)
@@ -697,6 +967,11 @@ export function useSaveEvent() {
   return useMutation({ mutationFn: saveEvent, onSuccess: () => invalidateEvents(queryClient) })
 }
 
+export function useSaveEventDraft() {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: saveEventDraft, onSuccess: () => invalidateEvents(queryClient) })
+}
+
 export function useUpdateEventStatus() {
   const queryClient = useQueryClient()
   return useMutation({ mutationFn: updateEventStatus, onSuccess: () => invalidateEvents(queryClient) })
@@ -775,6 +1050,15 @@ export function getEventPhotoUrl(path: string) {
 
 export function toEditableEventPhotos(event: FundraisingEvent | null) {
   return toEditablePhotos(event?.gallery ?? [])
+}
+
+export function toEditableEventDraft(event: FundraisingEvent): EventDraft {
+  return {
+    ...event,
+    gallery: toEditableEventPhotos(event),
+    prizes: toEditableRafflePrizes(event),
+    products: event.products.map(toEditableProduct),
+  }
 }
 
 export function toEditableProduct(product: EventProduct): EditableEventProduct {

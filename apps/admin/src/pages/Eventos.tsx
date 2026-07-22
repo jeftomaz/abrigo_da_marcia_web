@@ -1,19 +1,24 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Action,
   Dialog,
+  getEventErrorMessage,
+  getEventPublicationError,
+  toEditableEventDraft,
   useAdminEvents,
   useDeleteEvent,
   useEventReservations,
+  useEventSettings,
   useSaveEvent,
+  useSaveEventDraft,
   useUpdateEventReservation,
   useUpdateEventStatus,
 } from '@abrigo/shared'
 import { useNavigate } from 'react-router-dom'
 import { EventForm } from '../components/EventForm'
+import type { EventFormHandle } from '../components/EventForm'
 import { EventManagement } from '../components/EventManagement'
 import { EventRow } from '../components/EventRow'
-import { EventSettingsForm } from '../components/EventSettingsForm'
 import type { EventDraft, EventStatus, FundraisingEvent, ReservationStatus } from '../events/events'
 import { useIsDesktop } from '../hooks/useIsDesktop'
 
@@ -22,6 +27,7 @@ type EventConfirmation = { action: 'archive' | 'end' | 'remove'; event: Fundrais
 export function Eventos() {
   const { data: events = [], error: loadError, isLoading } = useAdminEvents()
   const saveEvent = useSaveEvent()
+  const saveEventDraft = useSaveEventDraft()
   const updateStatus = useUpdateEventStatus()
   const deleteEvent = useDeleteEvent()
   const [editingTarget, setEditingTarget] = useState<FundraisingEvent | null | undefined>(undefined)
@@ -29,6 +35,8 @@ export function Eventos() {
   const [eventConfirmation, setEventConfirmation] = useState<EventConfirmation | null>(null)
   const [actionError, setActionError] = useState('')
   const [exportConfirmed, setExportConfirmed] = useState(false)
+  const eventFormRef = useRef<EventFormHandle>(null)
+  const editorCardRef = useRef<HTMLElement>(null)
   const isDesktop = useIsDesktop()
   const navigate = useNavigate()
   const isEditing = editingTarget !== undefined
@@ -37,6 +45,7 @@ export function Eventos() {
   const updateReservation = useUpdateEventReservation(managingEventId ?? '')
   const hasDetail = isEditing || Boolean(managingEvent)
   const activeEvent = useMemo(() => events.find((event) => event.status === 'active'), [events])
+  const { data: eventSettings } = useEventSettings()
   const displayedEvents = !isDesktop && managingEvent ? [managingEvent] : events
 
   const handleSave = async (draft: EventDraft) => {
@@ -44,12 +53,31 @@ export function Eventos() {
     setEditingTarget(undefined)
   }
 
+  const handleAutoSave = async (draft: EventDraft) => {
+    await saveEventDraft.mutateAsync(draft)
+  }
+
   const handleSetStatus = async (event: FundraisingEvent, status: EventStatus) => {
     setActionError('')
     try {
+      if (status === 'active') {
+        const publicationError = getEventPublicationError(event, {
+          activeEventId: activeEvent?.id,
+          defaultMaxProductUnits: eventSettings?.defaultMaxProductUnits,
+        })
+        if (publicationError) {
+          setActionError(`Não foi possível publicar “${event.title || 'evento sem título'}”: ${publicationError}`)
+          return false
+        }
+        if (!window.confirm('Confirma que as informações do evento foram verificadas e que ele pode ser publicado?')) return false
+        const savedEvent = await saveEvent.mutateAsync(toEditableEventDraft(event))
+        if (!savedEvent) throw new Error('O evento não foi encontrado após a validação.')
+      }
       await updateStatus.mutateAsync({ id: event.id, status })
+      return true
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Não foi possível alterar o status.')
+      setActionError(getEventErrorMessage(error, 'Não foi possível alterar o status.'))
+      return false
     }
   }
 
@@ -58,8 +86,8 @@ export function Eventos() {
     const { action, event } = eventConfirmation
     setActionError('')
     try {
-      if (action === 'end') await handleSetStatus(event, 'ended')
-      if (action === 'archive') await handleSetStatus(event, 'archived')
+      if (action === 'end' && !await handleSetStatus(event, 'ended')) return
+      if (action === 'archive' && !await handleSetStatus(event, 'archived')) return
       if (action === 'remove') await deleteEvent.mutateAsync({
         event,
         exportSentAt: event.status === 'archived' ? new Date().toISOString() : undefined,
@@ -69,7 +97,7 @@ export function Eventos() {
       setEventConfirmation(null)
       setExportConfirmed(false)
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'A ação não foi concluída.')
+      setActionError(getEventErrorMessage(error, 'A ação não foi concluída.'))
     }
   }
 
@@ -89,16 +117,28 @@ export function Eventos() {
 
   const formTitle = editingTarget ? 'Editar Evento' : 'Novo Evento'
   const isConfirming = updateStatus.isPending || deleteEvent.isPending
+  const dismissEditor = () => void eventFormRef.current?.dismiss()
+
+  useEffect(() => {
+    if (!isDesktop || !isEditing) return
+    const handleOutsideClick = (clickEvent: MouseEvent) => {
+      if (!editorCardRef.current || editorCardRef.current.contains(clickEvent.target as Node)) return
+      clickEvent.preventDefault()
+      clickEvent.stopPropagation()
+      void eventFormRef.current?.dismiss()
+    }
+    document.addEventListener('click', handleOutsideClick, true)
+    return () => document.removeEventListener('click', handleOutsideClick, true)
+  }, [isDesktop, isEditing])
 
   return (
     <main className="flex-1 overflow-x-hidden bg-cinza-claro px-4 py-8 text-cinza-escuro sm:px-6 desk:py-4 dark:bg-cinza-escuro dark:text-cinza-claro">
       <div className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-8 desk:items-start desk:gap-6 ${hasDetail ? 'desk:max-w-[1920px] desk:grid-cols-[minmax(17rem,29rem)_minmax(26rem,29rem)_minmax(36rem,45rem)] desk:justify-between' : 'desk:max-w-[64rem] desk:grid-cols-[29rem_29rem] desk:justify-between'}`}>
-        <section aria-label="Resumo de eventos" className="space-y-3">
+        <section aria-label="Resumo de eventos">
           <div className="grid grid-cols-[minmax(7rem,1fr)_minmax(0,2fr)] gap-3">
             <div className="rounded-2xl bg-surface-raised px-5 py-4 text-on-surface-raised"><strong className="block text-4xl font-medium">{events.length}</strong><span className="font-medium">Total de eventos</span></div>
             <div className="rounded-2xl bg-surface-raised px-5 py-4 text-on-surface-raised"><strong className="block truncate text-2xl font-medium text-marca">{activeEvent?.title ?? 'Nenhum evento'}</strong><span className="font-medium">{activeEvent ? 'Evento ativo' : 'Sem evento ativo'}</span></div>
           </div>
-          <EventSettingsForm />
         </section>
 
         <section className="flex min-w-0 flex-col gap-4">
@@ -128,9 +168,9 @@ export function Eventos() {
         </section>
 
         {hasDetail && isDesktop && (
-          <aside className="w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
+          <aside ref={editorCardRef} className="w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
             {isEditing ? (
-              <EventForm key={editingTarget?.id ?? 'new'} event={editingTarget ?? null} layout="panel" title={formTitle} onCancel={() => setEditingTarget(undefined)} onSave={handleSave} />
+              <EventForm ref={eventFormRef} key={editingTarget?.id ?? 'new'} event={editingTarget ?? null} layout="panel" title={formTitle} onAutoSave={handleAutoSave} onCancel={() => setEditingTarget(undefined)} onSave={handleSave} />
             ) : managingEvent ? (
               <EventManagement event={managingEvent} layout="panel" reservations={reservationsQuery.data ?? []} onUpdateReservation={updateManagedReservation} />
             ) : null}
@@ -139,8 +179,8 @@ export function Eventos() {
       </div>
 
       {isEditing && !isDesktop && (
-        <Dialog ariaLabel={formTitle} onClose={() => setEditingTarget(undefined)} className="max-h-[94vh] w-full max-w-[55rem] overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-14">
-          <EventForm key={editingTarget?.id ?? 'new'} event={editingTarget ?? null} layout="modal" title={formTitle} onCancel={() => setEditingTarget(undefined)} onSave={handleSave} />
+        <Dialog ariaLabel={formTitle} onClose={dismissEditor} className="max-h-[94vh] w-full max-w-[55rem] overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-14">
+          <EventForm ref={eventFormRef} key={editingTarget?.id ?? 'new'} event={editingTarget ?? null} layout="modal" title={formTitle} onAutoSave={handleAutoSave} onCancel={() => setEditingTarget(undefined)} onSave={handleSave} />
         </Dialog>
       )}
 

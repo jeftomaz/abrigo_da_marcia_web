@@ -1,5 +1,13 @@
 import { useId, useState, type ReactNode } from 'react'
-import { Action, Dialog } from '@abrigo/shared'
+import {
+  Action,
+  Dialog,
+  Switch,
+  formatBrazilPhoneInput,
+  getReservationContactError,
+  normalizeReservationContact,
+} from '@abrigo/shared'
+import type { ReservationContactType } from '@abrigo/shared'
 
 type ReservationCheckoutDialogProps = {
   active?: boolean
@@ -30,8 +38,11 @@ export function ReservationCheckoutDialog({
 }: ReservationCheckoutDialogProps) {
   const [customerName, setCustomerName] = useState('')
   const [contact, setContact] = useState('')
+  const [contactType, setContactType] = useState<ReservationContactType>('phone')
+  const [contactTouched, setContactTouched] = useState(false)
   const titleId = useId()
   const canSubmit = Boolean(customerName.trim() && contact.trim())
+  const contactError = getReservationContactError(contactType, contact)
 
   return (
     <Dialog
@@ -45,11 +56,13 @@ export function ReservationCheckoutDialog({
       </h2>
       {children}
       <form
+        noValidate
         className="mt-8"
         onSubmit={(event) => {
           event.preventDefault()
-          if (canSubmit && !isSubmitting) void onConfirm({
-            contact: contact.trim(),
+          setContactTouched(true)
+          if (canSubmit && !contactError && !isSubmitting) void onConfirm({
+            contact: normalizeReservationContact(contactType, contact),
             name: customerName.trim(),
           })
         }}
@@ -67,18 +80,45 @@ export function ReservationCheckoutDialog({
           required
           className="mt-1 h-10 w-full rounded-full bg-cinza-claro px-5 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
         />
-        <label htmlFor={`${titleId}-customer-contact`} className="mt-5 block">
-          Telefone ou e-mail
+        <div className="mt-5 flex items-center justify-between gap-4">
+          <span className="font-medium">Contato</span>
+          <div className="flex items-center gap-2 text-sm">
+            <span>Telefone</span>
+            <Switch
+              checked={contactType === 'email'}
+              onChange={(useEmail) => {
+                setContactType(useEmail ? 'email' : 'phone')
+                setContact('')
+                setContactTouched(false)
+              }}
+              aria-label="Usar e-mail em vez de telefone"
+              className="origin-center scale-75"
+            />
+            <span>E-mail</span>
+          </div>
+        </div>
+        <label htmlFor={`${titleId}-customer-contact`} className="mt-2 block">
+          {contactType === 'phone' ? 'Telefone com DDD' : 'E-mail'}
         </label>
         <input
           id={`${titleId}-customer-contact`}
+          type={contactType === 'phone' ? 'tel' : 'email'}
+          inputMode={contactType === 'phone' ? 'tel' : 'email'}
           value={contact}
-          onChange={(event) => setContact(event.target.value)}
-          placeholder="(00) 98765-4321"
-          autoComplete="email"
+          onChange={(event) => setContact(contactType === 'phone' ? formatBrazilPhoneInput(event.target.value) : event.target.value)}
+          onBlur={() => setContactTouched(true)}
+          placeholder={contactType === 'phone' ? '(11) 98765-4321' : 'nome@dominio.com'}
+          autoComplete={contactType === 'phone' ? 'tel' : 'email'}
+          aria-invalid={contactTouched && Boolean(contactError)}
+          aria-describedby={contactTouched && contactError ? `${titleId}-customer-contact-error` : undefined}
           required
           className="mt-1 h-10 w-full rounded-full bg-cinza-claro px-5 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
         />
+        {contactTouched && contactError && (
+          <p id={`${titleId}-customer-contact-error`} role="alert" className="mt-2 text-sm font-medium text-marca">
+            {contactError}
+          </p>
+        )}
         <p className="mt-3 text-xs">
           Esses dados serão utilizados apenas para registrar a reserva e entrar em contato, sendo
           removidos após o evento.

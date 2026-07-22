@@ -117,22 +117,23 @@ export type Database = {
           archived_at: string | null
           created_at: string
           data_verified_at: string | null
-          description: string
-          end_date: string
+          description: string | null
+          draft_payload: Json | null
+          end_date: string | null
           ended_at: string | null
-          fundraising_goal_cents: number
+          fundraising_goal_cents: number | null
           id: string
           max_items_per_reservation: number | null
-          name: string
+          name: string | null
           photos: string[]
           pix_city: string | null
           pix_copy_paste: string | null
           pix_key: string | null
           pix_receiver: string | null
-          post_payment_instructions: string
+          post_payment_instructions: string | null
           receipt_folder_url: string | null
           reservation_ttl: string | null
-          start_date: string
+          start_date: string | null
           status: Database["public"]["Enums"]["evento_status"]
           type: Database["public"]["Enums"]["evento_tipo"]
           updated_at: string
@@ -142,22 +143,23 @@ export type Database = {
           archived_at?: string | null
           created_at?: string
           data_verified_at?: string | null
-          description: string
-          end_date: string
+          description?: string | null
+          draft_payload?: Json | null
+          end_date?: string | null
           ended_at?: string | null
-          fundraising_goal_cents: number
+          fundraising_goal_cents?: number | null
           id?: string
           max_items_per_reservation?: number | null
-          name: string
+          name?: string | null
           photos?: string[]
           pix_city?: string | null
           pix_copy_paste?: string | null
           pix_key?: string | null
           pix_receiver?: string | null
-          post_payment_instructions: string
+          post_payment_instructions?: string | null
           receipt_folder_url?: string | null
           reservation_ttl?: string | null
-          start_date: string
+          start_date?: string | null
           status?: Database["public"]["Enums"]["evento_status"]
           type: Database["public"]["Enums"]["evento_tipo"]
           updated_at?: string
@@ -167,22 +169,23 @@ export type Database = {
           archived_at?: string | null
           created_at?: string
           data_verified_at?: string | null
-          description?: string
-          end_date?: string
+          description?: string | null
+          draft_payload?: Json | null
+          end_date?: string | null
           ended_at?: string | null
-          fundraising_goal_cents?: number
+          fundraising_goal_cents?: number | null
           id?: string
           max_items_per_reservation?: number | null
-          name?: string
+          name?: string | null
           photos?: string[]
           pix_city?: string | null
           pix_copy_paste?: string | null
           pix_key?: string | null
           pix_receiver?: string | null
-          post_payment_instructions?: string
+          post_payment_instructions?: string | null
           receipt_folder_url?: string | null
           reservation_ttl?: string | null
-          start_date?: string
+          start_date?: string | null
           status?: Database["public"]["Enums"]["evento_status"]
           type?: Database["public"]["Enums"]["evento_tipo"]
           updated_at?: string
@@ -1023,6 +1026,14 @@ export type Database = {
       }
       expire_event_reservations: { Args: never; Returns: number }
       is_valid_measurement_table: { Args: { value: Json }; Returns: boolean }
+      is_valid_reservation_contact: {
+        Args: { value: string }
+        Returns: boolean
+      }
+      normalize_reservation_contact: {
+        Args: { value: string }
+        Returns: string
+      }
       reserve_product_items: {
         Args: {
           p_customer_contact: string

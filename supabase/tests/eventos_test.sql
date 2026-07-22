@@ -1,7 +1,58 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(38);
+
+select throws_ok(
+  $$update public.event_settings set default_reservation_ttl = interval '30 seconds' where singleton$$,
+  '23514', null, 'rejeita prazo padrão abaixo de um minuto inteiro'
+);
+
+select ok(public.is_valid_reservation_contact('pessoa@example.com'), 'aceita e-mail completo');
+select ok(public.is_valid_reservation_contact('(11) 91234-5678'), 'aceita celular brasileiro com DDD');
+select ok(public.is_valid_reservation_contact('(11) 2345-6789'), 'aceita telefone fixo brasileiro com DDD');
+select ok(not public.is_valid_reservation_contact('(00) 00000-0000'), 'rejeita telefone fictício');
+select ok(not public.is_valid_reservation_contact('João da Silva'), 'rejeita nome no campo de contato');
+select ok(not public.is_valid_reservation_contact('pessoa@gmail'), 'rejeita e-mail sem domínio completo');
+select is(
+  public.normalize_reservation_contact('(11) 91234-5678'),
+  '+5511912345678',
+  'normaliza telefone para o formato internacional'
+);
+
+select lives_ok($$
+  insert into public.eventos (id, type, start_date, draft_payload)
+  values (
+    '40000000-0000-0000-0000-000000000001',
+    'produtos',
+    current_date,
+    '{"kind":"product","startDate":"2026-07-21"}'::jsonb
+  )
+$$, 'salva rascunho com somente um campo preenchido');
+select is(
+  (select status from public.eventos where id = '40000000-0000-0000-0000-000000000001'),
+  'rascunho'::public.evento_status,
+  'mantém formulário parcial como rascunho'
+);
+select throws_ok($$
+  update public.eventos set status = 'ativo'
+  where id = '40000000-0000-0000-0000-000000000001'
+$$, 'P0001', 'Conclua e salve todos os campos do rascunho antes de publicar.', 'impede publicar payload parcial');
+delete from public.eventos where id = '40000000-0000-0000-0000-000000000001';
+
+select throws_ok($$
+  insert into public.eventos (
+    id, name, description, type, photos, start_date, end_date,
+    fundraising_goal_cents, post_payment_instructions, data_verified_at
+  ) values (
+    '40000000-0000-0000-0000-000000000002', 'Sem Pix', 'Validação da publicação',
+    'produtos', '{eventos/sem-pix.jpg}', current_date - 1, current_date + 1,
+    100000, 'Envie o comprovante.', now()
+  );
+  update public.eventos set status = 'ativo'
+  where id = '40000000-0000-0000-0000-000000000002';
+$$, 'P0001', 'Informe um código Pix copia e cola real antes de publicar.', 'explica publicação bloqueada por Pix ausente');
+delete from public.eventos where id = '40000000-0000-0000-0000-000000000002';
 
 select lives_ok($$
   insert into public.eventos (
@@ -20,10 +71,28 @@ select lives_ok($$
   update public.eventos set status = 'ativo' where id = '10000000-0000-0000-0000-000000000001';
 $$, 'ativa uma rifa completamente configurada');
 
+select throws_ok(
+  $$update public.eventos set name = null where id = '10000000-0000-0000-0000-000000000001'$$,
+  '23514', null, 'mantém dados gerais obrigatórios depois da publicação'
+);
+
+select throws_ok(
+  $$update public.eventos set reservation_ttl = interval '90 seconds' where id = '10000000-0000-0000-0000-000000000001'$$,
+  '23514', null, 'rejeita prazo do evento fora de minutos inteiros'
+);
+
 insert into public.sessoes_reserva (id) values
   ('12000000-0000-0000-0000-000000000001'),
   ('12000000-0000-0000-0000-000000000002'),
   ('12000000-0000-0000-0000-000000000003');
+
+select throws_ok($$
+  select * from public.reserve_raffle_numbers(
+    '10000000-0000-0000-0000-000000000001',
+    '12000000-0000-0000-0000-000000000002',
+    'Pessoa inválida', 'nome no lugar do contato', array[10]
+  )
+$$, 'P0001', 'Informe um telefone com DDD válido ou um e-mail completo.', 'valida contato também dentro da reserva no banco');
 
 select is(
   (select total_cents from public.reserve_raffle_numbers(
@@ -125,6 +194,16 @@ select lives_ok($$
     values ('23000000-0000-0000-0000-000000000001', '22000000-0000-0000-0000-000000000001', 'M', 1);
   update public.eventos set status = 'ativo' where id = '20000000-0000-0000-0000-000000000001';
 $$, 'ativa evento com catálogo de produtos');
+
+select throws_ok($$
+  insert into public.produtos (
+    event_id, name, description, photos, unit_price_cents,
+    discount_min_quantity, discount_unit_price_cents, display_order
+  ) values (
+    '20000000-0000-0000-0000-000000000001', 'Desconto inalcançável', 'Teste',
+    '{eventos/invalido.jpg}', 1000, 11, 800, 2
+  )
+$$, 'P0001', 'A quantidade mínima para desconto deve ser igual ou menor que o máximo de 10 unidades por reserva.', 'impede desconto acima do máximo por reserva');
 
 insert into public.sessoes_reserva (id) values
   ('24000000-0000-0000-0000-000000000001'),
