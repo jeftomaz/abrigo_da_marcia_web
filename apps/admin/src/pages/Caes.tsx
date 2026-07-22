@@ -164,7 +164,7 @@ export function Caes() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 desk:gap-3">
-            {isLoading && <p className="text-center">Carregando cães...</p>}
+            {isLoading && <p role="status" className="text-center">Carregando cães...</p>}
             {error && <p role="alert" className="text-center">Não foi possível carregar os cães.</p>}
             {operationError && <p role="alert" className="text-center">{operationError}</p>}
             {filteredDogs.map((dog) => (

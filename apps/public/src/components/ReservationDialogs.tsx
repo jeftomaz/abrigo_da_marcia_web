@@ -81,7 +81,7 @@ export function ReservationCheckoutDialog({
           placeholder="Ex.: João Maria da Silva"
           autoComplete="name"
           required
-          className="mt-1 h-10 w-full rounded-full bg-cinza-claro px-5 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
+          className="mt-1 h-11 w-full rounded-full bg-cinza-claro px-5 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
         />
         <div className="mt-5 flex items-center justify-between gap-4">
           <span className="font-medium">Contato</span>
@@ -115,7 +115,7 @@ export function ReservationCheckoutDialog({
           aria-invalid={contactTouched && Boolean(contactError)}
           aria-describedby={contactTouched && contactError ? `${titleId}-customer-contact-error` : undefined}
           required
-          className="mt-1 h-10 w-full rounded-full bg-cinza-claro px-5 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
+          className="mt-1 h-11 w-full rounded-full bg-cinza-claro px-5 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
         />
         {contactTouched && contactError && (
           <p id={`${titleId}-customer-contact-error`} role="alert" className="mt-2 text-sm font-medium text-marca">

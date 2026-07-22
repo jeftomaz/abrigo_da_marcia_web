@@ -174,7 +174,7 @@ export function PhotoGalleryField({
             htmlFor={`${formId}-photos`}
             aria-label="Adicionar foto"
             aria-disabled={isProcessing}
-            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-cinza-medio text-xs font-medium text-cinza-medio dark:border-cinza-claro dark:text-cinza-claro"
+            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-cinza-medio text-xs font-medium text-cinza-medio has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marca dark:border-cinza-claro dark:text-cinza-claro"
           >
             <input
               id={`${formId}-photos`}
@@ -219,7 +219,7 @@ export function PhotoGalleryField({
                 if (!didDragPhoto.current) setExpandedPhoto(photo)
               }}
               aria-label={`Ampliar foto ${index + 1} de ${subjectLabel}`}
-              className="absolute inset-0 cursor-grab active:cursor-grabbing"
+              className="absolute inset-0 cursor-grab focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-marca active:cursor-grabbing"
             >
               <img
                 src={photo.previewUrl}
@@ -237,7 +237,7 @@ export function PhotoGalleryField({
               type="button"
               onClick={() => removePhoto(photo)}
               aria-label={`Remover foto ${index + 1}`}
-              className="absolute top-1.5 right-1.5 rounded-full bg-cinza-escuro/80 p-1.5 text-cinza-claro"
+              className="absolute top-1.5 right-1.5 rounded-full bg-cinza-escuro/80 p-1.5 text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara"
             >
               <Icon name="xmark-circle-solid" className="size-5" />
             </button>

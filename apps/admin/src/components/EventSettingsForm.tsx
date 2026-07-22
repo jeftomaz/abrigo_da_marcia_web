@@ -172,6 +172,7 @@ export function EventSettingsForm({
                 type="button"
                 onClick={() => changeExpirationUnit('hours')}
                 aria-pressed={expirationUnit === 'hours'}
+                className="min-h-11 rounded-lg px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
               >
                 Horas
               </button>
@@ -184,6 +185,7 @@ export function EventSettingsForm({
                 type="button"
                 onClick={() => changeExpirationUnit('minutes')}
                 aria-pressed={expirationUnit === 'minutes'}
+                className="min-h-11 rounded-lg px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
               >
                 Minutos
               </button>

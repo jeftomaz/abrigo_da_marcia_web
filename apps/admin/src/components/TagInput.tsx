@@ -32,7 +32,7 @@ export function TagInput({ id, onChange, placeholder, tags }: TagInputProps) {
             onPointerDown={(event) => event.preventDefault()}
             onClick={() => onChange(tags.filter((item) => item.id !== tag.id))}
             aria-label={`Remover ${tag.name}`}
-            className="rounded-full"
+            className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara"
           >
             <Icon name="xmark-circle-solid" className="size-4" />
           </button>

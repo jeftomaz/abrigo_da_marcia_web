@@ -33,7 +33,7 @@ export function Hero() {
         type="button"
         onClick={scrollToNext}
         aria-label="Rolar para a próxima seção"
-        className="mt-8 flex w-full justify-center lg:hidden"
+        className="mt-8 flex min-h-11 w-full justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current lg:hidden"
       >
         <ChevronDownIcon />
       </button>

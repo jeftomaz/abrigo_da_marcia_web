@@ -150,8 +150,8 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
 
               <section className="mx-auto mt-6 max-w-2xl pb-4" aria-labelledby={`${titleId}-numbers`}>
                 <h3 id={`${titleId}-numbers`} className="text-center text-2xl font-medium">Escolha seus números</h3>
-                {numbersQuery.isLoading ? <p className="mt-5 text-center">Carregando números...</p> : numbersQuery.error ? <p role="alert" className="mt-5 text-center text-marca">Não foi possível carregar os números disponíveis.</p> : (
-                  <div className="mt-5 grid grid-cols-8 gap-2 sm:gap-3 lg:grid-cols-10">
+                {numbersQuery.isLoading ? <p role="status" className="mt-5 text-center">Carregando números...</p> : numbersQuery.error ? <p role="alert" className="mt-5 text-center text-marca">Não foi possível carregar os números disponíveis.</p> : (
+                  <div className="mt-5 grid grid-cols-5 gap-2 sm:grid-cols-8 sm:gap-3 lg:grid-cols-10">
                     {numberStates.map(({ number, available }) => {
                       const selected = selectedNumbers.includes(number)
                       return (
@@ -162,7 +162,7 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
                           aria-pressed={selected}
                           aria-label={`Número ${formatNumber(number, numberDigits)}: ${available ? selected ? 'selecionado' : 'disponível' : 'reservado'}`}
                           onClick={() => toggleNumber(number)}
-                          className={`aspect-square rounded-md border-2 text-sm font-medium transition-colors sm:text-base ${!available ? 'cursor-not-allowed border-cinza-claro bg-cinza-medio text-cinza-claro' : selected ? 'border-marca bg-marca text-marca-clara' : 'cursor-pointer border-marca bg-marca-clara text-marca hover:bg-marca hover:text-marca-clara'}`}
+                          className={`aspect-square min-h-11 rounded-md border-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca sm:text-base ${!available ? 'cursor-not-allowed border-cinza-claro bg-cinza-medio text-cinza-claro' : selected ? 'border-marca bg-marca text-marca-clara' : 'cursor-pointer border-marca bg-marca-clara text-marca hover:bg-marca hover:text-marca-clara'}`}
                         >
                           {formatNumber(number, numberDigits)}
                         </button>

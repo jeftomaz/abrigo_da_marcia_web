@@ -77,7 +77,7 @@ export function Doacao() {
                 aria-pressed={selected}
                 disabled={recurring && !settings?.recurringDonationUrls[String(value)]}
                 onClick={() => { setAmount(value); setCustomAmount('') }}
-                className={`rounded-full py-3 text-base font-medium transition-colors ${
+                className={`min-h-11 rounded-full py-3 text-base font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara ${
                   selected
                     ? 'bg-marca-clara text-marca dark:bg-marca-escura dark:text-marca-clara'
                     : 'bg-marca-escura text-marca-clara enabled:hover:bg-cinza-escuro disabled:cursor-not-allowed disabled:opacity-40 dark:bg-marca-clara dark:text-marca'
@@ -97,7 +97,7 @@ export function Doacao() {
                 inputMode="decimal"
                 value={customAmount}
                 onChange={(event) => { setCustomAmount(event.target.value.replace(/[^0-9,.]/g, '')); setAmount(null) }}
-                className="min-w-0 flex-1 border-b-2 border-current bg-transparent outline-none"
+                className="min-h-11 min-w-0 flex-1 border-b-2 border-current bg-transparent outline-none focus-visible:border-marca-clara dark:focus-visible:border-marca-escura"
                 aria-label="Valor livre da doação"
               />
             </span>

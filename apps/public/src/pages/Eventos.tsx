@@ -46,7 +46,7 @@ export function Eventos() {
           <p className="mt-6 text-2xl font-medium lg:mt-3">Veja os eventos de arrecadação e ajude o abrigo</p>
         </header>
 
-        {isLoading && <p className="mt-16 text-center text-xl">Carregando eventos...</p>}
+        {isLoading && <p role="status" className="mt-16 text-center text-xl">Carregando eventos...</p>}
         {error && <p role="alert" className="mt-16 text-center text-xl text-marca">Não foi possível carregar os eventos.</p>}
 
         {!isLoading && !error && (

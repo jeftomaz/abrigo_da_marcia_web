@@ -16,7 +16,7 @@ export function Footer() {
               <Icon name="map-pin" className="h-4 w-4 shrink-0 lg:h-5 lg:w-5" />
               Ribeirão Preto, São Paulo, Brasil
             </span>
-            <a className="flex min-w-0 items-center gap-2" href="mailto:abrigodamarcia@gmail.com">
+            <a className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" href="mailto:abrigodamarcia@gmail.com">
               <Icon name="mail-solid" className="h-4 w-4 shrink-0 lg:h-5 lg:w-5" />
               <span className="min-w-0 break-all">abrigodamarcia@gmail.com</span>
             </a>

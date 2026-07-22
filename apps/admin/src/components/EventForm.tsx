@@ -828,7 +828,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                                     type="button"
                                     onClick={() => updateProduct(product.id, { measurementGuide: { kind: 'table', table: { ...tableGuide, sections: [{ title: 'Medidas', rows: tableRows.filter((_, index) => index !== rowIndex) }] } } })}
                                     aria-label={`Remover medida ${row.label || rowIndex + 1}`}
-                                    className="rounded-full p-2"
+                                    className="rounded-full p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
                                   >
                                     <Icon name="trash-solid" className="size-4" />
                                   </button>
@@ -921,7 +921,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                     setField('prizes', prizes)
                   }}
                   aria-label={`Mover ${prize.name} para cima`}
-                  className="rounded-lg bg-cinza-medio px-2 py-1 text-xs text-cinza-claro disabled:opacity-30"
+                  className="rounded-lg bg-cinza-medio px-2 py-1 text-xs text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-30"
                 >
                   ←
                 </button>
@@ -934,18 +934,18 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                     setField('prizes', prizes)
                   }}
                   aria-label={`Mover ${prize.name} para baixo`}
-                  className="rounded-lg bg-cinza-medio px-2 py-1 text-xs text-cinza-claro disabled:opacity-30"
+                  className="rounded-lg bg-cinza-medio px-2 py-1 text-xs text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-30"
                 >
                   →
                 </button>
               </div>
-              <button type="button" onClick={() => setField('prizes', draft.prizes.filter((item) => item.id !== prize.id))} className="mt-1 w-full text-xs underline">Remover</button>
+              <button type="button" onClick={() => setField('prizes', draft.prizes.filter((item) => item.id !== prize.id))} className="mt-1 w-full rounded text-xs underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca">Remover</button>
             </div>
           ))}
           <button
             type="button"
             onClick={() => openPrizeDialog()}
-            className={`${isPanel ? 'w-20' : 'w-32'} flex flex-col gap-2 text-left font-medium`}
+            className={`${isPanel ? 'w-20' : 'w-32'} flex flex-col gap-2 rounded-lg text-left font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca`}
           >
             <span className="flex aspect-square w-full items-center justify-center rounded-2xl bg-cinza-medio text-cinza-escuro">
               <Icon name="plus-circle-solid" className="size-10" />

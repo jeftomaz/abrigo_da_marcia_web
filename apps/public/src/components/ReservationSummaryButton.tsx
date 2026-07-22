@@ -23,7 +23,7 @@ export function ReservationSummaryButton({
       disabled={count === 0}
       aria-expanded={expanded}
       onClick={onToggle}
-      className="w-full min-w-0 cursor-pointer text-center text-sm leading-tight text-marca-clara disabled:cursor-default disabled:opacity-50"
+      className="min-h-11 w-full min-w-0 cursor-pointer rounded-lg text-center text-sm leading-tight text-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:cursor-default disabled:opacity-50"
     >
       <span className="block">
         {count} {count === 1 ? singularLabel : pluralLabel}

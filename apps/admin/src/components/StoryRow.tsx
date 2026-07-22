@@ -11,11 +11,14 @@ type StoryRowProps = {
   story: Story
 }
 
+const ACTION_CLASSES =
+  'min-h-11 w-full min-w-0 !gap-1 !px-2 !py-2 !text-sm [&_svg]:size-5'
+
 export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story }: StoryRowProps) {
   return (
     <AdminListRow
       isEditing={isEditing}
-      className="flex min-w-0 items-center gap-3 rounded-2xl p-3"
+      className="grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-3 rounded-2xl p-3 min-[28rem]:grid-cols-[4rem_minmax(0,1fr)_13.5rem]"
     >
       <div className="relative shrink-0">
         <div className="size-14 overflow-hidden rounded-xl sm:size-16">
@@ -38,14 +41,14 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
 
       <p className="min-w-0 flex-1 text-base leading-tight font-medium sm:text-lg">{story.name}</p>
 
-      <div className="grid w-[13.5rem] min-w-0 shrink grid-cols-2 justify-items-start gap-2">
+      <div className="col-span-2 grid min-w-0 grid-cols-2 items-stretch gap-2 min-[28rem]:col-span-1 min-[28rem]:col-start-3 min-[28rem]:row-start-1">
         <Action
           onClick={onTogglePublished}
           size="small"
           variant={story.published ? 'neutral-inverted' : 'neutral-adaptive'}
           icon="check-circle-solid"
           aria-pressed={story.published}
-          className={`gap-1 px-3 ${
+          className={`${ACTION_CLASSES} ${
             story.published
               ? '!bg-cinza-escuro !text-cinza-claro hover:!bg-cinza-medio dark:!bg-cinza-claro dark:!text-cinza-escuro dark:hover:!bg-cinza-medio dark:hover:!text-cinza-claro dark:active:!bg-cinza-escuro dark:active:!text-cinza-claro'
               : ''
@@ -59,7 +62,7 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
           variant={isEditing ? 'secondary-adaptive' : 'neutral-adaptive'}
           icon="edit-pencil"
           aria-pressed={isEditing}
-          className="gap-1 px-3"
+          className={ACTION_CLASSES}
         >
           Editar
         </Action>
@@ -68,7 +71,7 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
           size="small"
           variant="neutral-adaptive"
           icon="trash-solid"
-          className="gap-1 px-3"
+          className={ACTION_CLASSES}
         >
           Remover
         </Action>

@@ -65,7 +65,11 @@ export function Header() {
       }`}
     >
       <div className="mx-auto flex max-w-[1920px] flex-wrap items-center justify-between gap-10 px-6 py-4 lg:flex-nowrap lg:gap-6">
-        <Link to="/" className="shrink-0 text-on-brand">
+        <Link
+          to="/"
+          aria-label="Ir para a página inicial"
+          className="shrink-0 rounded-lg text-on-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-marca-clara"
+        >
           <Logo className="h-12 w-auto" />
         </Link>
 
@@ -104,7 +108,7 @@ export function Header() {
           type="button"
           onClick={toggleTheme}
           aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
-          className="order-1 shrink-0 text-on-brand lg:order-3"
+          className="order-1 flex size-11 shrink-0 items-center justify-center rounded-full text-on-brand transition-colors hover:bg-marca-escura focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara lg:order-3"
         >
           <Icon name={theme === 'dark' ? 'half-moon' : 'sun-light'} className="h-8 w-8" />
         </button>

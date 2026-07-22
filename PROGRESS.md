@@ -1,5 +1,11 @@
 # PROGRESS.md
 
+- Passada final de Admin, autenticação e Configurações: carregamentos sem anúncio ganharam `role="status"`/`role="alert"` (Cães, Histórias, Eventos, sorteio, verificação de sessão) e os controles nativos restantes sem foco visível (sorteio, prêmios e medidas do formulário de Eventos, alternador Horas/Minutos, galeria de fotos, remoção de tags) foram padronizados; build/lint aprovados e validação visual em claro/escuro e mobile/desktop confirmada no navegador local (Cães, Histórias, Eventos e login/MFA do admin).
+- Cards da gestão de Histórias preservam ações em duas colunas sem sobreposição: em larguras estreitas, o bloco ocupa uma linha própria; a partir de 448px, retorna à terceira coluna com botões limitados à célula.
+- Passada final de Eventos ampliou campos, remoção do carrinho e resumo para alvos acessíveis; números da rifa usam cinco colunas no mobile e foco visível, preservando oito/dez colunas em telas maiores.
+- Passada final de Histórias alinhou carregamento, erro, vazio e catálogo aos estados exclusivos usados em Adoção; o carregamento agora é anunciado a tecnologias assistivas.
+- Passada final de Adoção padronizou alvo dos filtros, foco das fotos ampliáveis e elevação de cards por teclado; carregamento/erro não exibem mais contagem e catálogo vazios simultâneos.
+- Passada final da Landing: foco visível e alvos mínimos foram padronizados nos controles nativos do Header, Hero, Doação e Footer; build/lint aprovados e validação visual em claro/escuro e mobile/desktop confirmada no navegador local.
 - Formulário de Cães ampliou a galeria por toda a largura interna do painel desktop, manteve Dados/Adoção recuados, removeu o ícone informativo sem função e passou a explicar erros em cada campo inválido.
 - Remoção de cães agora usa `Dialog`, recomenda preservar o cadastro como Adotado/Falecido e oferece ambas as mudanças de status antes da exclusão definitiva de registro e fotos.
 - Preview de Histórias da Landing passou a distribuir duas ou três colunas conforme o espaço real em desktops, com largura mínima de 10rem, altura mínima uniforme e ação contida no card.

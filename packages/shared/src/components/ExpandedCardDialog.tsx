@@ -150,7 +150,7 @@ export function ExpandedCardDialog({
                 key={`${src}-${index}`}
                 type="button"
                 aria-label={`Ampliar ${title} - foto ${index + 1}`}
-                className={`${imageClasses} cursor-zoom-in`}
+                className={`${imageClasses} cursor-zoom-in focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-marca`}
                 onClick={() => {
                   if (didDrag.current) {
                     didDrag.current = false

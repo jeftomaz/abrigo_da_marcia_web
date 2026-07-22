@@ -116,7 +116,7 @@ export function Historias() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 rounded-3xl bg-cinza-claro p-2 desk:gap-3 desk:bg-transparent desk:p-0 dark:bg-cinza-medio desk:dark:bg-transparent">
-            {isLoading && <p className="text-center">Carregando histórias...</p>}
+            {isLoading && <p role="status" className="text-center">Carregando histórias...</p>}
             {error && <p role="alert" className="text-center">Não foi possível carregar as histórias.</p>}
             {operationError && <p role="alert" className="text-center">{operationError}</p>}
             {filteredStories.map((story) => (

@@ -146,34 +146,37 @@ export function Adocao() {
           </section>
         )}
 
-        <div
-          className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm"
-          aria-live="polite"
-        >
-          <div className="flex flex-wrap gap-2">
-            {activeFilters.map((filter) => (
-              <span
-                key={filter}
-                className="rounded-full bg-marca-escura px-3 py-1 font-medium text-marca-clara dark:bg-marca"
-              >
-                {filter}
-              </span>
-            ))}
+        {!isLoading && !error && (
+          <div
+            className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm"
+            aria-live="polite"
+          >
+            <div className="flex flex-wrap gap-2">
+              {activeFilters.map((filter) => (
+                <span
+                  key={filter}
+                  className="rounded-full bg-marca-escura px-3 py-1 font-medium text-marca-clara dark:bg-marca"
+                >
+                  {filter}
+                </span>
+              ))}
+            </div>
+            <p className="ml-auto font-medium">
+              {dogs.length} {dogs.length === 1 ? 'cão encontrado' : 'cães encontrados'}
+            </p>
           </div>
-          <p className="ml-auto font-medium">
-            {dogs.length} {dogs.length === 1 ? 'cão encontrado' : 'cães encontrados'}
-          </p>
-        </div>
+        )}
 
-        {isLoading && <p className="mt-10 text-center text-2xl">Carregando cães...</p>}
+        {isLoading && <p role="status" className="mt-10 text-center text-2xl">Carregando cães...</p>}
         {error && (
           <p role="alert" className="mt-10 text-center text-2xl">
             Não foi possível carregar os cães.
           </p>
         )}
 
-        <section aria-label="Cães disponíveis" className="mt-10 grid grid-cols-2 gap-5 lg:mt-10 lg:grid-cols-3 lg:gap-6">
-          {dogs.map((dog) => {
+        {!isLoading && !error && dogs.length > 0 && (
+          <section aria-label="Cães disponíveis" className="mt-10 grid grid-cols-2 gap-5 lg:mt-10 lg:grid-cols-3 lg:gap-6">
+            {dogs.map((dog) => {
             const tags = getDogTags(dog)
             const cover = dog.photos[0]
 
@@ -198,8 +201,9 @@ export function Adocao() {
                 }
               />
             )
-          })}
-        </section>
+            })}
+          </section>
+        )}
 
         {!isLoading && !error && dogs.length === 0 && (
           <p className="mt-10 text-center text-2xl">Nenhum cão encontrado.</p>

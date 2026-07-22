@@ -53,7 +53,7 @@ export function CompactCard({
 }: CompactCardProps) {
   return (
     <article
-      className={`relative flex overflow-hidden rounded-2xl bg-surface-raised text-on-surface-raised transition-transform duration-200 ease-out motion-safe:hover:-translate-y-1 ${ORIENTATION_CLASSES[orientation]} ${className}`}
+      className={`relative flex overflow-hidden rounded-2xl bg-surface-raised text-on-surface-raised transition-transform duration-200 ease-out motion-safe:hover:-translate-y-1 motion-safe:focus-within:-translate-y-1 ${ORIENTATION_CLASSES[orientation]} ${className}`}
     >
       {image ? (
         <img

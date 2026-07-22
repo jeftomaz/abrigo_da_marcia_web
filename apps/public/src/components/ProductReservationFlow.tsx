@@ -237,7 +237,7 @@ export function ProductReservationFlow({ event, onClose }: ProductReservationFlo
                 {cart.map((item) => (
                   <li key={item.id} className="flex items-center justify-between gap-3">
                     <span>{itemLabel(item, event.products)}</span>
-                    <button type="button" onClick={() => setCart((items) => items.filter(({ id }) => id !== item.id))} aria-label={`Remover ${itemLabel(item, event.products)}`} className="shrink-0 text-marca"><Icon name="trash-solid" className="size-5" /></button>
+                    <button type="button" onClick={() => setCart((items) => items.filter(({ id }) => id !== item.id))} aria-label={`Remover ${itemLabel(item, event.products)}`} className="flex size-11 shrink-0 items-center justify-center rounded-full text-marca hover:bg-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"><Icon name="trash-solid" className="size-5" /></button>
                   </li>
                 ))}
               </ul>

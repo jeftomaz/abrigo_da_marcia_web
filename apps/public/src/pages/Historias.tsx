@@ -24,35 +24,37 @@ export function Historias() {
           </p>
         </header>
 
-        <section
-          aria-label="Histórias de adoção"
-          className="mt-10 grid grid-cols-2 gap-5 lg:grid-cols-3 lg:gap-6"
-        >
-          {stories.map((story) => (
-            <CompactCard
-              key={story.id}
-              image={{
-                src: getStoryPhotoUrl(story.photos[0]),
-                alt: `Cão adotado: ${story.name}`,
-              }}
-              imageAspect="landscape"
-              title={story.name}
-              description={story.description}
-              action={
-                <Action
-                  onClick={() => setSelectedStoryId(story.id)}
-                  size="small"
-                  className="px-1"
-                  aria-label={`Conhecer a história de ${story.name}`}
-                >
-                  Conheça essa história
-                </Action>
-              }
-            />
-          ))}
-        </section>
+        {!isLoading && !error && stories.length > 0 && (
+          <section
+            aria-label="Histórias de adoção"
+            className="mt-10 grid grid-cols-2 gap-5 lg:grid-cols-3 lg:gap-6"
+          >
+            {stories.map((story) => (
+              <CompactCard
+                key={story.id}
+                image={{
+                  src: getStoryPhotoUrl(story.photos[0]),
+                  alt: `Cão adotado: ${story.name}`,
+                }}
+                imageAspect="landscape"
+                title={story.name}
+                description={story.description}
+                action={
+                  <Action
+                    onClick={() => setSelectedStoryId(story.id)}
+                    size="small"
+                    className="px-1"
+                    aria-label={`Conhecer a história de ${story.name}`}
+                  >
+                    Conheça essa história
+                  </Action>
+                }
+              />
+            ))}
+          </section>
+        )}
 
-        {isLoading && <p className="mt-10 text-center text-2xl">Carregando histórias...</p>}
+        {isLoading && <p role="status" className="mt-10 text-center text-2xl">Carregando histórias...</p>}
         {error && (
           <p role="alert" className="mt-10 text-center text-2xl">
             Não foi possível carregar as histórias.

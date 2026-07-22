@@ -414,7 +414,7 @@ export function AdminAuth({ children }: { children: ReactNode }) {
     signOut,
   } : null
 
-  if (state.status === 'checking') return <AuthLayout><p className="text-center">Verificando sessão...</p></AuthLayout>
+  if (state.status === 'checking') return <AuthLayout><p role="status" className="text-center">Verificando sessão...</p></AuthLayout>
   if (state.status === 'signed-out') return <Login onSubmit={login} />
   if (state.status === 'forbidden') return (
     <AuthLayout>
