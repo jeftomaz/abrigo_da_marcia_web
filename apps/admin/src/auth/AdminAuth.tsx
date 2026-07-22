@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Action, Logo, supabase } from '@abrigo/shared'
+import { Action, Icon, Logo, supabase } from '@abrigo/shared'
 import { AdminAuthContext } from './AdminAuthContext'
 
 const LAST_ACTIVITY_KEY = 'abrigo-admin-last-activity-at'
@@ -41,6 +41,7 @@ const isStrongPassword = (password: string) => password.length >= 12
 function Login({ onSubmit }: { onSubmit: (email: string, password: string) => Promise<void> }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -67,7 +68,24 @@ function Login({ onSubmit }: { onSubmit: (email: string, password: string) => Pr
         </label>
         <label className="mt-4 block font-medium">
           Senha
-          <input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} className={fieldClasses} />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className={`${fieldClasses} pr-11`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              className="absolute top-1 right-0 bottom-0 flex w-11 items-center justify-center text-cinza-medio hover:text-cinza-escuro focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-marca dark:text-cinza-claro/70 dark:hover:text-cinza-claro"
+            >
+              <Icon name={showPassword ? 'eye-closed' : 'eye'} className="size-5" />
+            </button>
+          </div>
         </label>
         {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
         <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
