@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Action, Logo, supabase } from '@abrigo/shared'
 import { AdminAuthContext } from './AdminAuthContext'
@@ -11,6 +11,7 @@ type AuthState =
   | { status: 'challenge'; email: string; factorId: string }
   | { status: 'enroll'; email: string }
   | { status: 'forbidden' }
+  | { status: 'registration'; email: string }
   | { status: 'ready'; email: string; factorId: string }
   | { status: 'signed-out' }
 
@@ -31,6 +32,11 @@ function AuthLayout({ children }: { children: ReactNode }) {
 }
 
 const fieldClasses = 'mt-1 h-11 w-full rounded-lg border-2 border-cinza-medio bg-transparent px-4 text-current outline-none focus-visible:border-marca dark:border-cinza-claro'
+const isStrongPassword = (password: string) => password.length >= 12
+  && /[a-z]/.test(password)
+  && /[A-Z]/.test(password)
+  && /\d/.test(password)
+  && /[^A-Za-z0-9]/.test(password)
 
 function Login({ onSubmit }: { onSubmit: (email: string, password: string) => Promise<void> }) {
   const [email, setEmail] = useState('')
@@ -66,6 +72,85 @@ function Login({ onSubmit }: { onSubmit: (email: string, password: string) => Pr
         {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
         <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
           {isSubmitting ? 'Entrando...' : 'Entrar'}
+        </Action>
+      </form>
+    </AuthLayout>
+  )
+}
+
+function Registration({
+  email,
+  onSubmit,
+}: {
+  email: string
+  onSubmit: (password: string) => Promise<void>
+}) {
+  const [password, setPassword] = useState('')
+  const [confirmation, setConfirmation] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!isStrongPassword(password)) {
+      setError('Use pelo menos 12 caracteres, com maiúscula, minúscula, número e símbolo.')
+      return
+    }
+    if (password !== confirmation) {
+      setError('As senhas não coincidem.')
+      return
+    }
+    setIsSubmitting(true)
+    setError('')
+    try {
+      await onSubmit(password)
+    } catch {
+      setError('Não foi possível concluir o cadastro. Solicite um novo convite se o link expirou.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <AuthLayout>
+      <form onSubmit={submit}>
+        <h1 className="text-3xl font-medium text-marca">Concluir cadastro</h1>
+        <p className="mt-3">Defina sua senha para acessar a administração do Abrigo da Márcia.</p>
+        <label className="mt-6 block font-medium">
+          E-mail
+          <input type="email" autoComplete="username" readOnly value={email} className={fieldClasses} />
+        </label>
+        <label className="mt-4 block font-medium">
+          Senha
+          <input
+            type="password"
+            autoComplete="new-password"
+            minLength={12}
+            required
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className={fieldClasses}
+            aria-describedby="password-requirements"
+          />
+        </label>
+        <p id="password-requirements" className="mt-2 text-sm">
+          Mínimo de 12 caracteres, com maiúscula, minúscula, número e símbolo.
+        </p>
+        <label className="mt-4 block font-medium">
+          Confirmar senha
+          <input
+            type="password"
+            autoComplete="new-password"
+            minLength={12}
+            required
+            value={confirmation}
+            onChange={(event) => setConfirmation(event.target.value)}
+            className={fieldClasses}
+          />
+        </label>
+        {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
+        <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
+          {isSubmitting ? 'Salvando...' : 'Criar senha e continuar'}
         </Action>
       </form>
     </AuthLayout>
@@ -187,8 +272,10 @@ function EnrollmentScreen({
 
 export function AdminAuth({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'checking' })
+  const refreshedInvitationRole = useRef(false)
 
   const signOut = useCallback(async () => {
+    refreshedInvitationRole.current = false
     localStorage.removeItem(LAST_ACTIVITY_KEY)
     await supabase.auth.signOut()
     setState({ status: 'signed-out' })
@@ -197,12 +284,27 @@ export function AdminAuth({ children }: { children: ReactNode }) {
   const inspectSession = useCallback(async (
     session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'],
   ) => {
-    if (!session) {
+    let activeSession = session
+    if (!activeSession) {
       setState({ status: 'signed-out' })
       return
     }
-    if (session.user.app_metadata.role !== 'admin') {
+    if (
+      activeSession.user.app_metadata.role !== 'admin'
+      && activeSession.user.invited_at
+      && !refreshedInvitationRole.current
+    ) {
+      refreshedInvitationRole.current = true
+      const { data, error } = await supabase.auth.refreshSession()
+      if (!error && data.session) activeSession = data.session
+    }
+    if (activeSession.user.app_metadata.role !== 'admin') {
       setState({ status: 'forbidden' })
+      return
+    }
+    const email = activeSession.user.email ?? 'administrador'
+    if (activeSession.user.invited_at && activeSession.user.app_metadata.admin_onboarding_completed !== true) {
+      setState({ status: 'registration', email })
       return
     }
     const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY))
@@ -213,7 +315,6 @@ export function AdminAuth({ children }: { children: ReactNode }) {
     const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
     if (factorsError) throw factorsError
     const factor = factors.totp.find((item) => item.status === 'verified')
-    const email = session.user.email ?? 'administrador'
     if (!factor) {
       setState({ status: 'enroll', email })
       return
@@ -267,6 +368,14 @@ export function AdminAuth({ children }: { children: ReactNode }) {
     await inspectSession(data.session)
   }
 
+  const completeRegistration = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw error
+    const { data, error: refreshError } = await supabase.auth.refreshSession()
+    if (refreshError) throw refreshError
+    await inspectSession(data.session)
+  }
+
   const beginEnrollment = async (): Promise<Enrollment> => {
     const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
     if (factorsError) throw factorsError
@@ -314,6 +423,9 @@ export function AdminAuth({ children }: { children: ReactNode }) {
       <Action onClick={() => void signOut()} className="mt-6 w-full px-6">Sair</Action>
     </AuthLayout>
   )
+  if (state.status === 'registration') return (
+    <Registration email={state.email} onSubmit={completeRegistration} />
+  )
   if (state.status === 'enroll') return <EnrollmentScreen beginEnrollment={beginEnrollment} verify={verify} />
   if (state.status === 'challenge') return (
     <AuthLayout>
@@ -322,6 +434,9 @@ export function AdminAuth({ children }: { children: ReactNode }) {
         description={`Abra o autenticador vinculado a ${state.email}.`}
         onSubmit={(code) => verify(state.factorId, code)}
       />
+      <Action variant="secondary" onClick={() => void signOut()} className="mt-4 w-full px-6">
+        Sair e usar outra conta
+      </Action>
     </AuthLayout>
   )
   return <AdminAuthContext.Provider value={contextValue}>{children}</AdminAuthContext.Provider>

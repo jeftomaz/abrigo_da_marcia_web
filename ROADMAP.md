@@ -12,9 +12,9 @@
 
 ### P0 — Publicação e dados reais
 
-- `todo` Criar o projeto Supabase hospedado, aplicar migrations/bucket e configurar URLs, Auth, TOTP, sessão, `pg_cron` e variáveis de produção.
-- `todo` Provisionar o primeiro admin hospedado e repetir o smoke test de login, `aal2`, RLS, Storage, reservas, expiração e sorteio no ambiente real.
-- `todo` Publicar os apps público e admin no GitHub Pages: definir caminhos/base, domínio do admin, workflow de build/deploy e fallback `404.html` do `BrowserRouter`.
+- `doing` Homologação `banco_site_abrigo` ativa, migrada e validada com bucket, Auth/TOTP, fallback de sessão do plano Free e `pg_cron`; auditoria da produção, URLs e variáveis finais pendentes.
+- `doing` Onboarding hospedado por convite implementado (senha → TOTP → `aal2`); recebimento e abertura do e-mail confirmados, conclusão do cadastro no navegador e smoke de RLS, Storage, reservas, expiração e sorteio em andamento.
+- `doing` Publicar os apps público e admin no GitHub Pages (bases, admin em `/admin/`, workflow e fallback `404.html` prontos; configuração do Pages, variáveis e publicação pendentes).
 - `todo` Carregar configurações, cães, histórias, eventos e fotos reais; o `seed.sql` continua exclusivamente fictício e não deve abastecer produção.
 - `todo` Sanitizar EXIF/GPS e otimizar as fotos versionadas antes da publicação; há assets com metadados de aparelho, data e localização.
 
@@ -126,7 +126,7 @@ O CRUD de produtos deve permitir um único formato de guia de medidas por produt
 8. Login administrativo e MFA/TOTP — `done`
    - Implementar login, sessão e proteção das rotas do admin.
    - Implementar ativação por QR Code, confirmação por código, exigência de `aal2` e remoção segura do autenticador.
-9. Validação final — `done` (50 testes pgTAP, smoke test real de login/TOTP/RLS e builds/lints dos apps aprovados)
+9. Validação final — `done` (53 testes pgTAP locais/remotos, smoke test de login/TOTP/RLS anterior e builds/lints dos apps aprovados; novo onboarding por convite em validação hospedada)
    - Testar migrations/RLS, hooks, propagação para cada página consumidora, ausência de valores hardcoded, temas, responsividade, teclado/foco e fluxos de MFA.
 
 Critério de conclusão: todo valor salvo em Configurações deve ser a fonte de verdade e aparecer nas páginas relacionadas após revalidação, sem exigir alteração de código ou novo deploy.

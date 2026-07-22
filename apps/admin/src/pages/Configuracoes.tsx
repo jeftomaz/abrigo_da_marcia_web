@@ -51,8 +51,8 @@ function formatExpiration(minutes: number) {
   return `${minutes} minutos`
 }
 
-function configured(value: string) {
-  return value ? 'configurado' : 'oculto até ser configurado'
+function configurationStatus(value: string) {
+  return value ? 'configurado' : 'não configurado'
 }
 
 export function Configuracoes() {
@@ -89,15 +89,21 @@ export function Configuracoes() {
   }
 
   const landingDetails = siteSettings && socialLinks ? [
-    `Link de doação ${configured(siteSettings.donationUrl)}`,
-    `Voluntariado ${configured(siteSettings.volunteerFormUrl)}`,
-    `Facebook ${configured(socialLinks.facebook)}; Instagram ${configured(socialLinks.instagram)}`,
+    `Link de doação: ${configurationStatus(siteSettings.donationUrl)}`,
+    `Formulário de voluntariado: ${configurationStatus(siteSettings.volunteerFormUrl)}`,
+    `Facebook: ${configurationStatus(socialLinks.facebook)}`,
+    `Instagram: ${configurationStatus(socialLinks.instagram)}`,
   ] : ['Doação, voluntariado e redes sociais']
   const eventDetails = eventSettings ? [
-    `Até ${eventSettings.defaultMaxProductUnits} produtos ou ${eventSettings.defaultMaxRaffleNumbers} números por reserva`,
-    `Expiração padrão em ${formatExpiration(eventSettings.defaultReservationTtlMinutes)}`,
-    eventSettings.defaultPixCopyPaste ? 'Pagamento padrão configurado para novos eventos' : 'Pagamento padrão ainda não informado',
-    eventSettings.eventExportEmail ? `Exportações enviadas para ${eventSettings.eventExportEmail}` : 'E-mail de exportação ainda não informado',
+    `Limite de produtos por reserva: ${eventSettings.defaultMaxProductUnits}`,
+    `Limite de números de rifa por reserva: ${eventSettings.defaultMaxRaffleNumbers}`,
+    `Tempo de expiração: ${formatExpiration(eventSettings.defaultReservationTtlMinutes)}`,
+    `Chave Pix: ${configurationStatus(eventSettings.defaultPixKey)}`,
+    `Recebedor do Pix: ${configurationStatus(eventSettings.defaultPixReceiver)}`,
+    `Cidade do Pix: ${configurationStatus(eventSettings.defaultPixCity)}`,
+    `Pix copia-e-cola: ${configurationStatus(eventSettings.defaultPixCopyPaste)}`,
+    `Instrução pós-pagamento: ${configurationStatus(eventSettings.defaultPostPaymentInstructions)}`,
+    `E-mail para cópia das exportações: ${configurationStatus(eventSettings.eventExportEmail)}`,
   ] : ['Limites, pagamento, expiração e auditoria das reservas']
 
   const editorContent = editor === 'events' && eventSettings ? (
@@ -134,7 +140,7 @@ export function Configuracoes() {
               <h2 id="dogs-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Gestão de Cães</h2>
               <SettingsCard
                 title="Dados e valores padrão"
-                details={siteSettings ? [`Formulário global: ${siteSettings.adoptionFormUrl}`] : ['Link global do formulário de adoção']}
+                details={siteSettings ? [`Formulário global de adoção: ${configurationStatus(siteSettings.adoptionFormUrl)}`] : ['Formulário global de adoção']}
                 isEditing={editor === 'dogs'}
                 actions={<Action onClick={() => setEditor('dogs')} disabled={!siteSettings || isLoadingSite} icon="edit-pencil" size="small" variant="neutral-adaptive" className="h-11 px-5">Editar</Action>}
               />
@@ -156,7 +162,7 @@ export function Configuracoes() {
               <h2 id="security-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Segurança</h2>
               <SettingsCard
                 title="Autenticação em 2 fatores (2FA)"
-                details={[`Autenticador TOTP ativo para ${email}`, 'Novo desafio após 7 dias sem atividade']}
+                details={[`Autenticador TOTP ativo para ${email}`, 'Sessão encerrada após 7 dias sem atividade']}
                 status={<StatusBadge tone="verde" size="sm">Ativa</StatusBadge>}
                 actions={<Action onClick={() => void removeMfa()} icon="trash-solid" size="small" variant="neutral-adaptive" className="h-11 px-5">Remover</Action>}
               />

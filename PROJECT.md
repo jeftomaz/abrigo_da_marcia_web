@@ -6,14 +6,14 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 
 ## Stack
 
-- **Host:** GitHub Pages (estático). Público: BrowserRouter + truque `404.html`. Admin: HashRouter.
+- **Host:** GitHub Pages (estático). Público em `/abrigo_da_marcia_web/` com BrowserRouter + `404.html`; admin em `/abrigo_da_marcia_web/admin/` com HashRouter.
 - **Frontend:** React + Vite + TypeScript. Tailwind CSS (tokens do design system em `tailwind.config`).
 - **Backend:** Supabase — Postgres (RLS rígido), Auth (MFA TOTP p/ admin), Storage (fotos), `pg_cron` (expiração de reservas).
 - **Dados no client:** TanStack Query; client Supabase único e tipado (`database.types.ts` gerado) em `packages/shared`.
 - **Monorepo:** pnpm workspaces — `apps/public`, `apps/admin`, `packages/shared`.
 - **Dev local do banco:** `supabase start` (requer Docker) sobe o stack; `supabase db reset` aplica `supabase/migrations/` + `supabase/seed.sql`. Studio em `localhost:54323`.
 - **Bootstrap local removível:** `./scripts/dev-local.sh` inicia Supabase, público (`5173`) e admin (`5174`). O arquivo não participa de build/deploy.
-- **Admin:** login por e-mail e senha, TOTP obrigatório e RLS condicionada a `app_metadata.role = admin` + `aal2`. Cadastro público permanece desabilitado; contas são criadas/convidadas pelo Dashboard ou Admin API.
+- **Admin:** entrada exclusiva por convite, definição de senha, TOTP obrigatório e RLS condicionada a `app_metadata.role = admin` + `aal2`. Cadastro público permanece desabilitado; convites são enviados pelo Dashboard ou Admin API.
 
 ## Regras específicas
 
@@ -51,6 +51,6 @@ Status detalhado: `ROADMAP.md`.
 
 ## Sessão admin
 
-Refresh token longo (padrão Supabase). A sessão é encerrada após 7 dias sem atividade, controlados por `abrigo-admin-last-activity-at` no navegador e `auth.sessions.inactivity_timeout`; o próximo acesso exige senha e novo desafio TOTP.
+Refresh token longo (padrão Supabase). A sessão é encerrada no client após 7 dias sem atividade, controlados por `abrigo-admin-last-activity-at`; o próximo acesso exige senha e novo desafio TOTP. `auth.sessions.inactivity_timeout` permanece desabilitado no Supabase Free porque exige plano Pro.
 
-Para provisionar um admin local ou hospedado: criar a conta pelo Studio/Dashboard ou Admin API e definir `app_metadata.role` como `admin`. Nenhuma credencial administrativa vive no repositório.
+Para provisionar um admin local ou hospedado: convidar a conta pelo Studio/Dashboard ou Admin API. O banco atribui `app_metadata.role = admin` somente a usuários convidados; o link exige definição de senha e cadastro do TOTP antes de liberar a gestão. Nenhuma credencial administrativa vive no repositório.

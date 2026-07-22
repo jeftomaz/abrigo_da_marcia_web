@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eventos estão materializados e validados em `supabase/migrations/`. Ainda sem projeto hospedado.
+Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eventos estão materializados em `supabase/migrations/` e validados localmente e na homologação hospedada `banco_site_abrigo`. A produção legada `site-do-abrigo` ainda não foi auditada nem migrada.
 
 ## Imagens no Storage
 
@@ -476,8 +476,10 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 
 ## Auth e matriz de acesso administrativo
 
-- Contas administrativas são provisionadas fora do client e recebem `app_metadata.role = admin`; cadastro público está desabilitado.
-- O frontend exige senha, fator TOTP verificado e sessão `aal2`. Sem fator, conduz a ativação por QR Code; com fator e `aal1`, exige novo desafio.
+- Contas administrativas são convidadas fora do client pelo Dashboard ou Admin API; cadastro público está desabilitado. `assign_invited_admin_role` atribui `app_metadata.role = admin` somente quando `auth.users.invited_at` está preenchido, tanto na inserção quanto na atualização posterior usada pelo Supabase hospedado.
+- O convite abre uma sessão `aal1` na tela de cadastro. A alteração real de `encrypted_password` marca `app_metadata.admin_onboarding_completed`; então o frontend exige cadastro e verificação do TOTP para elevar a sessão a `aal2` antes de liberar a gestão.
+- Em logins posteriores, uma sessão `aal1` com TOTP verificado exige novo desafio. Fatores incompletos são descartados antes de gerar outro QR Code.
+- No plano gratuito, o admin encerra no client a sessão após sete dias sem atividade; `auth.sessions.inactivity_timeout` exige plano Pro e permanece desabilitado no serviço hospedado.
 - `site_settings`, `social_links`, `caes`, `historias`, `event_settings`, `eventos`, `rifas`, `rifa_premios`, `produtos`, variações/opções e reservas usam uma policy permissiva para `is_admin()` e outra policy restritiva exigindo `aal2`, em leitura e escrita.
 - `event_deletion_audit` permite somente `select` e `insert` a admin `aal2`; atualizações e exclusões não são concedidas.
 - `storage.objects` do bucket `dog-photos` permite `select`, `insert` e `delete` somente a admin `aal2`; leitura pública das imagens continua pelo bucket público.
