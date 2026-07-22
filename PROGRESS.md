@@ -87,3 +87,4 @@
 - Histórias e Eventos ordenam rascunhos primeiro e os demais por nome; cards de Histórias usam ações em duas colunas, galeria com alvos maiores, validação por campo e `Dialog` para publicação/rascunho/exclusão.
 - Eventos corrigiu rótulos de variação/prêmio, levou Exportar CSV ao mobile e passou a distinguir carregamento/erro de reservas no admin, números públicos e sorteio.
 - Gestão de reservas bloqueia comandos concorrentes por linha e mostra “Salvando...”/erro; resumo exibe meta e total pago, e o detalhe público da rifa passou a mostrar as imagens dos prêmios.
+- Confirmações nativas foram eliminadas: publicação/verificação de Eventos, limpeza de links e remoção de MFA usam `Dialog` compartilhado. “Tratamento contra carrapatos” ganhou descrição própria e o Footer usa copyright/ano corrente; conteúdo final ainda depende de aprovação do Abrigo.

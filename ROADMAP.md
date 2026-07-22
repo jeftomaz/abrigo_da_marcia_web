@@ -24,7 +24,7 @@
 - `done` Remover o card mockado “Camiseta Copa 2026” e renderizar o preview de Eventos somente com dados reais; sem evento cadastrado/publicável, nenhum card de evento deve aparecer.
 - `done` Implementar doação por modalidade e valor: doação única aceita valores predefinidos ou livre e gera o Pix correspondente; recorrente abre o link PagSeguro específico de cada valor, persistido na tela de Configurações.
 - `done` Definir largura e altura mínimas para o card de História na Landing em desktops menores, preservando a leitura e mantendo “Conheça essa história” dentro do botão.
-- `todo` Revisar com o Abrigo textos, fotos, contato, localização e créditos finais; corrigir a descrição duplicada de vacinação em “Tratamento contra carrapatos” e o símbolo/ano fixo `® 2026` do Footer.
+- `doing` Revisar com o Abrigo textos, fotos, contato, localização e créditos finais; descrição duplicada e Footer com símbolo/ano fixos já corrigidos, aprovação do conteúdo real pendente.
 - `done` Remover recursos demonstrativos sem consumidor após integrar o preview: `evento_camiseta.jpg`, `evento_rifa.jpg` e `DEMO_PIX_CODE`.
 
 ### P1 — Adoção e Gestão de Cães
@@ -42,7 +42,7 @@
 - `done` Manter rascunhos de Histórias/Eventos no topo e ordenar os demais registros alfabeticamente.
 - `done` Corrigir o componente/layout das ações dos cards de Histórias para manter duas colunas alinhadas à esquerda nos breakpoints previstos.
 - `done` Ampliar as miniaturas da galeria de Histórias para facilitar toque/arraste e afastar a ação de remoção.
-- `todo` Padronizar os `window.confirm` restantes com o `Dialog` de Eventos: Cães, Histórias, publicação/verificação de Eventos, limpeza de links e remoção de MFA.
+- `done` Padronizar todas as confirmações com `Dialog`: Cães, Histórias, publicação/verificação de Eventos, limpeza de links e remoção de MFA.
 - `done` Exibir mensagens de validação por campo em Cães e Histórias; entradas inválidas por normalização agora explicam o motivo.
 
 ### P1 — Eventos e reservas

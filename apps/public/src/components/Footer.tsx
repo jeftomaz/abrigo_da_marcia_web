@@ -23,7 +23,7 @@ export function Footer() {
           </address>
 
           <small className="col-span-2 row-start-4 mt-4 text-footer-meta lg:mt-0">
-            ® 2026 Abrigo da Márcia
+            © {new Date().getFullYear()} Abrigo da Márcia
           </small>
         </div>
 

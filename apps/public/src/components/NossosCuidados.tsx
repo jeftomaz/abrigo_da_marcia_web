@@ -23,7 +23,7 @@ const CARES: Care[] = [
   {
     icon: 'bug-solid',
     title: 'Tratamento contra carrapatos',
-    description: 'Todos os animais possuem um ciclo anual de vacinação',
+    description: 'Todos os animais recebem prevenção e tratamento contra carrapatos',
   },
 ]
 

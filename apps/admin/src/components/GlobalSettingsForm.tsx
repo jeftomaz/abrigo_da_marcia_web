@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import { Action } from '@abrigo/shared'
 import type { SiteSettings, SocialLinks } from '@abrigo/shared'
+import { ConfirmationDialog } from './ConfirmationDialog'
 
 const DONATION_AMOUNTS = [10, 20, 30, 50, 100, 150]
 
@@ -40,11 +41,24 @@ export function GlobalSettingsForm({
   const [instagram, setInstagram] = useState(socialLinks.instagram)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+  const [pendingRemoval, setPendingRemoval] = useState<{ links: SocialLinks; settings: SiteSettings } | null>(null)
   const isPanel = layout === 'panel'
   const fieldClasses = `${isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'} mt-1 w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50`
   const labelClasses = `${isPanel ? 'text-sm' : 'text-base'} block font-medium`
 
-  const submit = async (event: React.FormEvent) => {
+  const persist = async (nextSettings: SiteSettings, nextSocialLinks: SocialLinks) => {
+    setIsSaving(true)
+    setSaveError('')
+    try {
+      await onSave(nextSettings, nextSocialLinks)
+    } catch {
+      setSaveError('Não foi possível salvar as configurações.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const submit = (event: React.FormEvent) => {
     event.preventDefault()
     const nextSettings: SiteSettings = {
       adoptionFormUrl: adoptionFormUrl.trim(),
@@ -77,18 +91,9 @@ export function GlobalSettingsForm({
         socialLinks.facebook && !nextSocialLinks.facebook,
         socialLinks.instagram && !nextSocialLinks.instagram,
       ].some(Boolean)
-      if (removed && !window.confirm('Os botões ou redes sem link serão ocultados do site público. Deseja continuar?')) return
+      if (removed) { setPendingRemoval({ settings: nextSettings, links: nextSocialLinks }); return }
     }
-
-    setIsSaving(true)
-    setSaveError('')
-    try {
-      await onSave(nextSettings, nextSocialLinks)
-    } catch {
-      setSaveError('Não foi possível salvar as configurações.')
-    } finally {
-      setIsSaving(false)
-    }
+    void persist(nextSettings, nextSocialLinks)
   }
 
   return (
@@ -178,6 +183,7 @@ export function GlobalSettingsForm({
           {isSaving ? 'Salvando...' : 'Salvar'}
         </Action>
       </div>
+      {pendingRemoval && <ConfirmationDialog title="Ocultar links públicos" description="Botões e redes sem link deixarão de aparecer no site público." isPending={isSaving} onCancel={() => setPendingRemoval(null)} onConfirm={() => { const pending = pendingRemoval; setPendingRemoval(null); void persist(pending.settings, pending.links) }} />}
     </form>
   )
 }

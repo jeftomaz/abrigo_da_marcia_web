@@ -13,6 +13,7 @@ import {
 import type { EventSettings, SiteSettings, SocialLinks } from '@abrigo/shared'
 import { useAdminAuth } from '../auth/AdminAuthContext'
 import { AdminListRow } from '../components/AdminListRow'
+import { ConfirmationDialog } from '../components/ConfirmationDialog'
 import { EventSettingsForm } from '../components/EventSettingsForm'
 import { GlobalSettingsForm } from '../components/GlobalSettingsForm'
 import { StatusBadge } from '../components/StatusBadge'
@@ -65,6 +66,7 @@ export function Configuracoes() {
   const saveEventSettings = useSaveEventSettings()
   const [editor, setEditor] = useState<Editor | null>(null)
   const [securityError, setSecurityError] = useState('')
+  const [confirmMfaRemoval, setConfirmMfaRemoval] = useState(false)
   const isDesktop = useIsDesktop()
 
   const saveGlobalSettings = async (settings: SiteSettings, links: SocialLinks) => {
@@ -79,10 +81,10 @@ export function Configuracoes() {
   }
 
   const removeMfa = async () => {
-    if (!window.confirm('Remover o autenticador encerrará a sessão e exigirá uma nova ativação no próximo acesso. Continuar?')) return
     setSecurityError('')
     try {
       await removeAuthenticator()
+      setConfirmMfaRemoval(false)
     } catch {
       setSecurityError('Não foi possível remover o autenticador.')
     }
@@ -165,7 +167,7 @@ export function Configuracoes() {
                 title="Autenticação em 2 fatores (2FA)"
                 details={[`Autenticador TOTP ativo para ${email}`, 'Sessão encerrada após 7 dias sem atividade']}
                 status={<StatusBadge tone="verde" size="sm">Ativa</StatusBadge>}
-                actions={<Action onClick={() => void removeMfa()} icon="trash-solid" size="small" variant="neutral-adaptive" className="h-11 px-5">Remover</Action>}
+                actions={<Action onClick={() => setConfirmMfaRemoval(true)} icon="trash-solid" size="small" variant="neutral-adaptive" className="h-11 px-5">Remover</Action>}
               />
               {securityError && <p role="alert" className="mt-2 text-sm font-medium text-marca">{securityError}</p>}
             </section>
@@ -180,6 +182,7 @@ export function Configuracoes() {
           {editorContent}
         </Dialog>
       )}
+      {confirmMfaRemoval && <ConfirmationDialog title="Remover autenticador" description="A sessão será encerrada e uma nova ativação será exigida no próximo acesso." onCancel={() => setConfirmMfaRemoval(false)} onConfirm={() => void removeMfa()} />}
     </main>
   )
 }

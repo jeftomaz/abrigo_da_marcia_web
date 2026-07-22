@@ -14,6 +14,7 @@ import type { EditablePhoto } from '@abrigo/shared'
 import type { EditableEventProduct, EditableRafflePrize, EventDraft, EventKind, EventSettings, FundraisingEvent, MeasurementTable } from '../events/events'
 import { formatCurrencyInput, parseCurrencyToCents, toEditableEventDraft } from '../events/events'
 import { PhotoGalleryField } from './PhotoGalleryField'
+import { ConfirmationDialog } from './ConfirmationDialog'
 import { TagInput } from './TagInput'
 
 type EventFormProps = {
@@ -412,16 +413,10 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
 
   useImperativeHandle(ref, () => ({ dismiss }))
 
-  const handleSubmit = async (submitEvent: React.FormEvent) => {
-    submitEvent.preventDefault()
-    setSaveError('')
-    const validationIssue = validateDraft()
-    if (validationIssue) {
-      showValidationIssue(validationIssue)
-      return
-    }
-    if (!window.confirm('Confirma que as informações do evento foram verificadas?')) return
+  const [confirmVerification, setConfirmVerification] = useState(false)
 
+  const saveVerified = async () => {
+    setConfirmVerification(false)
     setIsSaving(true)
     setSaveError('')
     try {
@@ -449,6 +444,17 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const handleSubmit = (submitEvent: React.FormEvent) => {
+    submitEvent.preventDefault()
+    setSaveError('')
+    const validationIssue = validateDraft()
+    if (validationIssue) {
+      showValidationIssue(validationIssue)
+      return
+    }
+    setConfirmVerification(true)
   }
 
   const handlePrizeImage = async (changeEvent: React.ChangeEvent<HTMLInputElement>) => {
@@ -1157,6 +1163,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           </div>
         </form>
         {isPrizeDialogOpen && prizeDialog}
+        {confirmVerification && <ConfirmationDialog title="Confirmar verificação" description="Confirme que todas as informações do evento foram verificadas antes de salvar." onCancel={() => setConfirmVerification(false)} onConfirm={() => void saveVerified()} />}
       </>
     )
   }
@@ -1175,6 +1182,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
         {buttonsRow}
       </form>
       {isPrizeDialogOpen && prizeDialog}
+      {confirmVerification && <ConfirmationDialog title="Confirmar verificação" description="Confirme que todas as informações do evento foram verificadas antes de salvar." onCancel={() => setConfirmVerification(false)} onConfirm={() => void saveVerified()} />}
     </>
   )
 })

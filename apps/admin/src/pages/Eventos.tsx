@@ -22,7 +22,7 @@ import { EventRow } from '../components/EventRow'
 import type { EventDraft, EventStatus, FundraisingEvent, ReservationStatus } from '../events/events'
 import { useIsDesktop } from '../hooks/useIsDesktop'
 
-type EventConfirmation = { action: 'archive' | 'end' | 'remove'; event: FundraisingEvent }
+type EventConfirmation = { action: 'archive' | 'end' | 'publish' | 'remove'; event: FundraisingEvent }
 
 export function Eventos() {
   const { data: events = [], error: loadError, isLoading } = useAdminEvents()
@@ -69,7 +69,6 @@ export function Eventos() {
           setActionError(`Não foi possível publicar “${event.title || 'evento sem título'}”: ${publicationError}`)
           return false
         }
-        if (!window.confirm('Confirma que as informações do evento foram verificadas e que ele pode ser publicado?')) return false
         const savedEvent = await saveEvent.mutateAsync(toEditableEventDraft(event))
         if (!savedEvent) throw new Error('O evento não foi encontrado após a validação.')
       }
@@ -86,6 +85,7 @@ export function Eventos() {
     const { action, event } = eventConfirmation
     setActionError('')
     try {
+      if (action === 'publish' && !await handleSetStatus(event, 'active')) return
       if (action === 'end' && !await handleSetStatus(event, 'ended')) return
       if (action === 'archive' && !await handleSetStatus(event, 'archived')) return
       if (action === 'remove') await deleteEvent.mutateAsync({
@@ -159,7 +159,7 @@ export function Eventos() {
                 onEdit={() => openEditor(event)}
                 onOpenReservations={() => openManagement(event)}
                 onRemove={() => { setExportConfirmed(false); setEventConfirmation({ action: 'remove', event }) }}
-                onSetStatus={(status) => void handleSetStatus(event, status)}
+                onSetStatus={(status) => status === 'active' ? setEventConfirmation({ action: 'publish', event }) : void handleSetStatus(event, status)}
               />
             ))}
             {!isLoading && events.length === 0 && <p className="py-6 text-center">Nenhum evento cadastrado.</p>}
@@ -185,10 +185,11 @@ export function Eventos() {
       )}
 
       {eventConfirmation && (
-        <Dialog ariaLabel={eventConfirmation.action === 'end' ? 'Encerrar evento' : eventConfirmation.action === 'archive' ? 'Arquivar evento' : 'Remover evento'} onClose={() => setEventConfirmation(null)} className="w-full max-w-[46rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised sm:p-12">
-          <h2 className="text-4xl font-medium text-marca">{eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.action === 'archive' ? 'Arquivar Evento' : eventConfirmation.event.status === 'draft' ? 'Remover Rascunho' : 'Remover Evento'}</h2>
+        <Dialog ariaLabel={eventConfirmation.action === 'publish' ? 'Publicar evento' : eventConfirmation.action === 'end' ? 'Encerrar evento' : eventConfirmation.action === 'archive' ? 'Arquivar evento' : 'Remover evento'} onClose={() => setEventConfirmation(null)} className="w-full max-w-[46rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised sm:p-12">
+          <h2 className="text-4xl font-medium text-marca">{eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.action === 'archive' ? 'Arquivar Evento' : eventConfirmation.event.status === 'draft' ? 'Remover Rascunho' : 'Remover Evento'}</h2>
           <h3 className="mt-6 text-3xl font-medium">{eventConfirmation.event.title}</h3>
           {eventConfirmation.action === 'end' && <p className="mt-3 text-lg">Novas reservas deixarão de ser aceitas. Os dados e a gestão das reservas serão mantidos.</p>}
+          {eventConfirmation.action === 'publish' && <p className="mt-3 text-lg">Confirme que as informações foram verificadas. O evento ficará disponível ao público.</p>}
           {eventConfirmation.action === 'archive' && <p className="mt-3 text-lg">O evento sairá do histórico público, mas seus dados permanecerão disponíveis na gestão.</p>}
           {eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'draft' && <p className="mt-3 text-lg">O rascunho e todos os dados associados serão apagados.</p>}
           {eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'archived' && (
@@ -200,7 +201,7 @@ export function Eventos() {
           {actionError && <p role="alert" className="mt-4 text-sm font-medium text-marca">{actionError}</p>}
           <div className="mt-10 flex gap-4">
             <Action onClick={() => setEventConfirmation(null)} size="small" variant="secondary-adaptive" className="w-32 shrink-0">Cancelar</Action>
-            <Action onClick={() => void confirmEventAction()} disabled={isConfirming || (eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'archived' && !exportConfirmed)} icon={eventConfirmation.action === 'archive' ? 'archive' : eventConfirmation.action === 'end' ? 'white-flag-solid' : 'trash-solid'} size="small" variant="primary-adaptive" className="min-w-0 flex-1">{isConfirming ? 'Processando...' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.action === 'archive' ? 'Arquivar Evento' : 'Remover Evento'}</Action>
+            <Action onClick={() => void confirmEventAction()} disabled={isConfirming || (eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'archived' && !exportConfirmed)} icon={eventConfirmation.action === 'archive' ? 'archive' : eventConfirmation.action === 'end' ? 'white-flag-solid' : eventConfirmation.action === 'publish' ? 'check-circle-solid' : 'trash-solid'} size="small" variant="primary-adaptive" className="min-w-0 flex-1">{isConfirming ? 'Processando...' : eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.action === 'archive' ? 'Arquivar Evento' : 'Remover Evento'}</Action>
           </div>
         </Dialog>
       )}
