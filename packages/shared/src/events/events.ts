@@ -790,12 +790,9 @@ async function updateEventStatus({ id, status }: { id: string; status: EventStat
   if (error) throw error
 }
 
-async function deleteEvent({ event, exportSentAt }: { event: FundraisingEvent; exportSentAt?: string }) {
+async function deleteEvent({ event }: { event: FundraisingEvent }) {
   if (event.status === 'archived') {
-    const { error } = await supabase.rpc('delete_archived_event', {
-      p_event_id: event.id,
-      p_export_sent_at: required(exportSentAt, 'Confirme o envio da exportação.'),
-    })
+    const { error } = await supabase.functions.invoke('delete-archived-event', { body: { eventId: event.id } })
     if (error) throw error
   } else {
     const { error } = await supabase.from('eventos').delete().eq('id', event.id)

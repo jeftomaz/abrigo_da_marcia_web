@@ -24,7 +24,7 @@
 - `done` Remover o card mockado “Camiseta Copa 2026” e renderizar o preview de Eventos somente com dados reais; sem evento cadastrado/publicável, nenhum card de evento deve aparecer.
 - `done` Implementar doação por modalidade e valor: doação única aceita valores predefinidos ou livre e gera o Pix correspondente; recorrente abre o link PagSeguro específico de cada valor, persistido na tela de Configurações.
 - `done` Definir largura e altura mínimas para o card de História na Landing em desktops menores, preservando a leitura e mantendo “Conheça essa história” dentro do botão.
-- `doing` Revisar com o Abrigo textos, fotos, contato, localização e créditos finais; descrição duplicada e Footer com símbolo/ano fixos já corrigidos, aprovação do conteúdo real pendente.
+- `done` Revisar com o Abrigo textos, fotos, contato, localização e créditos finais; conteúdo atual aprovado, descrição duplicada e Footer corrigidos.
 - `done` Remover recursos demonstrativos sem consumidor após integrar o preview: `evento_camiseta.jpg`, `evento_rifa.jpg` e `DEMO_PIX_CODE`.
 
 ### P1 — Adoção e Gestão de Cães
@@ -50,7 +50,7 @@
 - `done` Corrigir rótulos provisórios do formulário: “Nova Variação” e “Prêmio da rifa”.
 - `done` Disponibilizar “Exportar CSV” também na gestão mobile de reservas.
 - `done` Exibir carregamento e erro das reservas no admin, da disponibilidade de números no público e das reservas usadas pela tela de sorteio.
-- `doing` Automatizar o envio da exportação após escolher um provedor de e-mail; Configurações já explicita que o envio atual é manual.
+- `doing` Automatizar o envio da exportação com Resend antes da exclusão: Edge Function implementada; secrets e deploy hospedado pendentes.
 - `done` Exibir dados persistidos: meta/arrecadado na gestão, identificação Pix na confirmação pública e imagens dos prêmios no detalhe público.
 - `done` Revisar os estados de atualização das reservas (salvando, erro e bloqueio por linha) para impedir comandos concorrentes sem retorno visual.
 

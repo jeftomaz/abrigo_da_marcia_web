@@ -336,7 +336,7 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 
 Índice unique parcial em `status = 'ativo'` garante um único evento ativo. A ativação rejeita `draft_payload`, exige todos os dados gerais/Pix, foto e configuração específica do tipo. Valores monetários permanecem padronizados em centavos e o TTL em minutos inteiros convertidos para `interval`.
 
-Eventos encerrados precisam ser arquivados antes da exclusão definitiva. Rascunhos podem ser excluídos diretamente. No fluxo atual, o admin exporta o CSV, envia a cópia a `event_settings.event_export_email` e confirma o envio; só então a RPC registra a auditoria e apaga o domínio. Automatizar o envio depende da escolha de um provedor de e-mail.
+Eventos encerrados precisam ser arquivados antes da exclusão definitiva. Rascunhos podem ser excluídos diretamente. Para arquivados, a Edge Function autenticada `delete-archived-event` gera o CSV, envia ao `event_settings.event_export_email` via Resend e só após sucesso chama a RPC, que registra a auditoria e apaga o domínio. Falha no envio preserva todos os dados.
 
 ### `event_deletion_audit`
 

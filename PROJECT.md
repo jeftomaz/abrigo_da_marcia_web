@@ -9,6 +9,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - **Host:** GitHub Pages (estático). Público em `/abrigo_da_marcia_web/` com BrowserRouter + `404.html`; admin em `/abrigo_da_marcia_web/admin/` com HashRouter.
 - **Frontend:** React + Vite + TypeScript. Tailwind CSS (tokens do design system em `tailwind.config`).
 - **Backend:** Supabase — Postgres (RLS rígido), Auth (MFA TOTP p/ admin), Storage (fotos), `pg_cron` (expiração de reservas).
+- **E-mail transacional:** Resend via Supabase Edge Function; credenciais somente em secrets (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`).
 - **Dados no client:** TanStack Query; client Supabase único e tipado (`database.types.ts` gerado) em `packages/shared`.
 - **Monorepo:** pnpm workspaces — `apps/public`, `apps/admin`, `packages/shared`.
 - **Dev local do banco:** `supabase start` (requer Docker) sobe o stack; `supabase db reset` aplica `supabase/migrations/` + `supabase/seed.sql`. Studio em `localhost:54323`.

@@ -34,7 +34,6 @@ export function Eventos() {
   const [managingEventId, setManagingEventId] = useState<string | null>(null)
   const [eventConfirmation, setEventConfirmation] = useState<EventConfirmation | null>(null)
   const [actionError, setActionError] = useState('')
-  const [exportConfirmed, setExportConfirmed] = useState(false)
   const eventFormRef = useRef<EventFormHandle>(null)
   const editorCardRef = useRef<HTMLElement>(null)
   const isDesktop = useIsDesktop()
@@ -88,14 +87,10 @@ export function Eventos() {
       if (action === 'publish' && !await handleSetStatus(event, 'active')) return
       if (action === 'end' && !await handleSetStatus(event, 'ended')) return
       if (action === 'archive' && !await handleSetStatus(event, 'archived')) return
-      if (action === 'remove') await deleteEvent.mutateAsync({
-        event,
-        exportSentAt: event.status === 'archived' ? new Date().toISOString() : undefined,
-      })
+      if (action === 'remove') await deleteEvent.mutateAsync({ event })
       if (managingEventId === event.id) setManagingEventId(null)
       if (editingTarget?.id === event.id) setEditingTarget(undefined)
       setEventConfirmation(null)
-      setExportConfirmed(false)
     } catch (error) {
       setActionError(getEventErrorMessage(error, 'A ação não foi concluída.'))
     }
@@ -158,7 +153,7 @@ export function Eventos() {
                 onEnd={() => setEventConfirmation({ action: 'end', event })}
                 onEdit={() => openEditor(event)}
                 onOpenReservations={() => openManagement(event)}
-                onRemove={() => { setExportConfirmed(false); setEventConfirmation({ action: 'remove', event }) }}
+                onRemove={() => setEventConfirmation({ action: 'remove', event })}
                 onSetStatus={(status) => status === 'active' ? setEventConfirmation({ action: 'publish', event }) : void handleSetStatus(event, status)}
               />
             ))}
@@ -192,16 +187,11 @@ export function Eventos() {
           {eventConfirmation.action === 'publish' && <p className="mt-3 text-lg">Confirme que as informações foram verificadas. O evento ficará disponível ao público.</p>}
           {eventConfirmation.action === 'archive' && <p className="mt-3 text-lg">O evento sairá do histórico público, mas seus dados permanecerão disponíveis na gestão.</p>}
           {eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'draft' && <p className="mt-3 text-lg">O rascunho e todos os dados associados serão apagados.</p>}
-          {eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'archived' && (
-            <label className="mt-5 flex items-start gap-3 rounded-2xl bg-cinza-claro p-4 text-cinza-escuro dark:bg-cinza-medio dark:text-cinza-claro">
-              <input type="checkbox" checked={exportConfirmed} onChange={(event) => setExportConfirmed(event.target.checked)} className="mt-1 accent-marca" />
-              <span>Confirmo que exportei as reservas e enviei a cópia ao e-mail definido nas Configurações. A confirmação ficará registrada na auditoria.</span>
-            </label>
-          )}
+          {eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'archived' && <p className="mt-3 text-lg">A exportação será enviada automaticamente ao e-mail configurado antes da exclusão. Se o envio falhar, nada será removido.</p>}
           {actionError && <p role="alert" className="mt-4 text-sm font-medium text-marca">{actionError}</p>}
           <div className="mt-10 flex gap-4">
             <Action onClick={() => setEventConfirmation(null)} size="small" variant="secondary-adaptive" className="w-32 shrink-0">Cancelar</Action>
-            <Action onClick={() => void confirmEventAction()} disabled={isConfirming || (eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'archived' && !exportConfirmed)} icon={eventConfirmation.action === 'archive' ? 'archive' : eventConfirmation.action === 'end' ? 'white-flag-solid' : eventConfirmation.action === 'publish' ? 'check-circle-solid' : 'trash-solid'} size="small" variant="primary-adaptive" className="min-w-0 flex-1">{isConfirming ? 'Processando...' : eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.action === 'archive' ? 'Arquivar Evento' : 'Remover Evento'}</Action>
+            <Action onClick={() => void confirmEventAction()} disabled={isConfirming} icon={eventConfirmation.action === 'archive' ? 'archive' : eventConfirmation.action === 'end' ? 'white-flag-solid' : eventConfirmation.action === 'publish' ? 'check-circle-solid' : 'trash-solid'} size="small" variant="primary-adaptive" className="min-w-0 flex-1">{isConfirming ? 'Processando...' : eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.action === 'archive' ? 'Arquivar Evento' : 'Remover Evento'}</Action>
           </div>
         </Dialog>
       )}

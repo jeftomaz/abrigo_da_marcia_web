@@ -265,7 +265,7 @@ export function EventSettingsForm({
               Auditoria
             </h3>
             <label htmlFor={`${formId}-email`} className={`${labelClasses} mt-3`}>
-              E-mail de referência para envio manual
+              E-mail para exportação automática
               <input
                 id={`${formId}-email`}
                 type="email"
