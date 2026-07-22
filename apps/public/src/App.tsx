@@ -5,6 +5,7 @@ import { Landing } from './pages/Landing'
 import { Adocao } from './pages/Adocao'
 import { Historias } from './pages/Historias'
 import { Eventos } from './pages/Eventos'
+import { NotFound } from './pages/NotFound'
 import { Footer } from './components/Footer'
 
 function ScrollToTop() {
@@ -37,6 +38,7 @@ function App() {
           <Route path="/adocao" element={<Adocao />} />
           <Route path="/historias" element={<Historias />} />
           <Route path="/eventos" element={<Eventos />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
       </BrowserRouter>

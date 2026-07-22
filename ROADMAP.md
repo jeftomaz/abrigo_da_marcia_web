@@ -64,7 +64,7 @@
 
 ### P2 — Qualidade, segurança e operação
 
-- `todo` Criar rotas de página não encontrada para público e admin e finalizar favicon, descrição, Open Graph e demais metadados de compartilhamento.
+- `done` Criar rotas de página não encontrada para público e admin e finalizar favicon, descrição, Open Graph e demais metadados de compartilhamento.
 - `todo` Tornar o seed local autocontido: remover caminhos de fotos inexistentes ou carregar os arquivos no Storage e incluir fixtures de Eventos para validar os fluxos completos.
 - `todo` Adicionar pgTAP específico para Cães, Histórias, views públicas e policies do Storage; os testes atuais concentram Eventos e Configurações.
 - `todo` Adicionar testes frontend/E2E dos fluxos críticos e auditoria de acessibilidade por teclado, foco, leitores de tela e contraste.

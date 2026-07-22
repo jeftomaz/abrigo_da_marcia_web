@@ -6,6 +6,7 @@ import { Caes } from './pages/Caes'
 import { Configuracoes } from './pages/Configuracoes'
 import { Eventos } from './pages/Eventos'
 import { Historias } from './pages/Historias'
+import { NotFound } from './pages/NotFound'
 import { RaffleDraw } from './pages/RaffleDraw'
 
 function AdminShell() {
@@ -28,6 +29,7 @@ function App() {
               <Route path="/historias" element={<Historias />} />
               <Route path="/eventos" element={<Eventos />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
             <Route path="/eventos/:eventId/sorteio" element={<RaffleDraw />} />
           </Routes>
