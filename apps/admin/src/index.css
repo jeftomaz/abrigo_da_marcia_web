@@ -43,3 +43,58 @@
   --color-surface-inverted: #fff;
   --color-on-surface-inverted: var(--color-cinza-escuro);
 }
+
+@keyframes raffle-ball-drawing {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-marca-clara) 55%, transparent);
+  }
+  50% {
+    transform: scale(1.035) rotate(1.5deg);
+    box-shadow: 0 0 0 1.25rem color-mix(in srgb, var(--color-marca-clara) 0%, transparent);
+  }
+}
+
+@keyframes raffle-number-change {
+  from {
+    opacity: 0.25;
+    transform: translateY(-0.08em) scale(0.82);
+    filter: blur(0.08em);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes raffle-result-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.raffle-draw-ball[data-drawing="true"] {
+  animation: raffle-ball-drawing 850ms ease-in-out infinite;
+}
+
+.raffle-draw-number {
+  animation: raffle-number-change 180ms ease-out;
+}
+
+.raffle-draw-result {
+  animation: raffle-result-reveal 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .raffle-draw-ball,
+  .raffle-draw-number,
+  .raffle-draw-result {
+    animation: none;
+  }
+}

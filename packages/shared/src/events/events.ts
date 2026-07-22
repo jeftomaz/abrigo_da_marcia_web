@@ -1,0 +1,795 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { Json, Tables, TablesInsert } from '../database.types'
+import {
+  getStoredPhotoUrl,
+  removeStoredPhotos,
+  toEditablePhotos,
+  uploadNewPhotos,
+} from '../images/storagePhotos'
+import type { EditablePhoto } from '../images/storagePhotos'
+import { supabase } from '../supabase/client'
+
+export type EventKind = 'product' | 'raffle'
+export type EventStatus = 'active' | 'archived' | 'draft' | 'ended'
+export type ReservationStatus = 'canceled' | 'delivered' | 'paid' | 'reserved'
+
+export type ProductOption = { id: string; name: string }
+export type ProductVariation = { id: string; name: string; options: ProductOption[] }
+
+export type MeasurementTable = {
+  sizes: string[]
+  sections: { title: string; rows: { label: string; values: string[] }[] }[]
+}
+
+export type ProductMeasurementGuide =
+  | { kind: 'image'; path: string }
+  | { kind: 'table'; table: MeasurementTable }
+
+export type EventProduct = {
+  description: string
+  discountMinimum: string
+  discountPrice: string
+  gallery: string[]
+  id: string
+  measurementGuide?: ProductMeasurementGuide
+  name: string
+  price: string
+  variations: ProductVariation[]
+}
+
+export type EditableEventProduct = Omit<EventProduct, 'gallery' | 'measurementGuide'> & {
+  gallery: EditablePhoto[]
+  measurementGuide?:
+    | { kind: 'image'; photo: EditablePhoto }
+    | { kind: 'table'; table: MeasurementTable }
+}
+
+export type RafflePrize = {
+  drawnAt?: string
+  id: string
+  image: string
+  name: string
+  winnerName?: string
+  winningNumber?: number
+}
+
+export type EditableRafflePrize = Omit<RafflePrize, 'image'> & { image: EditablePhoto }
+
+export type FundraisingEvent = {
+  city: string
+  description: string
+  endDate: string
+  fundraisingGoal: string
+  gallery: string[]
+  id: string
+  kind: EventKind
+  maxItemsPerReservation: string
+  paymentKey: string
+  paymentReceiver: string
+  pixCode: string
+  postPaymentInstructions: string
+  products: EventProduct[]
+  prizes: RafflePrize[]
+  raffleNumberPrice: string
+  raffleTotalNumbers: string
+  receiptFolderUrl: string
+  reservationTtlMinutes: string
+  startDate: string
+  status: EventStatus
+  title: string
+}
+
+export type EventDraft = Omit<FundraisingEvent, 'gallery' | 'id' | 'prizes' | 'products' | 'status'> & {
+  gallery: EditablePhoto[]
+  id?: string
+  prizes: EditableRafflePrize[]
+  products: EditableEventProduct[]
+  status?: EventStatus
+}
+
+export type ReservationProductItem = {
+  id: string
+  options: Record<string, { optionId: string; optionName: string; variationName: string }>
+  productId: string | null
+  productName: string
+  unitPriceCents: number
+}
+
+export type EventReservation = {
+  contact: string
+  eventId: string
+  expiresAt: string
+  id: string
+  name: string
+  numbers: number[]
+  productItems: ReservationProductItem[]
+  receiptSaved: boolean
+  status: ReservationStatus
+  totalCents: number
+}
+
+export type ReservationResult = {
+  expiresAt: string
+  pixCode: string
+  postPaymentInstructions: string
+  reservationId: string
+  totalCents: number
+}
+
+export type EventSettings = {
+  defaultMaxProductUnits: number
+  defaultMaxRaffleNumbers: number
+  defaultReservationTtlMinutes: number
+  eventExportEmail: string
+}
+
+const adminEventsKey = ['events', 'admin'] as const
+const publicEventsKey = ['events', 'public'] as const
+const eventSettingsKey = ['events', 'settings'] as const
+const reservationsKey = (eventId: string) => ['events', eventId, 'reservations'] as const
+const raffleNumbersKey = (eventId: string) => ['events', eventId, 'numbers'] as const
+
+const EVENT_KIND_FROM_DB = { produtos: 'product', rifa: 'raffle' } as const
+const EVENT_KIND_TO_DB = { product: 'produtos', raffle: 'rifa' } as const
+const EVENT_STATUS_FROM_DB = {
+  ativo: 'active',
+  arquivado: 'archived',
+  encerrado: 'ended',
+  rascunho: 'draft',
+} as const
+const EVENT_STATUS_TO_DB = {
+  active: 'ativo',
+  archived: 'arquivado',
+  draft: 'rascunho',
+  ended: 'encerrado',
+} as const
+const RESERVATION_STATUS_FROM_DB = {
+  cancelada: 'canceled',
+  entregue: 'delivered',
+  paga: 'paid',
+  pendente: 'reserved',
+} as const
+const RESERVATION_STATUS_TO_DB = {
+  canceled: 'cancelada',
+  delivered: 'entregue',
+  paid: 'paga',
+  reserved: 'pendente',
+} as const
+
+type EventRow = Tables<'eventos'> | Tables<'eventos_public'>
+type ProductRow = Tables<'produtos'> | Tables<'produtos_public'>
+type VariationRow = Tables<'produto_variacoes'> | Tables<'produto_variacoes_public'>
+type OptionRow = Tables<'produto_variacao_opcoes'> | Tables<'produto_variacao_opcoes_public'>
+type PrizeRow = Tables<'rifa_premios'> | Tables<'rifa_premios_public'>
+type RaffleRow = Tables<'rifas'> | Tables<'rifas_public'>
+
+function required<T>(value: T | null | undefined, message: string): T {
+  if (value === null || value === undefined) throw new Error(message)
+  return value
+}
+
+export function parseCurrencyToCents(value: string) {
+  const normalized = value.trim().replace(/\s/g, '').replace(/^R\$/, '')
+  if (!normalized) return 0
+  const comma = normalized.lastIndexOf(',')
+  const dot = normalized.lastIndexOf('.')
+  const decimalIndex = Math.max(comma, dot)
+  const hasDecimal = decimalIndex >= 0 && normalized.length - decimalIndex <= 3
+  const integer = (hasDecimal ? normalized.slice(0, decimalIndex) : normalized).replace(/\D/g, '')
+  const decimal = hasDecimal ? normalized.slice(decimalIndex + 1).replace(/\D/g, '').padEnd(2, '0').slice(0, 2) : '00'
+  return Number(integer || '0') * 100 + Number(decimal)
+}
+
+export function formatCentsForInput(value: number | null | undefined) {
+  if (value === null || value === undefined) return ''
+  return (value / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function intervalToMinutes(value: string | null | undefined) {
+  if (!value) return ''
+  const dayMatch = value.match(/(\d+) day/)
+  const timeMatch = value.match(/(?:(\d+):)?(\d+):(\d+)/)
+  const days = Number(dayMatch?.[1] ?? 0)
+  const hours = Number(timeMatch?.[1] ?? 0)
+  const minutes = Number(timeMatch?.[2] ?? 0)
+  return String(days * 1440 + hours * 60 + minutes)
+}
+
+function minutesToInterval(value: string) {
+  const minutes = Number(value)
+  return Number.isFinite(minutes) && minutes > 0 ? `${minutes} minutes` : null
+}
+
+function mapMeasurement(row: ProductRow): ProductMeasurementGuide | undefined {
+  if (row.measurement_image) return { kind: 'image', path: row.measurement_image }
+  if (row.measurement_table) return { kind: 'table', table: row.measurement_table as MeasurementTable }
+  return undefined
+}
+
+function composeEvents(
+  eventRows: EventRow[],
+  productRows: ProductRow[],
+  variationRows: VariationRow[],
+  optionRows: OptionRow[],
+  raffleRows: RaffleRow[],
+  prizeRows: PrizeRow[],
+) {
+  return eventRows.map((row): FundraisingEvent => {
+    const id = required(row.id, 'Evento sem identificador.')
+    const products = productRows
+      .filter((product) => product.event_id === id)
+      .sort((a, b) => required(a.display_order, 'Produto sem ordem.') - required(b.display_order, 'Produto sem ordem.'))
+      .map((product): EventProduct => {
+        const productId = required(product.id, 'Produto sem identificador.')
+        const variations = variationRows
+          .filter((variation) => variation.product_id === productId)
+          .sort((a, b) => required(a.display_order, 'Variação sem ordem.') - required(b.display_order, 'Variação sem ordem.'))
+          .map((variation): ProductVariation => ({
+            id: required(variation.id, 'Variação sem identificador.'),
+            name: required(variation.name, 'Variação sem nome.'),
+            options: optionRows
+              .filter((option) => option.variation_id === variation.id)
+              .sort((a, b) => required(a.display_order, 'Opção sem ordem.') - required(b.display_order, 'Opção sem ordem.'))
+              .map((option) => ({
+                id: required(option.id, 'Opção sem identificador.'),
+                name: required(option.name, 'Opção sem nome.'),
+              })),
+          }))
+        return {
+          id: productId,
+          name: required(product.name, 'Produto sem nome.'),
+          description: required(product.description, 'Produto sem descrição.'),
+          gallery: product.photos ?? [],
+          price: formatCentsForInput(product.unit_price_cents),
+          discountMinimum: product.discount_min_quantity ? String(product.discount_min_quantity) : '',
+          discountPrice: formatCentsForInput(product.discount_unit_price_cents),
+          measurementGuide: mapMeasurement(product),
+          variations,
+        }
+      })
+    const raffle = raffleRows.find((item) => item.event_id === id)
+
+    return {
+      id,
+      kind: EVENT_KIND_FROM_DB[required(row.type, 'Evento sem tipo.')],
+      status: EVENT_STATUS_FROM_DB[required(row.status, 'Evento sem status.')],
+      title: required(row.name, 'Evento sem nome.'),
+      description: required(row.description, 'Evento sem descrição.'),
+      startDate: required(row.start_date, 'Evento sem data inicial.'),
+      endDate: required(row.end_date, 'Evento sem data final.'),
+      fundraisingGoal: formatCentsForInput(row.fundraising_goal_cents),
+      maxItemsPerReservation: row.max_items_per_reservation ? String(row.max_items_per_reservation) : '',
+      reservationTtlMinutes: 'reservation_ttl' in row
+        ? intervalToMinutes(row.reservation_ttl)
+        : row.reservation_ttl_seconds ? String(Math.ceil(row.reservation_ttl_seconds / 60)) : '',
+      gallery: row.photos ?? [],
+      products,
+      raffleTotalNumbers: raffle?.total_numbers ? String(raffle.total_numbers) : '',
+      raffleNumberPrice: formatCentsForInput(raffle?.number_price_cents),
+      prizes: prizeRows
+        .filter((prize) => prize.event_id === id)
+        .sort((a, b) => required(a.display_order, 'Prêmio sem ordem.') - required(b.display_order, 'Prêmio sem ordem.'))
+        .map((prize) => ({
+          id: required(prize.id, 'Prêmio sem identificador.'),
+          name: required(prize.name, 'Prêmio sem nome.'),
+          image: required(prize.photo, 'Prêmio sem foto.'),
+          winningNumber: prize.winning_number ?? undefined,
+          winnerName: prize.winner_name ?? undefined,
+          drawnAt: prize.drawn_at ?? undefined,
+        })),
+      paymentKey: 'pix_key' in row ? row.pix_key ?? '' : '',
+      paymentReceiver: 'pix_receiver' in row ? row.pix_receiver ?? '' : '',
+      city: 'pix_city' in row ? row.pix_city ?? '' : '',
+      pixCode: row.pix_copy_paste ?? '',
+      postPaymentInstructions: required(row.post_payment_instructions, 'Evento sem instrução de pagamento.'),
+      receiptFolderUrl: 'receipt_folder_url' in row ? row.receipt_folder_url ?? '' : '',
+    }
+  })
+}
+
+async function loadEventRelations(publicOnly: boolean) {
+  const results = publicOnly
+    ? await Promise.all([
+        supabase.from('eventos_public').select('*'),
+        supabase.from('produtos_public').select('*'),
+        supabase.from('produto_variacoes_public').select('*'),
+        supabase.from('produto_variacao_opcoes_public').select('*'),
+        supabase.from('rifas_public').select('*'),
+        supabase.from('rifa_premios_public').select('*'),
+      ])
+    : await Promise.all([
+        supabase.from('eventos').select('*'),
+        supabase.from('produtos').select('*'),
+        supabase.from('produto_variacoes').select('*'),
+        supabase.from('produto_variacao_opcoes').select('*'),
+        supabase.from('rifas').select('*'),
+        supabase.from('rifa_premios').select('*'),
+      ])
+  const error = results.find((result) => result.error)?.error
+  if (error) throw error
+  return composeEvents(
+    results[0].data as unknown as EventRow[],
+    results[1].data as unknown as ProductRow[],
+    results[2].data as unknown as VariationRow[],
+    results[3].data as unknown as OptionRow[],
+    results[4].data as unknown as RaffleRow[],
+    results[5].data as unknown as PrizeRow[],
+  )
+}
+
+async function resolvePhotos(prefix: string, photos: EditablePhoto[]) {
+  const uploaded = await uploadNewPhotos(prefix, photos)
+  return {
+    paths: photos.map((photo) => required(photo.path ?? uploaded.get(photo.key), 'Imagem não preparada.')),
+    uploaded: [...uploaded.values()],
+  }
+}
+
+async function saveEvent(draft: EventDraft) {
+  const id = draft.id ?? crypto.randomUUID()
+  const oldEvent = draft.id ? (await loadEventRelations(false)).find((event) => event.id === id) : undefined
+  const uploadedPaths: string[] = []
+  const retainedPaths = new Set<string>()
+
+  try {
+    const eventPhotos = await resolvePhotos(`eventos/${id}`, draft.gallery)
+    uploadedPaths.push(...eventPhotos.uploaded)
+    eventPhotos.paths.forEach((path) => retainedPaths.add(path))
+
+    const values: TablesInsert<'eventos'> = {
+      id,
+      name: draft.title.trim(),
+      description: draft.description.trim(),
+      type: EVENT_KIND_TO_DB[draft.kind],
+      status: draft.status ? EVENT_STATUS_TO_DB[draft.status] : 'rascunho',
+      photos: eventPhotos.paths,
+      start_date: draft.startDate,
+      end_date: draft.endDate,
+      fundraising_goal_cents: parseCurrencyToCents(draft.fundraisingGoal),
+      max_items_per_reservation: Number(draft.maxItemsPerReservation) || null,
+      reservation_ttl: minutesToInterval(draft.reservationTtlMinutes),
+      pix_key: draft.paymentKey.trim() || null,
+      pix_receiver: draft.paymentReceiver.trim() || null,
+      pix_city: draft.city.trim() || null,
+      pix_copy_paste: draft.pixCode.trim() || null,
+      post_payment_instructions: draft.postPaymentInstructions.trim(),
+      receipt_folder_url: draft.receiptFolderUrl.trim() || null,
+      data_verified_at: new Date().toISOString(),
+    }
+    const eventRequest = draft.id
+      ? supabase.from('eventos').update(values).eq('id', id)
+      : supabase.from('eventos').insert(values)
+    const { error: eventError } = await eventRequest
+    if (eventError) throw eventError
+
+    if (draft.kind === 'raffle') {
+      const { error: productDeleteError } = await supabase.from('produtos').delete().eq('event_id', id)
+      if (productDeleteError) throw productDeleteError
+      const { error: raffleError } = await supabase.from('rifas').upsert({
+        event_id: id,
+        total_numbers: Number(draft.raffleTotalNumbers),
+        number_price_cents: parseCurrencyToCents(draft.raffleNumberPrice),
+      })
+      if (raffleError) throw raffleError
+
+      const prizeIds = draft.prizes.map((prize) => prize.id)
+      const oldPrizeIds = oldEvent?.prizes.map((prize) => prize.id) ?? []
+      const removedPrizeIds = oldPrizeIds.filter((prizeId) => !prizeIds.includes(prizeId))
+      if (removedPrizeIds.length) {
+        const { error } = await supabase.from('rifa_premios').delete().in('id', removedPrizeIds)
+        if (error) throw error
+      }
+      for (const [index, prize] of (oldEvent?.prizes ?? []).entries()) {
+        const { error } = await supabase.from('rifa_premios').update({ display_order: 30000 + index }).eq('id', prize.id)
+        if (error) throw error
+      }
+      for (const [index, prize] of draft.prizes.entries()) {
+        const image = await resolvePhotos(`eventos/${id}/premios/${prize.id}`, [prize.image])
+        uploadedPaths.push(...image.uploaded)
+        image.paths.forEach((path) => retainedPaths.add(path))
+        const { error } = await supabase.from('rifa_premios').upsert({
+          id: prize.id,
+          event_id: id,
+          name: prize.name.trim(),
+          photo: image.paths[0],
+          display_order: index + 1,
+          winning_number: prize.winningNumber ?? null,
+          winner_name: prize.winnerName ?? null,
+          drawn_at: prize.drawnAt ?? null,
+        })
+        if (error) throw error
+      }
+    } else {
+      const { error: raffleDeleteError } = await supabase.from('rifas').delete().eq('event_id', id)
+      if (raffleDeleteError) throw raffleDeleteError
+      const productIds = draft.products.map((product) => product.id)
+      const oldProductIds = oldEvent?.products.map((product) => product.id) ?? []
+      const removedProductIds = oldProductIds.filter((productId) => !productIds.includes(productId))
+      if (removedProductIds.length) {
+        const { error } = await supabase.from('produtos').delete().in('id', removedProductIds)
+        if (error) throw error
+      }
+      for (const [index, product] of (oldEvent?.products ?? []).entries()) {
+        const { error } = await supabase.from('produtos').update({ display_order: 30000 + index }).eq('id', product.id)
+        if (error) throw error
+      }
+
+      for (const [productIndex, product] of draft.products.entries()) {
+        const photos = await resolvePhotos(`eventos/${id}/produtos/${product.id}`, product.gallery)
+        uploadedPaths.push(...photos.uploaded)
+        photos.paths.forEach((path) => retainedPaths.add(path))
+        let measurementImage: string | null = null
+        let measurementTable: Json | null = null
+        if (product.measurementGuide?.kind === 'image') {
+          const image = await resolvePhotos(
+            `eventos/${id}/produtos/${product.id}/medidas`,
+            [product.measurementGuide.photo],
+          )
+          uploadedPaths.push(...image.uploaded)
+          measurementImage = image.paths[0]
+          retainedPaths.add(measurementImage)
+        } else if (product.measurementGuide?.kind === 'table') {
+          measurementTable = product.measurementGuide.table as unknown as Json
+        }
+        const { error: productError } = await supabase.from('produtos').upsert({
+          id: product.id,
+          event_id: id,
+          name: product.name.trim(),
+          description: product.description.trim(),
+          photos: photos.paths,
+          unit_price_cents: parseCurrencyToCents(product.price),
+          discount_min_quantity: Number(product.discountMinimum) || null,
+          discount_unit_price_cents: parseCurrencyToCents(product.discountPrice) || null,
+          measurement_image: measurementImage,
+          measurement_table: measurementTable,
+          display_order: productIndex + 1,
+        })
+        if (productError) throw productError
+
+        const variationIds = product.variations.map((variation) => variation.id)
+        const oldVariations = oldEvent?.products.find((item) => item.id === product.id)?.variations ?? []
+        const removedVariationIds = oldVariations.map((item) => item.id).filter((item) => !variationIds.includes(item))
+        if (removedVariationIds.length) {
+          const { error } = await supabase.from('produto_variacoes').delete().in('id', removedVariationIds)
+          if (error) throw error
+        }
+        for (const [index, variation] of oldVariations.entries()) {
+          const { error } = await supabase.from('produto_variacoes').update({ display_order: 30000 + index }).eq('id', variation.id)
+          if (error) throw error
+        }
+        for (const [variationIndex, variation] of product.variations.entries()) {
+          const { error: variationError } = await supabase.from('produto_variacoes').upsert({
+            id: variation.id,
+            product_id: product.id,
+            name: variation.name.trim(),
+            display_order: variationIndex + 1,
+          })
+          if (variationError) throw variationError
+          const optionIds = variation.options.map((option) => option.id)
+          const oldOptions = oldVariations.find((item) => item.id === variation.id)?.options ?? []
+          const removedOptionIds = oldOptions.map((item) => item.id).filter((item) => !optionIds.includes(item))
+          if (removedOptionIds.length) {
+            const { error } = await supabase.from('produto_variacao_opcoes').delete().in('id', removedOptionIds)
+            if (error) throw error
+          }
+          for (const [index, option] of oldOptions.entries()) {
+            const { error } = await supabase.from('produto_variacao_opcoes').update({ display_order: 30000 + index }).eq('id', option.id)
+            if (error) throw error
+          }
+          const { error: optionsError } = await supabase.from('produto_variacao_opcoes').upsert(
+            variation.options.map((option, optionIndex) => ({
+              id: option.id,
+              variation_id: variation.id,
+              name: option.name.trim(),
+              display_order: optionIndex + 1,
+            })),
+          )
+          if (optionsError) throw optionsError
+        }
+      }
+    }
+
+    const previousPaths = [
+      ...(oldEvent?.gallery ?? []),
+      ...(oldEvent?.prizes.map((prize) => prize.image) ?? []),
+      ...(oldEvent?.products.flatMap((product) => [
+        ...product.gallery,
+        ...(product.measurementGuide?.kind === 'image' ? [product.measurementGuide.path] : []),
+      ]) ?? []),
+    ]
+    await removeStoredPhotos(previousPaths.filter((path) => !retainedPaths.has(path)))
+    return (await loadEventRelations(false)).find((event) => event.id === id)
+  } catch (error) {
+    await removeStoredPhotos(uploadedPaths)
+    throw error
+  }
+}
+
+async function updateEventStatus({ id, status }: { id: string; status: EventStatus }) {
+  const { error } = await supabase.from('eventos').update({ status: EVENT_STATUS_TO_DB[status] }).eq('id', id)
+  if (error) throw error
+}
+
+async function deleteEvent({ event, exportSentAt }: { event: FundraisingEvent; exportSentAt?: string }) {
+  if (event.status === 'archived') {
+    const { error } = await supabase.rpc('delete_archived_event', {
+      p_event_id: event.id,
+      p_export_sent_at: required(exportSentAt, 'Confirme o envio da exportação.'),
+    })
+    if (error) throw error
+  } else {
+    const { error } = await supabase.from('eventos').delete().eq('id', event.id)
+    if (error) throw error
+  }
+  await removeStoredPhotos([
+    ...event.gallery,
+    ...event.prizes.map((prize) => prize.image),
+    ...event.products.flatMap((product) => [
+      ...product.gallery,
+      ...(product.measurementGuide?.kind === 'image' ? [product.measurementGuide.path] : []),
+    ]),
+  ])
+}
+
+async function listReservations(eventId: string) {
+  const [reservationsResult, numbersResult, itemsResult, optionsResult] = await Promise.all([
+    supabase.from('reservas').select('*').eq('event_id', eventId).order('created_at', { ascending: false }),
+    supabase.from('reserva_numeros').select('*').eq('raffle_id', eventId),
+    supabase.from('reserva_produtos').select('*'),
+    supabase.from('reserva_produto_opcoes').select('*'),
+  ])
+  const error = reservationsResult.error ?? numbersResult.error ?? itemsResult.error ?? optionsResult.error
+  if (error) throw error
+  const reservationRows = reservationsResult.data ?? []
+  const numberRows = numbersResult.data ?? []
+  const itemRows = itemsResult.data ?? []
+  const optionRows = optionsResult.data ?? []
+  const reservationIds = new Set(reservationRows.map((row) => row.id))
+  return reservationRows.map((row): EventReservation => ({
+    id: row.id,
+    eventId: row.event_id,
+    name: row.customer_name ?? 'Dados removidos',
+    contact: row.customer_contact ?? '',
+    status: RESERVATION_STATUS_FROM_DB[row.status],
+    receiptSaved: row.receipt_saved,
+    totalCents: row.total_cents,
+    expiresAt: row.expires_at,
+    numbers: numberRows.filter((number) => number.reservation_id === row.id).map((number) => number.number).sort((a, b) => a - b),
+    productItems: itemRows
+      .filter((item) => reservationIds.has(item.reservation_id) && item.reservation_id === row.id)
+      .map((item) => ({
+        id: item.id,
+        productId: item.product_id,
+        productName: item.product_name,
+        unitPriceCents: item.unit_price_cents,
+        options: Object.fromEntries(optionRows
+          .filter((option) => option.reservation_product_id === item.id)
+          .map((option) => [option.variation_id, {
+            optionId: option.option_id,
+            optionName: option.option_name,
+            variationName: option.variation_name,
+          }])),
+      })),
+  }))
+}
+
+async function getReservationSession() {
+  const key = 'abrigo-event-reservation-session'
+  const stored = sessionStorage.getItem(key)
+  if (stored) return stored
+  const { data, error } = await supabase.rpc('create_reservation_session')
+  if (error) throw error
+  sessionStorage.setItem(key, data)
+  return data
+}
+
+function mapReservationResult(row: {
+  expires_at: string
+  pix_copy_paste: string
+  post_payment_instructions: string
+  reservation_id: string
+  total_cents: number
+}): ReservationResult {
+  return {
+    reservationId: row.reservation_id,
+    totalCents: row.total_cents,
+    expiresAt: row.expires_at,
+    pixCode: row.pix_copy_paste,
+    postPaymentInstructions: row.post_payment_instructions,
+  }
+}
+
+async function reserveRaffle(input: { eventId: string; name: string; contact: string; numbers: number[] }) {
+  const { data, error } = await supabase.rpc('reserve_raffle_numbers', {
+    p_event_id: input.eventId,
+    p_session_id: await getReservationSession(),
+    p_customer_name: input.name,
+    p_customer_contact: input.contact,
+    p_numbers: input.numbers,
+  })
+  if (error) throw error
+  return mapReservationResult(required(data[0], 'Reserva sem confirmação.'))
+}
+
+async function reserveProducts(input: {
+  contact: string
+  eventId: string
+  items: { options: Record<string, string>; productId: string }[]
+  name: string
+}) {
+  const { data, error } = await supabase.rpc('reserve_product_items', {
+    p_event_id: input.eventId,
+    p_session_id: await getReservationSession(),
+    p_customer_name: input.name,
+    p_customer_contact: input.contact,
+    p_items: input.items as Json,
+  })
+  if (error) throw error
+  return mapReservationResult(required(data[0], 'Reserva sem confirmação.'))
+}
+
+async function listRaffleNumbers(eventId: string) {
+  const { data, error } = await supabase.from('rifa_numeros_public').select('*').eq('event_id', eventId).order('number')
+  if (error) throw error
+  return data.map((row) => ({
+    number: required(row.number, 'Número de rifa inválido.'),
+    available: row.available ?? false,
+  }))
+}
+
+async function updateReservation(input: { id: string; receiptSaved?: boolean; status?: ReservationStatus }) {
+  const values: { receipt_saved?: boolean; status?: Tables<'reservas'>['status'] } = {}
+  if (input.receiptSaved !== undefined) values.receipt_saved = input.receiptSaved
+  if (input.status) values.status = RESERVATION_STATUS_TO_DB[input.status]
+  const { error } = await supabase.from('reservas').update(values).eq('id', input.id)
+  if (error) throw error
+}
+
+async function drawPrize(prizeId: string) {
+  const { data, error } = await supabase.rpc('draw_raffle_prize', { p_prize_id: prizeId })
+  if (error) throw error
+  return required(data[0], 'Sorteio sem resultado.')
+}
+
+async function loadEventSettings(): Promise<EventSettings> {
+  const { data, error } = await supabase.from('event_settings').select('*').eq('singleton', true).single()
+  if (error) throw error
+  return {
+    defaultMaxProductUnits: data.default_max_product_units,
+    defaultMaxRaffleNumbers: data.default_max_raffle_numbers,
+    defaultReservationTtlMinutes: Number(intervalToMinutes(data.default_reservation_ttl)),
+    eventExportEmail: data.event_export_email ?? '',
+  }
+}
+
+async function saveEventSettings(settings: EventSettings) {
+  const { error } = await supabase.from('event_settings').update({
+    default_max_product_units: settings.defaultMaxProductUnits,
+    default_max_raffle_numbers: settings.defaultMaxRaffleNumbers,
+    default_reservation_ttl: `${settings.defaultReservationTtlMinutes} minutes`,
+    event_export_email: settings.eventExportEmail.trim() || null,
+  }).eq('singleton', true)
+  if (error) throw error
+}
+
+function invalidateEvents(queryClient: ReturnType<typeof useQueryClient>) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: adminEventsKey }),
+    queryClient.invalidateQueries({ queryKey: publicEventsKey }),
+  ])
+}
+
+export function useAdminEvents() {
+  return useQuery({ queryKey: adminEventsKey, queryFn: () => loadEventRelations(false) })
+}
+
+export function usePublicEvents() {
+  return useQuery({
+    queryKey: publicEventsKey,
+    queryFn: () => loadEventRelations(true),
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: 'always',
+  })
+}
+
+export function useSaveEvent() {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: saveEvent, onSuccess: () => invalidateEvents(queryClient) })
+}
+
+export function useUpdateEventStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: updateEventStatus, onSuccess: () => invalidateEvents(queryClient) })
+}
+
+export function useDeleteEvent() {
+  const queryClient = useQueryClient()
+  return useMutation({ mutationFn: deleteEvent, onSuccess: () => invalidateEvents(queryClient) })
+}
+
+export function useEventReservations(eventId: string) {
+  return useQuery({
+    queryKey: reservationsKey(eventId),
+    queryFn: () => listReservations(eventId),
+    enabled: Boolean(eventId),
+    refetchInterval: 5_000,
+  })
+}
+
+export function useUpdateEventReservation(eventId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: updateReservation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: reservationsKey(eventId) }),
+  })
+}
+
+export function useRaffleNumbers(eventId: string, enabled = true) {
+  return useQuery({
+    queryKey: raffleNumbersKey(eventId),
+    queryFn: () => listRaffleNumbers(eventId),
+    enabled: enabled && Boolean(eventId),
+    refetchInterval: 5_000,
+  })
+}
+
+export function useReserveRaffle() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: reserveRaffle,
+    onSuccess: (_data, variables) => queryClient.invalidateQueries({ queryKey: raffleNumbersKey(variables.eventId) }),
+  })
+}
+
+export function useReserveProducts() {
+  return useMutation({ mutationFn: reserveProducts })
+}
+
+export function useDrawRafflePrize(eventId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: drawPrize,
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminEventsKey }),
+      queryClient.invalidateQueries({ queryKey: publicEventsKey }),
+      queryClient.invalidateQueries({ queryKey: reservationsKey(eventId) }),
+    ]),
+  })
+}
+
+export function useEventSettings() {
+  return useQuery({ queryKey: eventSettingsKey, queryFn: loadEventSettings })
+}
+
+export function useSaveEventSettings() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: saveEventSettings,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: eventSettingsKey }),
+  })
+}
+
+export function getEventPhotoUrl(path: string) {
+  return getStoredPhotoUrl(path)
+}
+
+export function toEditableEventPhotos(event: FundraisingEvent | null) {
+  return toEditablePhotos(event?.gallery ?? [])
+}
+
+export function toEditableProduct(product: EventProduct): EditableEventProduct {
+  return {
+    ...product,
+    gallery: toEditablePhotos(product.gallery),
+    measurementGuide: product.measurementGuide?.kind === 'image'
+      ? { kind: 'image', photo: toEditablePhotos([product.measurementGuide.path])[0] }
+      : product.measurementGuide,
+  }
+}
+
+export function toEditableRafflePrizes(event: FundraisingEvent | null): EditableRafflePrize[] {
+  return (event?.prizes ?? []).map((prize) => ({
+    ...prize,
+    image: toEditablePhotos([prize.image])[0],
+  }))
+}

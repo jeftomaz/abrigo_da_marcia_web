@@ -130,8 +130,8 @@ export function Caes() {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Busca por nome, contato..."
-                aria-label="Busca por nome, contato"
+                placeholder="Busca por nome..."
+                aria-label="Busca por nome"
                 className="h-10 w-full rounded-full bg-white pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
               />
             </div>

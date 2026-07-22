@@ -20,10 +20,10 @@ type OptionToggleProps = {
 }
 
 const HALF_BASE =
-  'flex items-center justify-center gap-2 font-medium transition-colors focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40'
+  'flex flex-1 items-center justify-center gap-2 font-medium transition-colors focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40'
 const HALF_SIZE = {
   default: 'px-5.5 py-3.5 text-xs sm:px-2 sm:text-sm',
-  compact: 'px-2 py-2 text-xs desk:px-2 desk:py-3.5 desk:text-sm',
+  compact: 'min-h-11 px-2 py-2 text-xs desk:text-sm',
 }
 
 function Half({

@@ -86,7 +86,7 @@ export function Historias() {
                   setPublicationFilter(event.target.value as 'published' | 'draft' | '')
                 }
                 aria-label="Filtrar histórias por publicação"
-                className="h-10 appearance-none rounded-full bg-cinza-claro pr-8 pl-3 text-sm text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca desk:bg-white dark:bg-cinza-medio dark:text-cinza-claro"
+                className="h-10 appearance-none rounded-full bg-white pr-8 pl-3 text-sm text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
               >
                 <option value="">Todos os status</option>
                 <option value="published">Publicadas</option>
@@ -116,7 +116,7 @@ export function Historias() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Busca por nome..."
                 aria-label="Busca por nome"
-                className="h-10 w-full rounded-full bg-cinza-claro pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca desk:bg-white dark:bg-cinza-medio dark:text-cinza-claro"
+                className="h-10 w-full rounded-full bg-white pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
               />
             </div>
           </div>

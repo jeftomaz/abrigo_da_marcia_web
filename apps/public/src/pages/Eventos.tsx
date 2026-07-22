@@ -1,99 +1,20 @@
 import { useState } from 'react'
-import { Action, CompactCard } from '@abrigo/shared'
-import camisetaPhoto from '../assets/evento_camiseta.jpg'
-import rifaPhoto from '../assets/evento_rifa.jpg'
+import { Action, CompactCard, getEventPhotoUrl, usePublicEvents } from '@abrigo/shared'
+import type { FundraisingEvent } from '@abrigo/shared'
 import { ProductReservationFlow } from '../components/ProductReservationFlow'
-import type { ProductMeasurementGuide } from '../components/ProductReservationFlow'
 import { RaffleReservationFlow } from '../components/RaffleReservationFlow'
 
-type FundraisingEvent = {
-  actionLabel: string
-  description: string
-  id: number
-  image: string
-  measurementGuide?: ProductMeasurementGuide
-  reservationKind?: 'product' | 'raffle'
-  prize?: string
-  title: string
-  winner?: string
-}
-
-const DESCRIPTION =
-  'Aqui vem o início de um texto descrevendo um cão ou um produto, depende do contexto. Pode ser possível encaixar mais, devido ao formato horizontal.'
-const FULL_DESCRIPTION =
-  'Aqui vem o texto mais completo, descrevendo um produto ou qualquer outro objeto. Esta versão aproveita melhor o espaço da tela e apresenta as informações necessárias para a reserva. Escolha as características desejadas e adicione o produto antes de finalizar.'
-const FULL_RAFFLE_DESCRIPTION =
-  'Aqui vem o texto mais completo, descrevendo a rifa e o prêmio. Escolha entre os números disponíveis para montar sua reserva. Os números marcados como reservados não podem ser selecionados e voltam a ficar disponíveis caso o pagamento não seja confirmado dentro do prazo.'
-
-const TEMPORARY_MEASUREMENT_GUIDE: ProductMeasurementGuide = {
-  kind: 'table',
-  sizes: ['P', 'M', 'G', 'GG', 'XG'],
-  sections: [
-    {
-      title: 'Feminina',
-      rows: [
-        { label: 'Ombro', values: ['34', '37', '40', '43', '44'] },
-        { label: 'Altura', values: ['55', '58', '64', '67', '70'] },
-        { label: 'Busto', values: ['41', '44', '47', '50', '52'] },
-        { label: 'Cintura', values: ['37', '40', '43', '46', '48'] },
-        { label: 'Quadril', values: ['44', '46', '49', '53', '55'] },
-      ],
-    },
-    {
-      title: 'Masculina',
-      rows: [
-        { label: 'Ombro', values: ['42', '44', '45', '48', '50'] },
-        { label: 'Altura', values: ['68', '72', '75', '78', '80'] },
-        { label: 'Largura', values: ['48', '52', '55', '61', '64'] },
-      ],
-    },
-  ],
-}
-
-const ACTIVE_EVENT: FundraisingEvent = {
-  id: 1,
-  title: 'Camiseta Copa 2026',
-  description: DESCRIPTION,
-  image: camisetaPhoto,
-  actionLabel: 'Reserve a sua',
-  reservationKind: 'product',
-  measurementGuide: TEMPORARY_MEASUREMENT_GUIDE,
-}
-
-const PAST_EVENTS: FundraisingEvent[] = [
-  {
-    id: 2,
-    title: 'Rifa de Páscoa',
-    description: DESCRIPTION,
-    image: rifaPhoto,
-    actionLabel: 'Conheça o evento',
-    reservationKind: 'raffle',
-    prize: 'Cesta de Páscoa',
-    winner: 'a ser anunciado',
-  },
-  {
-    id: 3,
-    title: 'Sorvetes de Março',
-    description: DESCRIPTION,
-    image: rifaPhoto,
-    actionLabel: 'Conheça o evento',
-  },
-]
-
-function EventCard({
-  event,
-  active = false,
-  onOpen,
-}: {
-  event: FundraisingEvent
+function EventCard({ event, active, onOpen }: {
   active?: boolean
-  onOpen?: () => void
+  event: FundraisingEvent
+  onOpen: () => void
 }) {
+  const image = event.gallery[0]
   return (
     <CompactCard
       orientation="responsive"
       imageAspect="landscape"
-      image={{ src: event.image, alt: event.title }}
+      image={image ? { src: getEventPhotoUrl(image), alt: event.title } : undefined}
       title={event.title}
       description={event.description}
       action={
@@ -102,9 +23,9 @@ function EventCard({
           size="compact"
           variant={active ? 'primary' : 'secondary'}
           className={active ? '' : 'dark:bg-marca-escura dark:text-marca'}
-          aria-label={`${event.actionLabel}: ${event.title}`}
+          aria-label={`${active ? 'Reservar' : 'Conhecer'}: ${event.title}`}
         >
-          {event.actionLabel}
+          {active ? 'Quero participar' : 'Conheça o evento'}
         </Action>
       }
     />
@@ -112,65 +33,46 @@ function EventCard({
 }
 
 export function Eventos() {
+  const { data: events = [], error, isLoading } = usePublicEvents()
   const [selectedEvent, setSelectedEvent] = useState<FundraisingEvent | null>(null)
+  const activeEvent = events.find((event) => event.status === 'active')
+  const pastEvents = events.filter((event) => event.status === 'ended')
 
   return (
     <main className="min-h-screen bg-cinza-claro px-10 pt-10 pb-20 text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro lg:px-6 lg:pt-4">
       <div className="mx-auto max-w-4xl">
         <header className="text-left lg:text-center">
-          <h1 className="text-5xl leading-tight font-medium text-marca lg:text-6xl">
-            Cada evento, uma lembrança
-          </h1>
-          <p className="mt-6 text-2xl font-medium lg:mt-3">
-            Veja os eventos de arrecadação e ajude o abrigo
-          </p>
+          <h1 className="text-5xl leading-tight font-medium text-marca lg:text-6xl">Cada evento, uma lembrança</h1>
+          <p className="mt-6 text-2xl font-medium lg:mt-3">Veja os eventos de arrecadação e ajude o abrigo</p>
         </header>
 
-        <section aria-labelledby="active-event-title" className="mx-auto mt-10 max-w-2xl">
-          <h2 id="active-event-title" className="text-4xl font-medium text-marca">
-            Evento Ativo
-          </h2>
-          <div className="mx-auto mt-6 w-4/5 lg:w-full">
-            <EventCard event={ACTIVE_EVENT} active onOpen={() => setSelectedEvent(ACTIVE_EVENT)} />
-          </div>
-        </section>
+        {isLoading && <p className="mt-16 text-center text-xl">Carregando eventos...</p>}
+        {error && <p role="alert" className="mt-16 text-center text-xl text-marca">Não foi possível carregar os eventos.</p>}
 
-        <section aria-labelledby="past-events-title" className="mx-auto mt-20 max-w-2xl">
-          <h2 id="past-events-title" className="text-4xl font-medium">
-            Eventos Passados
-          </h2>
-          <div className="mx-auto mt-6 w-4/5 space-y-12 lg:w-full">
-            {PAST_EVENTS.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onOpen={event.reservationKind ? () => setSelectedEvent(event) : undefined}
-              />
-            ))}
-          </div>
-        </section>
+        {!isLoading && !error && (
+          <>
+            <section aria-labelledby="active-event-title" className="mx-auto mt-10 max-w-2xl">
+              <h2 id="active-event-title" className="text-4xl font-medium text-marca">Evento Ativo</h2>
+              {activeEvent ? (
+                <div className="mx-auto mt-6 w-4/5 lg:w-full"><EventCard event={activeEvent} active onOpen={() => setSelectedEvent(activeEvent)} /></div>
+              ) : (
+                <p className="mt-6 rounded-3xl bg-surface-raised p-8 text-center text-on-surface-raised">Nenhum evento está recebendo reservas agora.</p>
+              )}
+            </section>
+
+            <section aria-labelledby="past-events-title" className="mx-auto mt-20 max-w-2xl">
+              <h2 id="past-events-title" className="text-4xl font-medium">Eventos Passados</h2>
+              <div className="mx-auto mt-6 w-4/5 space-y-12 lg:w-full">
+                {pastEvents.map((event) => <EventCard key={event.id} event={event} onOpen={() => setSelectedEvent(event)} />)}
+                {pastEvents.length === 0 && <p className="rounded-3xl bg-surface-raised p-8 text-center text-on-surface-raised">O histórico de eventos aparecerá aqui.</p>}
+              </div>
+            </section>
+          </>
+        )}
       </div>
 
-      {selectedEvent?.reservationKind === 'product' && (
-        <ProductReservationFlow
-          title={selectedEvent.title}
-          description={FULL_DESCRIPTION}
-          image={selectedEvent.image}
-          measurementGuide={selectedEvent.measurementGuide}
-          onClose={() => setSelectedEvent(null)}
-        />
-      )}
-
-      {selectedEvent?.reservationKind === 'raffle' && (
-        <RaffleReservationFlow
-          title={selectedEvent.title}
-          description={FULL_RAFFLE_DESCRIPTION}
-          image={selectedEvent.image}
-          prize={selectedEvent.prize ?? ''}
-          winner={selectedEvent.winner ?? ''}
-          onClose={() => setSelectedEvent(null)}
-        />
-      )}
+      {selectedEvent?.kind === 'product' && <ProductReservationFlow event={selectedEvent} onClose={() => setSelectedEvent(null)} />}
+      {selectedEvent?.kind === 'raffle' && <RaffleReservationFlow event={selectedEvent} onClose={() => setSelectedEvent(null)} />}
     </main>
   )
 }

@@ -1,70 +1,29 @@
 import { useId, useState, type ReactNode } from 'react'
 import { Action, Dialog } from '@abrigo/shared'
-import { DEMO_PIX_CODE } from './reservation'
 
 type ReservationCheckoutDialogProps = {
   active?: boolean
   children: ReactNode
+  error?: string
+  isSubmitting?: boolean
   onBack: () => void
-  onConfirm: () => void
+  onConfirm: (customer: { contact: string; name: string }) => Promise<void> | void
   title: string
 }
 
 type ReservationConfirmationDialogProps = {
   children: ReactNode
+  expiresAt: string
   onClose: () => void
-}
-
-function DemoPixQrCode() {
-  const size = 29
-  const finderOrigins = [
-    [0, 0],
-    [size - 7, 0],
-    [0, size - 7],
-  ]
-  const isFinderArea = (x: number, y: number) =>
-    finderOrigins.some(
-      ([originX, originY]) =>
-        x >= originX && x <= originX + 6 && y >= originY && y <= originY + 6,
-    )
-  const isFinderCell = (x: number, y: number) =>
-    finderOrigins.some(([originX, originY]) => {
-      const localX = x - originX
-      const localY = y - originY
-      if (localX < 0 || localX > 6 || localY < 0 || localY > 6) return false
-      return (
-        localX === 0 ||
-        localX === 6 ||
-        localY === 0 ||
-        localY === 6 ||
-        (localX >= 2 && localX <= 4 && localY >= 2 && localY <= 4)
-      )
-    })
-
-  return (
-    <svg
-      viewBox={`-2 -2 ${size + 4} ${size + 4}`}
-      role="img"
-      aria-label="Ilustração de QR Code Pix demonstrativo"
-      className="aspect-square w-full bg-white text-cinza-escuro"
-    >
-      <rect x="-2" y="-2" width={size + 4} height={size + 4} fill="white" />
-      {Array.from({ length: size }, (_, y) =>
-        Array.from({ length: size }, (_, x) => {
-          const finder = isFinderCell(x, y)
-          const timing = (x === 7 || y === 7) && (x + y) % 2 === 0
-          const data = ((x * 149 + y * 97) ^ ((x + y) * 53) ^ (x * y * 7)) % 17 < 8
-          if ((!finder && isFinderArea(x, y)) || (!finder && !timing && !data)) return null
-          return <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill="currentColor" />
-        }),
-      )}
-    </svg>
-  )
+  pixCode: string
+  postPaymentInstructions: string
 }
 
 export function ReservationCheckoutDialog({
   active,
   children,
+  error,
+  isSubmitting,
   onBack,
   onConfirm,
   title,
@@ -89,7 +48,10 @@ export function ReservationCheckoutDialog({
         className="mt-8"
         onSubmit={(event) => {
           event.preventDefault()
-          if (canSubmit) onConfirm()
+          if (canSubmit && !isSubmitting) void onConfirm({
+            contact: contact.trim(),
+            name: customerName.trim(),
+          })
         }}
       >
         <h3 className="text-2xl font-medium sm:text-3xl">Seus dados</h3>
@@ -121,6 +83,7 @@ export function ReservationCheckoutDialog({
           Esses dados serão utilizados apenas para registrar a reserva e entrar em contato, sendo
           removidos após o evento.
         </p>
+        {error && <p role="alert" className="mt-3 text-sm font-medium text-marca">{error}</p>}
         <div className="mt-6 flex gap-4">
           <Action
             onClick={onBack}
@@ -132,12 +95,12 @@ export function ReservationCheckoutDialog({
           </Action>
           <Action
             type="submit"
-            disabled={!canSubmit}
+            disabled={!canSubmit || isSubmitting}
             size="small"
             variant="primary-adaptive"
             className="min-w-0 flex-1"
           >
-            Finalizar sua reserva
+            {isSubmitting ? 'Reservando...' : 'Finalizar sua reserva'}
           </Action>
         </div>
       </form>
@@ -147,13 +110,16 @@ export function ReservationCheckoutDialog({
 
 export function ReservationConfirmationDialog({
   children,
+  expiresAt,
   onClose,
+  pixCode,
+  postPaymentInstructions,
 }: ReservationConfirmationDialogProps) {
   const [pixCopied, setPixCopied] = useState(false)
   const titleId = useId()
 
   const copyPixCode = async () => {
-    await navigator.clipboard.writeText(DEMO_PIX_CODE)
+    await navigator.clipboard.writeText(pixCode)
     setPixCopied(true)
   }
 
@@ -167,20 +133,17 @@ export function ReservationConfirmationDialog({
         Reserva confirmada!
       </h2>
       {children}
-      <p className="mt-5 text-sm">
-        Envie o comprovante para o Instagram @abrigodamarcia ou via WhatsApp para um voluntário.
-      </p>
-      <div className="mx-auto mt-6 w-4/5 max-w-72">
-        <DemoPixQrCode />
-        <Action onClick={copyPixCode} className="mt-3 flex w-full" size="small">
+      <p className="mt-5 text-sm">{postPaymentInstructions}</p>
+      <div className="mt-6 rounded-2xl bg-cinza-claro p-4 text-cinza-escuro dark:bg-cinza-medio dark:text-cinza-claro">
+        <p className="text-sm font-medium">Pix copia e cola</p>
+        <code className="mt-2 block max-h-28 overflow-auto break-all text-xs">{pixCode}</code>
+        <Action onClick={copyPixCode} className="mt-4 flex w-full" size="small">
           {pixCopied ? 'Código copiado' : 'Copiar código PIX'}
         </Action>
       </div>
-      <p className="mt-4 text-center text-xs text-marca">
-        Código Pix demonstrativo até a integração da chave oficial.
-      </p>
       <p className="mt-6 text-xs">
-        A confirmação da reserva é feita manualmente pelos comprovantes recebidos.
+        Pague até {new Date(expiresAt).toLocaleString('pt-BR')}. Depois desse horário, a
+        reserva pendente expira e os itens voltam a ficar disponíveis.
       </p>
       <Action onClick={onClose} className="mt-8 flex w-full" size="small">
         Fechar

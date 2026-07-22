@@ -1,4 +1,5 @@
 import { Action, Icon } from '@abrigo/shared'
+import { getEventPhotoUrl } from '../events/events'
 import type { EventStatus, FundraisingEvent } from '../events/events'
 import { AdminListRow } from './AdminListRow'
 import { StatusBadge } from './StatusBadge'
@@ -36,28 +37,28 @@ export function EventRow({
   onSetStatus,
 }: EventRowProps) {
   const status = STATUS[event.status]
-  const actionClasses = 'w-full min-w-0 !gap-1 !px-1 !py-2 !text-xs [&_svg]:size-4 sm:!px-3 sm:!text-sm sm:[&_svg]:size-5 desk:!px-2 desk:!text-xs desk:[&_svg]:size-4'
+  const actionClasses = 'min-h-11 w-full min-w-0 !gap-2 !px-3 !py-2 !text-sm [&_svg]:size-5 min-[28rem]:!gap-1 min-[28rem]:!px-2 min-[28rem]:!text-xs min-[28rem]:[&_svg]:size-4 sm:!gap-2 sm:!px-3 sm:!text-sm sm:[&_svg]:size-5 desk:!gap-1.5 desk:!px-2 desk:!text-sm desk:[&_svg]:size-5'
 
   return (
     <AdminListRow
       isEditing={isEditing || isManaging}
-      className="grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] items-start gap-3 rounded-3xl p-4 min-[23rem]:grid-cols-[4rem_minmax(0,1fr)_10.5rem] min-[23rem]:items-center min-[23rem]:gap-2 sm:grid-cols-[6rem_minmax(0,1fr)_17rem] sm:gap-4 sm:p-6 desk:grid-cols-[5rem_minmax(0,1fr)_11.5rem] desk:gap-3 desk:rounded-2xl desk:p-3"
+      className="grid min-w-0 grid-cols-[5rem_minmax(0,1fr)] items-start gap-4 rounded-3xl p-4 min-[28rem]:grid-cols-[5rem_minmax(0,1fr)_12rem] min-[28rem]:items-center min-[28rem]:gap-3 sm:grid-cols-[6rem_minmax(0,1fr)_17rem] sm:gap-4 sm:p-6 desk:grid-cols-[5rem_minmax(0,1fr)_12.5rem] desk:gap-3 desk:rounded-2xl desk:p-4"
     >
-      <div className="flex w-16 shrink-0 flex-col gap-2 sm:w-24 desk:w-20">
-        <div className="relative flex size-16 items-center justify-center overflow-hidden rounded-xl bg-cinza-claro sm:size-24 desk:size-20 dark:bg-cinza-medio">
+      <div className="flex w-20 shrink-0 flex-col gap-2 sm:w-24 desk:w-20">
+        <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-xl bg-cinza-claro sm:size-24 desk:size-20 dark:bg-cinza-medio">
           <Icon name="pata" className="size-8 text-cinza-medio dark:text-cinza-claro" />
           {event.gallery[0] && (
-            <img src={event.gallery[0]} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={getEventPhotoUrl(event.gallery[0])} alt="" className="absolute inset-0 h-full w-full object-cover" />
           )}
         </div>
-        <StatusBadge tone={status.tone} size="sm" className="w-full justify-center">
+        <StatusBadge tone={status.tone} className="w-full justify-center">
           {status.label}
         </StatusBadge>
       </div>
 
-      <p className="min-w-0 self-center text-base leading-tight font-medium sm:text-lg desk:text-sm">{event.title}</p>
+      <p className="min-w-0 self-center text-base leading-tight font-medium sm:text-lg desk:text-base">{event.title}</p>
 
-      <div className="col-span-2 grid min-w-0 grid-cols-2 gap-2 min-[23rem]:col-span-1 min-[23rem]:col-start-3 min-[23rem]:row-start-1">
+      <div className="col-span-2 grid min-w-0 grid-cols-2 gap-2 min-[28rem]:col-span-1 min-[28rem]:col-start-3 min-[28rem]:row-start-1">
         {event.status !== 'draft' && (
           <Action
             size="small"
@@ -91,7 +92,7 @@ export function EventRow({
         >
           Editar
         </Action>
-        {(event.status === 'active' || event.status === 'ended') && (
+        {event.kind === 'raffle' && (event.status === 'active' || event.status === 'ended') && (
           <Action
             size="small"
             variant="neutral-adaptive"

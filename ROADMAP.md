@@ -28,10 +28,16 @@
 
 ## Fase — Eventos
 
-1. Listagem pública e fluxos responsivos de produto e rifa (cards, seleções, checkout e confirmação) — `done` (dados temporários; Pix demonstrativo)
-2. Schema, views públicas, RLS e verificação de dados reais — `todo`
-3. Persistência da reserva com Pix real e expiração automática — `todo`
-4. CRUD admin — `doing` (listagem e formulário responsivos, gestão local de reservas com quatro estados, confirmações do ciclo do evento, CSV e sorteio demonstrativo usam dados temporários; persistência, cancelamento automático, envio da cópia na exclusão e sorteio definitivo pendentes)
+1. Listagem e fluxos públicos responsivos de produto e rifa — `done` (dados reais, histórico somente leitura, limites, checkout e confirmação persistida)
+2. Schema, views públicas, RLS e verificação de dados reais — `done` (stack local validado; policies admin hospedadas seguem com Auth/MFA)
+3. Reserva com Pix real e expiração automática — `done`
+4. CRUD admin e gestão de reservas — `done`
+5. Formulário alinhado ao schema — `done`
+6. Configurações e regras de ciclo — `done`
+7. Catálogo de produtos — `done` (múltiplos produtos, opções por unidade, desconto e guia exclusivo por tabela/imagem)
+8. Rifas — `done` (prêmios ordenáveis, sorteios persistidos; um número pode ganhar no máximo um prêmio)
+9. Ajustes da gestão — `doing` (totais e confirmações assíncronas corrigidos; exclusão auditada exige exportação/envio manual confirmado; envio automático aguarda provedor de e-mail)
+10. Testes de Eventos — `done` (22 testes pgTAP para conflitos, expiração/liberação, descontos, medidas, ciclo e sorteio; builds/lints dos apps e lint do schema aprovados)
 
 O CRUD de produtos deve permitir um único formato de guia de medidas por produto: tabela preenchida manualmente ou imagem enviada pelo admin.
 
