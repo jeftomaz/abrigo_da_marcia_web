@@ -13,7 +13,10 @@ Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eve
 erDiagram
   SITE_SETTINGS {
     boolean singleton PK
-    text donation_url "nullable"
+    text donation_pix_key "nullable"
+    text donation_pix_receiver "nullable"
+    text donation_pix_city "nullable"
+    jsonb recurring_donation_urls
     text volunteer_form_url "nullable"
     text adoption_form_url
     timestamptz updated_at
@@ -198,12 +201,15 @@ Configuração singleton compartilhada pelos CTAs públicos e pela gestão de C�
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `singleton` | `boolean` | PK; sempre `true` |
-| `donation_url` | `text` | nullable; URL HTTPS; CTA de doação é ocultado quando null |
+| `donation_pix_key` | `text` | nullable; chave usada para gerar o Pix de doação única |
+| `donation_pix_receiver` | `text` | nullable; 1–25 caracteres; nome no Pix |
+| `donation_pix_city` | `text` | nullable; 1–15 caracteres; cidade no Pix |
+| `recurring_donation_urls` | `jsonb` | mapa HTTPS opcional para os valores `10`, `20`, `30`, `50`, `100` e `150` |
 | `volunteer_form_url` | `text` | nullable; URL HTTPS; CTA de voluntariado é ocultado quando null |
 | `adoption_form_url` | `text` | not null; URL HTTPS; fonte única de todos os CTAs de adoção |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-`site_settings_public` expõe somente os três links. O link de adoção foi migrado de `caes.adoption_form_url`; a coluna por cão foi removida.
+`site_settings_public` expõe os campos usados pelos CTAs públicos. O link de adoção foi migrado de `caes.adoption_form_url`; a coluna por cão foi removida. Os três campos Pix precisam estar preenchidos para habilitar a doação única; cada valor recorrente só é habilitado quando possui seu próprio link.
 
 ## `social_links`
 

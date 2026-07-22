@@ -89,7 +89,8 @@ export function Configuracoes() {
   }
 
   const landingDetails = siteSettings && socialLinks ? [
-    `Link de doação: ${configurationStatus(siteSettings.donationUrl)}`,
+    `Pix para doação única: ${configurationStatus(siteSettings.donationPixKey && siteSettings.donationPixReceiver && siteSettings.donationPixCity)}`,
+    `Links de doação recorrente: ${Object.keys(siteSettings.recurringDonationUrls).length}/6 configurados`,
     `Formulário de voluntariado: ${configurationStatus(siteSettings.volunteerFormUrl)}`,
     `Facebook: ${configurationStatus(socialLinks.facebook)}`,
     `Instagram: ${configurationStatus(socialLinks.instagram)}`,

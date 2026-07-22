@@ -738,21 +738,30 @@ export type Database = {
       site_settings: {
         Row: {
           adoption_form_url: string
-          donation_url: string | null
+          donation_pix_city: string | null
+          donation_pix_key: string | null
+          donation_pix_receiver: string | null
+          recurring_donation_urls: Json
           singleton: boolean
           updated_at: string
           volunteer_form_url: string | null
         }
         Insert: {
           adoption_form_url: string
-          donation_url?: string | null
+          donation_pix_city?: string | null
+          donation_pix_key?: string | null
+          donation_pix_receiver?: string | null
+          recurring_donation_urls?: Json
           singleton?: boolean
           updated_at?: string
           volunteer_form_url?: string | null
         }
         Update: {
           adoption_form_url?: string
-          donation_url?: string | null
+          donation_pix_city?: string | null
+          donation_pix_key?: string | null
+          donation_pix_receiver?: string | null
+          recurring_donation_urls?: Json
           singleton?: boolean
           updated_at?: string
           volunteer_form_url?: string | null
@@ -1050,17 +1059,26 @@ export type Database = {
       site_settings_public: {
         Row: {
           adoption_form_url: string | null
-          donation_url: string | null
+          donation_pix_city: string | null
+          donation_pix_key: string | null
+          donation_pix_receiver: string | null
+          recurring_donation_urls: Json | null
           volunteer_form_url: string | null
         }
         Insert: {
           adoption_form_url?: string | null
-          donation_url?: string | null
+          donation_pix_city?: string | null
+          donation_pix_key?: string | null
+          donation_pix_receiver?: string | null
+          recurring_donation_urls?: Json | null
           volunteer_form_url?: string | null
         }
         Update: {
           adoption_form_url?: string | null
-          donation_url?: string | null
+          donation_pix_city?: string | null
+          donation_pix_key?: string | null
+          donation_pix_receiver?: string | null
+          recurring_donation_urls?: Json | null
           volunteer_form_url?: string | null
         }
         Relationships: []

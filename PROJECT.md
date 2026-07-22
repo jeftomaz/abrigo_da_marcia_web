@@ -44,6 +44,7 @@ Status detalhado: `ROADMAP.md`.
 
 - **Header:** âncoras da landing + links para páginas dedicadas.
 - **Landing:** seções horizontais (doação, adoção, histórias etc.).
+- **Doação:** modalidade única gera Pix copia-e-cola por valor predefinido ou livre; modalidade recorrente abre o link PagSeguro específico do valor configurado no admin.
 - **Adoção:** catálogo de cards expansíveis; ordenação por porte/idade; botão → Google Forms. Admin: CRUD de cães; status `disponivel|adotado|falecido` (≠ disponível some do público).
 - **Histórias:** exibição de adoções concluídas. Admin: CRUD e publicação/rascunho.
 - **Eventos:** 1 evento ativo + histórico. Usuário reserva produto/número de rifa → recebe código Pix → envia comprovante fora do site (WhatsApp/Instagram) → admin marca como pago. Reserva expira automaticamente (prazo definido pelo admin) e item volta ao catálogo. Admin: CRUD de eventos, produtos, rifas, prazos.

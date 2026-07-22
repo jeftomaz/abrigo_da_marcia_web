@@ -90,6 +90,7 @@ export {
   useSaveSocialLinks,
 } from './settings/settings'
 export type { SiteSettings, SocialLinks } from './settings/settings'
+export { createDonationPixCode } from './settings/pix'
 export type {
   EditableEventProduct,
   EditableRafflePrize,

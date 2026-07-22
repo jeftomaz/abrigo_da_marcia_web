@@ -6,7 +6,10 @@ insert into public.social_links (network, url, display_order) values
 on conflict (network) do update set url = excluded.url, display_order = excluded.display_order;
 
 update public.site_settings set
-  donation_url = null,
+  donation_pix_key = null,
+  donation_pix_receiver = null,
+  donation_pix_city = null,
+  recurring_donation_urls = '{}'::jsonb,
   volunteer_form_url = null,
   adoption_form_url = 'https://forms.gle/nLSjXJyeLGUJXZj27'
 where singleton;

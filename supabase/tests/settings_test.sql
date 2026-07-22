@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(15);
+select plan(19);
 
 select is((select count(*) from public.site_settings), 1::bigint, 'mantém uma única configuração global');
 select is(
@@ -15,15 +15,27 @@ select hasnt_column('public', 'caes', 'adoption_form_url', 'remove a duplicaçã
 select is((select count(*) from public.social_links), 2::bigint, 'materializa as redes suportadas');
 
 select throws_ok(
-  $$update public.site_settings set donation_url = 'http://destino-inseguro.example' where singleton$$,
-  '23514', null, 'rejeita link público sem HTTPS'
+  $$update public.site_settings set recurring_donation_urls = '{"10":"http://destino-inseguro.example"}' where singleton$$,
+  '23514', null, 'rejeita link recorrente sem HTTPS'
+);
+select throws_ok(
+  $$update public.site_settings set recurring_donation_urls = '{"25":"https://pagseguro.example/25"}' where singleton$$,
+  '23514', null, 'rejeita valor recorrente não suportado'
+);
+select throws_ok(
+  $$update public.site_settings set donation_pix_receiver = 'Nome de recebedor acima do limite permitido' where singleton$$,
+  '23514', null, 'respeita o limite do recebedor no Pix'
+);
+select throws_ok(
+  $$update public.site_settings set donation_pix_key = 'pix@example.com' where singleton$$,
+  '23514', null, 'exige os três dados do Pix em conjunto'
 );
 select throws_ok(
   $$update public.social_links set url = 'javascript:alert(1)' where network = 'facebook'$$,
   '23514', null, 'rejeita protocolo inválido nas redes sociais'
 );
 select lives_ok(
-  $$update public.site_settings set donation_url = null, volunteer_form_url = null where singleton$$,
+  $$update public.site_settings set donation_pix_key = 'pix@example.com', donation_pix_receiver = 'Abrigo da Marcia', donation_pix_city = 'Ribeirao Preto', recurring_donation_urls = '{"10":"https://pagseguro.example/10"}', volunteer_form_url = null where singleton$$,
   'permite ocultar CTAs opcionais sem destino'
 );
 select lives_ok(
@@ -100,6 +112,7 @@ select is((select count(*) from public.site_settings), 1::bigint, 'autoriza admi
 
 set local role anon;
 select is((select count(*) from public.site_settings_public), 1::bigint, 'mantém somente a view necessária disponível ao público');
+select is((select recurring_donation_urls ->> '10' from public.site_settings_public), 'https://pagseguro.example/10', 'expõe o destino recorrente por valor');
 
 select * from finish();
 rollback;

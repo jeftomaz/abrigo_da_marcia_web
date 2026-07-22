@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Action, FeatureSection, Switch, usePublicSiteSettings } from '@abrigo/shared'
+import { Action, createDonationPixCode, Dialog, FeatureSection, Switch, usePublicSiteSettings } from '@abrigo/shared'
 import doacaoPhoto from '../assets/landing_doacao.jpg'
 
 const AMOUNTS = [10, 20, 30, 50, 100, 150]
@@ -7,7 +7,30 @@ const AMOUNTS = [10, 20, 30, 50, 100, 150]
 export function Doacao() {
   const [recurring, setRecurring] = useState(true)
   const [amount, setAmount] = useState<number | null>(null)
+  const [customAmount, setCustomAmount] = useState('')
+  const [pixCode, setPixCode] = useState('')
+  const [copied, setCopied] = useState(false)
   const { data: settings } = usePublicSiteSettings()
+  const selectedAmount = amount ?? Number(customAmount.replace(',', '.'))
+  const validAmount = Number.isFinite(selectedAmount) && selectedAmount > 0 && selectedAmount <= 99_999_999.99
+  const pixConfigured = Boolean(settings?.donationPixKey && settings.donationPixReceiver && settings.donationPixCity)
+  const recurringUrl = amount ? settings?.recurringDonationUrls[String(amount)] : undefined
+
+  const donate = () => {
+    if (recurring && recurringUrl) {
+      window.open(recurringUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+    if (!recurring && settings && pixConfigured && validAmount) {
+      setCopied(false)
+      setPixCode(createDonationPixCode(settings.donationPixKey, settings.donationPixReceiver, settings.donationPixCity, selectedAmount))
+    }
+  }
+
+  const copyPix = async () => {
+    await navigator.clipboard.writeText(pixCode)
+    setCopied(true)
+  }
 
   return (
     <FeatureSection
@@ -52,11 +75,12 @@ export function Doacao() {
                 key={value}
                 type="button"
                 aria-pressed={selected}
-                onClick={() => setAmount(value)}
+                disabled={recurring && !settings?.recurringDonationUrls[String(value)]}
+                onClick={() => { setAmount(value); setCustomAmount('') }}
                 className={`rounded-full py-3 text-base font-medium transition-colors ${
                   selected
                     ? 'bg-marca-clara text-marca dark:bg-marca-escura dark:text-marca-clara'
-                    : 'bg-marca-escura text-marca-clara dark:bg-marca-clara dark:text-marca'
+                    : 'bg-marca-escura text-marca-clara enabled:hover:bg-cinza-escuro disabled:cursor-not-allowed disabled:opacity-40 dark:bg-marca-clara dark:text-marca'
                 }`}
               >
                 R$ {value}
@@ -64,14 +88,37 @@ export function Doacao() {
             )
           })}
         </div>
+        {!recurring && (
+          <label className="mt-3 block rounded-2xl bg-marca-escura px-4 py-3 text-left text-marca-clara dark:bg-marca-clara dark:text-marca">
+            Outro valor
+            <span className="mt-1 flex items-center gap-2">
+              R$
+              <input
+                inputMode="decimal"
+                value={customAmount}
+                onChange={(event) => { setCustomAmount(event.target.value.replace(/[^0-9,.]/g, '')); setAmount(null) }}
+                className="min-w-0 flex-1 border-b-2 border-current bg-transparent outline-none"
+                aria-label="Valor livre da doação"
+              />
+            </span>
+          </label>
+        )}
       </div>
 
-      {settings?.donationUrl && (
-        <div className="mt-8 flex justify-center">
-          <Action href={settings.donationUrl} target="_blank" rel="noopener noreferrer" icon="donate">
-            Realizar doação
-          </Action>
-        </div>
+      <div className="mt-8 flex justify-center">
+        <Action onClick={donate} disabled={!validAmount || (recurring ? !recurringUrl : !pixConfigured)} icon="donate">
+          Realizar doação
+        </Action>
+      </div>
+      {pixCode && (
+        <Dialog ariaLabel="Pix para doação" onClose={() => setPixCode('')} className="w-full max-w-xl rounded-3xl bg-surface-raised p-6 text-left text-on-surface-raised sm:p-10">
+          <h3 className="text-3xl font-medium text-marca">Pix para doação</h3>
+          <p className="mt-3">Valor: R$ {selectedAmount.toFixed(2).replace('.', ',')}</p>
+          <code className="mt-4 block max-h-40 overflow-auto break-all rounded-xl bg-cinza-claro p-4 text-xs text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro">{pixCode}</code>
+          <div className="mt-6 flex justify-end">
+            <Action onClick={() => void copyPix()}>{copied ? 'Código copiado' : 'Copiar código Pix'}</Action>
+          </div>
+        </Dialog>
       )}
     </FeatureSection>
   )
