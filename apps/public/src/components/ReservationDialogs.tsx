@@ -1,4 +1,5 @@
 import { useId, useState, type ReactNode } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import {
   Action,
   Dialog,
@@ -19,15 +20,16 @@ type ReservationCheckoutDialogProps = {
   title: string
 }
 
-type ReservationConfirmationDialogProps = {
+type PixConfirmationDialogProps = {
   children: ReactNode
-  expiresAt: string
+  expiresAt?: string
   onClose: () => void
   pixCode: string
   pixCity: string
   pixKey: string
   pixReceiver: string
-  postPaymentInstructions: string
+  postPaymentInstructions?: string
+  title: string
 }
 
 export function ReservationCheckoutDialog({
@@ -151,16 +153,14 @@ export function ReservationCheckoutDialog({
   )
 }
 
-export function ReservationConfirmationDialog({
+export function PixConfirmationDialog({
   children,
   expiresAt,
   onClose,
   pixCode,
-  pixCity,
-  pixKey,
-  pixReceiver,
   postPaymentInstructions,
-}: ReservationConfirmationDialogProps) {
+  title,
+}: PixConfirmationDialogProps) {
   const [pixCopied, setPixCopied] = useState(false)
   const titleId = useId()
 
@@ -176,25 +176,29 @@ export function ReservationConfirmationDialog({
       className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface-raised p-7 text-on-surface-raised sm:p-10"
     >
       <h2 id={titleId} className="text-3xl font-medium text-marca sm:text-4xl">
-        Reserva confirmada!
+        {title}
       </h2>
       {children}
-      <p className="mt-5 text-sm">{postPaymentInstructions}</p>
-      <div className="mt-6 rounded-2xl bg-cinza-claro p-4 text-cinza-escuro dark:bg-cinza-medio dark:text-cinza-claro">
-        <p className="text-sm font-medium">Pix copia e cola</p>
-        {(pixReceiver || pixKey || pixCity) && <p className="mt-2 text-xs">Recebedor: {pixReceiver || 'não informado'}{pixCity ? ` • ${pixCity}` : ''}<br />Chave: {pixKey || 'não informada'}</p>}
-        <code className="mt-2 block max-h-28 overflow-auto break-all text-xs">{pixCode}</code>
-        <Action onClick={copyPixCode} className="mt-4 flex w-full" size="small">
+      {postPaymentInstructions && <p className="mt-5 text-sm">{postPaymentInstructions}</p>}
+      <div className="mt-7 flex flex-col items-center">
+        <div className="bg-white p-2">
+          <QRCodeSVG value={pixCode} className="size-40 sm:size-48" marginSize={0} />
+        </div>
+        <Action onClick={copyPixCode} className="mt-3 w-full max-w-56 py-2" size="small">
           {pixCopied ? 'Código copiado' : 'Copiar código PIX'}
         </Action>
       </div>
-      <p className="mt-6 text-xs">
-        Pague até {new Date(expiresAt).toLocaleString('pt-BR')}. Depois desse horário, a
-        reserva pendente expira e os itens voltam a ficar disponíveis.
-      </p>
-      <Action onClick={onClose} className="mt-8 flex w-full" size="small">
-        Fechar
-      </Action>
+      {expiresAt && (
+        <p className="mt-6 text-xs">
+          Pague até {new Date(expiresAt).toLocaleString('pt-BR')}. Depois desse horário, a
+          reserva pendente expira e os itens voltam a ficar disponíveis.
+        </p>
+      )}
+      <div className="mt-8 flex justify-center">
+        <Action onClick={onClose} className="w-full max-w-72 py-2" size="small">
+          Fechar
+        </Action>
+      </div>
     </Dialog>
   )
 }

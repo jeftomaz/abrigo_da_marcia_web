@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { Dialog, ImagePlaceholder, getEventPhotoUrl, parseCurrencyToCents, useRaffleNumbers, useReserveRaffle } from '@abrigo/shared'
 import type { FundraisingEvent, ReservationResult } from '@abrigo/shared'
-import { ReservationCheckoutDialog, ReservationConfirmationDialog } from './ReservationDialogs'
+import { PixConfirmationDialog, ReservationCheckoutDialog } from './ReservationDialogs'
 import { ReservationBar } from './ReservationBar'
 import { ReservationSummaryButton } from './ReservationSummaryButton'
 import { formatCurrency } from './reservation'
@@ -85,7 +85,8 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
   ) : null
 
   const confirmationDialog = stage === 'confirmation' && result ? (
-    <ReservationConfirmationDialog
+    <PixConfirmationDialog
+      title="Reserva confirmada!"
       expiresAt={result.expiresAt}
       pixCode={result.pixCode}
       pixCity={event.city}
@@ -99,7 +100,7 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
         <p>Números escolhidos: {selectedNumbers.map((number) => formatNumber(number, numberDigits)).join(', ')}</p>
         <p>Total: {formatCurrency(result.totalCents / 100)}</p>
       </section>
-    </ReservationConfirmationDialog>
+    </PixConfirmationDialog>
   ) : null
 
   return (

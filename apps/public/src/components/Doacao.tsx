@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Action, createDonationPixCode, Dialog, FeatureSection, Switch, usePublicSiteSettings } from '@abrigo/shared'
+import { Action, createDonationPixCode, FeatureSection, Switch, usePublicSiteSettings } from '@abrigo/shared'
+import { PixConfirmationDialog } from './ReservationDialogs'
 import doacaoPhoto from '../assets/landing_doacao.jpg'
 
 const AMOUNTS = [10, 20, 30, 50, 100, 150]
@@ -9,7 +10,6 @@ export function Doacao() {
   const [amount, setAmount] = useState<number | null>(null)
   const [customAmount, setCustomAmount] = useState('')
   const [pixCode, setPixCode] = useState('')
-  const [copied, setCopied] = useState(false)
   const { data: settings } = usePublicSiteSettings()
   const selectedAmount = amount ?? Number(customAmount.replace(',', '.'))
   const validAmount = Number.isFinite(selectedAmount) && selectedAmount > 0 && selectedAmount <= 99_999_999.99
@@ -22,14 +22,8 @@ export function Doacao() {
       return
     }
     if (!recurring && settings && pixConfigured && validAmount) {
-      setCopied(false)
       setPixCode(createDonationPixCode(settings.donationPixKey, settings.donationPixReceiver, settings.donationPixCity, selectedAmount))
     }
-  }
-
-  const copyPix = async () => {
-    await navigator.clipboard.writeText(pixCode)
-    setCopied(true)
   }
 
   return (
@@ -111,14 +105,16 @@ export function Doacao() {
         </Action>
       </div>
       {pixCode && (
-        <Dialog ariaLabel="Pix para doação" onClose={() => setPixCode('')} className="w-full max-w-xl rounded-3xl bg-surface-raised p-6 text-left text-on-surface-raised sm:p-10">
-          <h3 className="text-3xl font-medium text-marca">Pix para doação</h3>
-          <p className="mt-3">Valor: R$ {selectedAmount.toFixed(2).replace('.', ',')}</p>
-          <code className="mt-4 block max-h-40 overflow-auto break-all rounded-xl bg-cinza-claro p-4 text-xs text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro">{pixCode}</code>
-          <div className="mt-6 flex justify-end">
-            <Action onClick={() => void copyPix()}>{copied ? 'Código copiado' : 'Copiar código Pix'}</Action>
-          </div>
-        </Dialog>
+        <PixConfirmationDialog
+          title="Pix para doação"
+          pixCode={pixCode}
+          pixKey={settings?.donationPixKey ?? ''}
+          pixReceiver={settings?.donationPixReceiver ?? ''}
+          pixCity={settings?.donationPixCity ?? ''}
+          onClose={() => setPixCode('')}
+        >
+          <p className="mt-4">Valor: R$ {selectedAmount.toFixed(2).replace('.', ',')}</p>
+        </PixConfirmationDialog>
       )}
     </FeatureSection>
   )

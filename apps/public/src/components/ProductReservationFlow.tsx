@@ -15,7 +15,7 @@ import type {
   ProductMeasurementGuide,
   ReservationResult,
 } from '@abrigo/shared'
-import { ReservationCheckoutDialog, ReservationConfirmationDialog } from './ReservationDialogs'
+import { PixConfirmationDialog, ReservationCheckoutDialog } from './ReservationDialogs'
 import { ReservationBar } from './ReservationBar'
 import { ReservationSummaryButton } from './ReservationSummaryButton'
 import { formatCurrency } from './reservation'
@@ -153,7 +153,8 @@ export function ProductReservationFlow({ event, onClose }: ProductReservationFlo
   ) : null
 
   const confirmationDialog = stage === 'confirmation' && result ? (
-    <ReservationConfirmationDialog
+    <PixConfirmationDialog
+      title="Reserva confirmada!"
       expiresAt={result.expiresAt}
       pixCode={result.pixCode}
       pixCity={event.city}
@@ -167,7 +168,7 @@ export function ProductReservationFlow({ event, onClose }: ProductReservationFlo
         <p>{cart.length} {cart.length === 1 ? 'produto escolhido' : 'produtos escolhidos'}</p>
         <p>Total: {formatCurrency(result.totalCents / 100)}</p>
       </section>
-    </ReservationConfirmationDialog>
+    </PixConfirmationDialog>
   ) : null
 
   const images = (product.gallery.length ? product.gallery : event.gallery).map(getEventPhotoUrl)
