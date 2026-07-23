@@ -29,12 +29,12 @@ function compressedFileName(name: string) {
   return `${baseName}.webp`
 }
 
+// Reencoda mesmo o arquivo já dentro do limite: o canvas descarta EXIF/GPS/XMP por
+// construção, e o bucket é público — devolver o original vazaria a localização de quem fotografou.
 export async function compressImage(file: File): Promise<File> {
   if (!ACCEPTED_UPLOAD_IMAGE_TYPES.includes(file.type as (typeof ACCEPTED_UPLOAD_IMAGE_TYPES)[number])) {
     throw new Error(`O arquivo "${file.name}" deve ser JPG, PNG ou WebP.`)
   }
-
-  if (file.size <= MAX_UPLOAD_IMAGE_BYTES) return file
 
   let image: ImageBitmap
   try {

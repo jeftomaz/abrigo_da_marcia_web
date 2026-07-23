@@ -119,7 +119,8 @@ file_size_limit = "50MiB"
 
 [storage.buckets.dog-photos]
 public = true
-file_size_limit = "500KB"
+# Em bytes: "500KB" seria lido como 500 KiB (512000) e divergiria do limite 500.000 da migration.
+file_size_limit = "500000B"
 allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
 objects_path = "./seed-storage"
 
