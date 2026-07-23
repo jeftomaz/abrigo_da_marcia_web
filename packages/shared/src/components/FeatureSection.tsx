@@ -17,6 +17,7 @@ type FeatureSectionProps = {
   image: {
     alt: string
     className?: string
+    priority?: boolean
     src: string
   }
   imagePosition?: FeatureSectionImagePosition
@@ -66,6 +67,7 @@ export function FeatureSection({
     <BlobImage
       src={image.src}
       alt={image.alt}
+      priority={image.priority}
       aspect={layout === 'compact' ? 'portrait' : 'square'}
       className={`${layoutClasses.desktopImage} ${image.className ?? ''}`}
     />
@@ -84,6 +86,7 @@ export function FeatureSection({
           <BlobImage
             src={image.src}
             alt={image.alt}
+            priority={image.priority}
             aspect={layout === 'compact' ? 'portrait' : 'square'}
             className={`${layoutClasses.mobileImage} ${image.className ?? ''}`}
           />
