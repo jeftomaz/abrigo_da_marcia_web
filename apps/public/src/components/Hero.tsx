@@ -13,7 +13,7 @@ export function Hero() {
 
   return (
     <FeatureSection
-      image={{ src: heroImage, alt: 'Mão fazendo carinho em um cachorro' }}
+      image={{ src: heroImage, alt: 'Mão fazendo carinho em um cachorro', priority: true }}
       contentClassName="lg:flex lg:flex-col lg:gap-4"
       heading={
         <h1 className="text-5xl leading-tight font-medium lg:text-8xl">

@@ -3,6 +3,8 @@ type BlobImageProps = {
   alt: string
   aspect?: 'portrait' | 'square'
   className?: string
+  // Imagem acima da dobra (ex.: Hero/LCP): carrega imediatamente com prioridade alta.
+  priority?: boolean
 }
 
 // Leve irregularidade no contorno, ecoando os "dedos" da pata do logo (Logo.tsx) em vez de um círculo perfeito.
@@ -13,13 +15,21 @@ export function BlobImage({
   alt,
   aspect = 'square',
   className = '',
+  priority = false,
 }: BlobImageProps) {
   return (
     <div
       className={`${aspect === 'portrait' ? 'aspect-[15/16]' : 'aspect-square'} overflow-hidden ${className}`}
       style={{ borderRadius: BLOB_RADIUS }}
     >
-      <img src={src} alt={alt} className="h-full w-full object-cover" />
+      <img
+        src={src}
+        alt={alt}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchPriority={priority ? 'high' : 'auto'}
+        className="h-full w-full object-cover"
+      />
     </div>
   )
 }

@@ -59,6 +59,8 @@ export function CompactCard({
         <img
           src={image.src}
           alt={image.alt}
+          loading="lazy"
+          decoding="async"
           className={`${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
         />
       ) : (

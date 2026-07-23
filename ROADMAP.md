@@ -68,7 +68,7 @@
 - `done` Tornar o seed local autocontido: fotos de Histórias e Eventos carregadas no Storage via seed de bucket do CLI, e fixtures de Eventos (rifa ativa e bazar encerrado) cobrindo reserva, pagamento, cancelamento, entrega e sorteio.
 - `todo` Adicionar pgTAP específico para Cães, Histórias, views públicas e policies do Storage; os testes atuais concentram Eventos e Configurações.
 - `todo` Adicionar testes frontend/E2E dos fluxos críticos e auditoria de acessibilidade por teclado, foco, leitores de tela e contraste.
-- `todo` Medir e reduzir bundles/assets grandes, aplicar carregamento sob demanda por rota e validar desempenho em conexão móvel.
+- `done` Medir e reduzir bundles/assets grandes, aplicar carregamento sob demanda por rota e validar desempenho em conexão móvel. (Recompressão/EXIF das fotos versionadas segue no item P0 de sanitização.)
 - `todo` Definir proteção de borda contra abuso de reservas por IP; a limitação atual é somente por sessão do navegador.
 - `todo` Documentar recuperação de acesso em perda do TOTP, backup/restauração e verificação periódica de cron, quotas e auditoria no ambiente hospedado.
 
