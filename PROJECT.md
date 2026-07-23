@@ -24,7 +24,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - Strings longas de classes Tailwind: componentizar. Inline apenas para layout pontual (2-4 classes).
 - Design system: fidelidade aos mockups Photoshop. Tokens (cores, fontes, radius, spacing) só via `tailwind.config` — nunca valores hardcoded em componente.
 - Superfícies 100% brancas no modo claro são sempre 100% pretas no modo escuro; cores de estado e ilustrações não entram nessa correspondência.
-- **Fluxo Git:** cada tela é desenvolvida em branch própria criada a partir da `main` atualizada. Ao finalizar, validar, publicar a branch, integrá-la à `main` e publicar a `main` antes de iniciar a próxima tela.
+- **Fluxo Git:** cada tela/bloco é desenvolvido em branch própria criada a partir da `main` atualizada. Ao finalizar: validar, publicar a branch e **confirmar com o usuário se ela deve ser integrada à `main`**. Se aprovado, mergear, publicar a `main` e criar a branch da próxima parte, se houver.
 - Fotos: todo upload usa `compressImage` de `packages/shared` no client e só segue ao Storage com até 500.000 bytes (JPG, PNG ou WebP; preservar a cota free tier).
 
 ## Ordem de desenvolvimento
