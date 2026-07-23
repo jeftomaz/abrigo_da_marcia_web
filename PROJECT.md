@@ -25,7 +25,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - Design system: fidelidade aos mockups Photoshop. Tokens (cores, fontes, radius, spacing) só via `tailwind.config` — nunca valores hardcoded em componente.
 - Superfícies 100% brancas no modo claro são sempre 100% pretas no modo escuro; cores de estado e ilustrações não entram nessa correspondência.
 - **Fluxo Git:** cada tela/bloco é desenvolvido em branch própria criada a partir da `main` atualizada. Ao finalizar: validar, publicar a branch e **confirmar com o usuário se ela deve ser integrada à `main`**. Se aprovado, mergear, publicar a `main` e criar a branch da próxima parte, se houver.
-- Fotos: todo upload usa `compressImage` de `packages/shared` no client e só segue ao Storage com até 500.000 bytes (JPG, PNG ou WebP; preservar a cota free tier).
+- Fotos: todo upload usa `compressImage` de `packages/shared` no client e só segue ao Storage com até 500.000 bytes (JPG, PNG ou WebP; preservar a cota free tier). Fotos versionadas no repositório (ex.: `apps/public/src/assets/landing_*.jpg`) não passam por esse client — antes de commitar, rodar `scripts/optimize-photo.py` para remover EXIF/GPS, converter para sRGB e recomprimir.
 
 ## Ordem de desenvolvimento
 
