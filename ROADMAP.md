@@ -17,7 +17,7 @@
 - `doing` Publicar os apps público e admin no GitHub Pages (bases, admin em `/admin/`, workflow e fallback `404.html` prontos; configuração do Pages, variáveis e publicação pendentes).
 - `todo` Comprar/verificar o domínio no Resend e configurar `RESEND_FROM_EMAIL` de produção; até lá, testes de envio ficam restritos ao remetente `onboarding@resend.dev` e ao e-mail da conta Resend.
 - `todo` Carregar configurações, cães, histórias, eventos e fotos reais; o `seed.sql` continua exclusivamente fictício e não deve abastecer produção.
-- `todo` Sanitizar EXIF/GPS e otimizar as fotos versionadas antes da publicação; há assets com metadados de aparelho, data e localização.
+- `done` Sanitizar EXIF/GPS e otimizar as fotos versionadas: as 7 fotos `landing_*.jpg` tiveram EXIF/GPS/XMP/maker notes removidos, perfil convertido para sRGB e recompressão q80/2048px via `scripts/optimize-photo.py` (10,2 MB → 3,07 MB). As imagens de `seed-storage/` já eram placeholders gerados (~2,4 KB, sem metadados).
 
 ### P1 — Landing, Header e conteúdo público
 
@@ -66,11 +66,11 @@
 
 - `done` Criar rotas de página não encontrada para público e admin e finalizar favicon, descrição, Open Graph e demais metadados de compartilhamento.
 - `done` Tornar o seed local autocontido: fotos de Histórias e Eventos carregadas no Storage via seed de bucket do CLI, e fixtures de Eventos (rifa ativa e bazar encerrado) cobrindo reserva, pagamento, cancelamento, entrega e sorteio.
-- `todo` Adicionar pgTAP específico para Cães, Histórias, views públicas e policies do Storage; os testes atuais concentram Eventos e Configurações.
+- `done` Adicionar pgTAP específico para Cães, Histórias, views públicas e policies do Storage: 56 testes novos em `caes_historias_test.sql` e `storage_test.sql`, mais 13 do teto por IP em `eventos_test.sql` (126 no total).
 - `todo` Adicionar testes frontend/E2E dos fluxos críticos e auditoria de acessibilidade por teclado, foco, leitores de tela e contraste.
-- `done` Medir e reduzir bundles/assets grandes, aplicar carregamento sob demanda por rota e validar desempenho em conexão móvel. (Recompressão/EXIF das fotos versionadas segue no item P0 de sanitização.)
-- `todo` Definir proteção de borda contra abuso de reservas por IP; a limitação atual é somente por sessão do navegador.
-- `todo` Documentar recuperação de acesso em perda do TOTP, backup/restauração e verificação periódica de cron, quotas e auditoria no ambiente hospedado.
+- `done` Medir e reduzir bundles/assets grandes, aplicar carregamento sob demanda por rota e validar desempenho em conexão móvel.
+- `done` Definir proteção de borda contra abuso de reservas por IP: triggers em `sessoes_reserva` e `reservas` limitam 60 sessões e 20 reservas por IP/hora, sobre hash com sal.
+- `done` Documentar recuperação de acesso em perda do TOTP, backup/restauração e verificação periódica de cron, quotas e auditoria no ambiente hospedado (`OPERATIONS.md`).
 
 ## Base implementada — Landing
 

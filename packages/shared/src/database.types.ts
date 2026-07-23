@@ -388,6 +388,42 @@ export type Database = {
           },
         ]
       }
+      reserva_ip_sal: {
+        Row: {
+          sal: string
+          singleton: boolean
+        }
+        Insert: {
+          sal?: string
+          singleton?: boolean
+        }
+        Update: {
+          sal?: string
+          singleton?: boolean
+        }
+        Relationships: []
+      }
+      reserva_ip_tentativas: {
+        Row: {
+          created_at: string
+          id: number
+          ip_hash: string
+          kind: Database["public"]["Enums"]["reserva_tentativa_tipo"]
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          ip_hash: string
+          kind: Database["public"]["Enums"]["reserva_tentativa_tipo"]
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          ip_hash?: string
+          kind?: Database["public"]["Enums"]["reserva_tentativa_tipo"]
+        }
+        Relationships: []
+      }
       reserva_numeros: {
         Row: {
           id: string
@@ -1105,6 +1141,7 @@ export type Database = {
     Functions: {
       clean_expired_event_personal_data: { Args: never; Returns: number }
       create_reservation_session: { Args: never; Returns: string }
+      current_request_ip_hash: { Args: never; Returns: string }
       delete_archived_event: {
         Args: { p_event_id: string; p_export_sent_at: string }
         Returns: undefined
@@ -1117,6 +1154,14 @@ export type Database = {
           winner_name: string
           winning_number: number
         }[]
+      }
+      enforce_reservation_ip_limit: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["reserva_tentativa_tipo"]
+          p_limit: number
+          p_message: string
+        }
+        Returns: undefined
       }
       expire_event_reservations: { Args: never; Returns: number }
       is_admin: { Args: never; Returns: boolean }
@@ -1161,6 +1206,7 @@ export type Database = {
           total_cents: number
         }[]
       }
+      valid_recurring_donation_urls: { Args: { urls: Json }; Returns: boolean }
     }
     Enums: {
       cae_genero: "macho" | "femea"
@@ -1169,6 +1215,7 @@ export type Database = {
       evento_status: "rascunho" | "ativo" | "encerrado" | "arquivado"
       evento_tipo: "rifa" | "produtos"
       reserva_status: "pendente" | "paga" | "cancelada" | "entregue"
+      reserva_tentativa_tipo: "sessao" | "reserva"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1305,6 +1352,8 @@ export const Constants = {
       evento_status: ["rascunho", "ativo", "encerrado", "arquivado"],
       evento_tipo: ["rifa", "produtos"],
       reserva_status: ["pendente", "paga", "cancelada", "entregue"],
+      reserva_tentativa_tipo: ["sessao", "reserva"],
     },
   },
 } as const
+

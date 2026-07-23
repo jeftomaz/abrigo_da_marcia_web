@@ -5,7 +5,9 @@ Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eve
 ## Imagens no Storage
 
 - Todo arquivo passa por `compressImage` de `packages/shared` no client antes do upload; somente JPG, PNG e WebP com até 500.000 bytes seguem ao Storage.
+- `compressImage` reencoda em WebP mesmo o arquivo já dentro do limite: o canvas descarta EXIF/GPS/XMP por construção e o bucket é público, então devolver o original vazaria a localização de quem fotografou.
 - Cães, Histórias, Eventos, Produtos, prêmios e guias de medidas usam o bucket público `dog-photos` (limite 500.000 bytes; JPG, PNG e WebP), sempre via `compressImage`; os CRUDs removem objetos descartados.
+- O limite do bucket é declarado em bytes nos dois lugares: `500000` na migration (vale no hospedado) e `"500000B"` em `config.toml` (vale no local). `"500KB"` seria lido como 500 KiB e faria o local divergir em 12.000 bytes.
 - Local: `supabase/seed-storage/` guarda as imagens fictícias referenciadas pelo `seed.sql`; `supabase/config.toml` (`[storage.buckets.dog-photos]`) reenvia essa pasta ao bucket a cada `supabase db reset`.
 
 ## DER
@@ -424,7 +426,24 @@ Sessão pública anônima e opaca, emitida pelo banco e mantida no `sessionStora
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-O intervalo mínimo entre tentativas é uma constante do sistema, não uma configuração do admin. A função de reserva bloqueia a linha da sessão, registra a tentativa e recusa outra chamada da mesma sessão dentro do intervalo. Essa proteção limita abuso acidental por sessão; não substitui limitação por IP na borda caso seja necessária defesa contra troca deliberada de sessão.
+O intervalo mínimo entre tentativas é uma constante do sistema, não uma configuração do admin. A função de reserva bloqueia a linha da sessão, registra a tentativa e recusa outra chamada da mesma sessão dentro do intervalo. Essa proteção limita abuso acidental por sessão; a defesa contra troca deliberada de sessão é o teto por IP descrito a seguir.
+
+### `reserva_ip_sal` e `reserva_ip_tentativas`
+
+Teto por IP de origem, aplicado por trigger `before insert` em `sessoes_reserva` e em `reservas` — protege qualquer origem, não apenas as RPCs públicas.
+
+| Tabela | Colunas e regras |
+|---|---|
+| `reserva_ip_sal` | `singleton boolean` PK; `sal bytea` gerado uma vez por instalação com `gen_random_bytes(32)` |
+| `reserva_ip_tentativas` | `id bigint` PK; `ip_hash bytea`; `kind reserva_tentativa_tipo` (`sessao`/`reserva`); `created_at timestamptz`; índice em (`ip_hash`, `kind`, `created_at desc`) |
+
+Limites por IP na janela de 1 hora, constantes do sistema: 60 criações de sessão e 20 reservas. Cada aba abre sua própria sessão e operadoras compartilham IP por NAT, então os tetos são altos o bastante para não barrar visitante legítimo.
+
+`current_request_ip_hash()` lê `cf-connecting-ip` (preenchido pela borda do Supabase, não falsificável pelo client) e cai para o primeiro salto de `x-forwarded-for`. O IP nunca é armazenado em claro: só o SHA-256 de IP + sal, para que nenhuma cópia do banco revele visitantes. Chamada sem cabeçalho de origem — seed, `psql`, `pg_cron` — não é atribuída a ninguém e não conta.
+
+As duas tabelas têm RLS habilitada e **nenhuma** policy: apenas as funções `security definer` as enxergam; nem o admin lê o histórico de IPs, que não tem uso administrativo. `expire_event_reservations` descarta tentativas com mais de 24 horas.
+
+Limitação conhecida: a tentativa é registrada na mesma transação da reserva, então uma chamada que falha e aborta não é contabilizada. O teto cobre reservas efetivadas — que é o abuso relevante — e não substitui proteção contra flood de chamadas inválidas, que exigiria bloqueio antes do banco.
 
 ### `reservas`
 

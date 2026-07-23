@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(38);
+select plan(51);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -269,6 +269,86 @@ select lives_ok($$
   update public.reservas set status = 'entregue'
   where session_id = '24000000-0000-0000-0000-000000000001'
 $$, 'permite entregar produtos pagos após o encerramento');
+
+-- Limitação por IP. As asserções sem cabeçalho vêm primeiro: uma vez definido,
+-- request.headers não volta a ficar ausente dentro da transação.
+select ok(
+  public.current_request_ip_hash() is null,
+  'não atribui tentativa quando a chamada não traz IP de origem (seed, cron, psql)'
+);
+select has_trigger('public', 'sessoes_reserva', 'sessoes_reserva_limit_ip', 'protege a criação de sessões por IP');
+select has_trigger('public', 'reservas', 'reservas_limit_ip', 'protege a criação de reservas por IP');
+
+select set_config('request.headers', '{"cf-connecting-ip":"203.0.113.10"}', true);
+select is(
+  public.current_request_ip_hash(),
+  public.current_request_ip_hash(),
+  'gera o mesmo identificador para o mesmo IP'
+);
+select isnt(
+  (select encode(public.current_request_ip_hash(), 'hex')),
+  (select encode(extensions.digest('203.0.113.10', 'sha256'), 'hex')),
+  'aplica sal ao hash, impedindo reverter o IP por força bruta'
+);
+
+create temporary table ip_hash_fixture (rotulo text primary key, hash bytea);
+insert into ip_hash_fixture values ('cf', public.current_request_ip_hash());
+select set_config('request.headers', '{"x-forwarded-for":"203.0.113.11, 10.0.0.1"}', true);
+insert into ip_hash_fixture values ('xff', public.current_request_ip_hash());
+select isnt(
+  (select hash from ip_hash_fixture where rotulo = 'cf'),
+  (select hash from ip_hash_fixture where rotulo = 'xff'),
+  'distingue IPs de origem diferentes, lendo também o primeiro salto de x-forwarded-for'
+);
+
+select set_config('request.headers', '{"cf-connecting-ip":"203.0.113.20"}', true);
+select is(
+  (select count(*) from (select public.create_reservation_session() from generate_series(1, 60)) criadas),
+  60::bigint,
+  'permite as sessões previstas para uma mesma conexão'
+);
+select throws_ok(
+  $$select public.create_reservation_session()$$,
+  'P0001', 'Muitas tentativas a partir desta conexão. Tente novamente mais tarde.',
+  'recusa novas sessões após o teto por IP'
+);
+
+select set_config('request.headers', '{"cf-connecting-ip":"203.0.113.21"}', true);
+select lives_ok(
+  $$select public.create_reservation_session()$$,
+  'preserva o acesso de outra conexão ao teto de sessões'
+);
+
+insert into public.sessoes_reserva (id) values ('25000000-0000-0000-0000-000000000001');
+insert into public.reservas (event_id, session_id, customer_name, customer_contact, total_cents, expires_at)
+select '20000000-0000-0000-0000-000000000001', '25000000-0000-0000-0000-000000000001',
+  'Teste de limite', 'pessoa@example.com', 1000, now() + interval '1 hour'
+from generate_series(1, 20);
+select throws_ok(
+  $$insert into public.reservas (event_id, session_id, customer_name, customer_contact, total_cents, expires_at)
+    values ('20000000-0000-0000-0000-000000000001', '25000000-0000-0000-0000-000000000001',
+      'Teste de limite', 'pessoa@example.com', 1000, now() + interval '1 hour')$$,
+  'P0001', 'Limite de reservas atingido para esta conexão. Tente novamente mais tarde.',
+  'recusa novas reservas após o teto por IP, mesmo trocando de sessão'
+);
+
+update public.reserva_ip_tentativas set created_at = now() - interval '25 hours';
+select lives_ok(
+  $$select public.expire_event_reservations()$$,
+  'executa a manutenção periódica das reservas'
+);
+select is(
+  (select count(*) from public.reserva_ip_tentativas),
+  0::bigint,
+  'descarta o histórico de tentativas por IP após 24 horas'
+);
+
+set local role anon;
+select throws_ok(
+  $$select 1 from public.reserva_ip_tentativas$$,
+  '42501', null, 'mantém o histórico de IPs fora do alcance do público'
+);
+set local role postgres;
 
 select * from finish();
 rollback;
