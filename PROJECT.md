@@ -39,7 +39,7 @@ Uma página por vez, nesta ordem (estrutura/funcionalidade primeiro, design fiel
 6. Configurações admin
 7. Passada de design system (fidelidade aos mockups)
 
-Status detalhado: `ROADMAP.md`.
+Status detalhado: `ROADMAP.md`. Operação do ambiente hospedado (perda de TOTP, backup/restauração, cron, quotas e auditoria): `OPERATIONS.md`.
 
 ## Funcionalidades por página (resumo)
 

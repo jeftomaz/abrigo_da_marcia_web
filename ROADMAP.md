@@ -66,11 +66,11 @@
 
 - `done` Criar rotas de página não encontrada para público e admin e finalizar favicon, descrição, Open Graph e demais metadados de compartilhamento.
 - `done` Tornar o seed local autocontido: fotos de Histórias e Eventos carregadas no Storage via seed de bucket do CLI, e fixtures de Eventos (rifa ativa e bazar encerrado) cobrindo reserva, pagamento, cancelamento, entrega e sorteio.
-- `todo` Adicionar pgTAP específico para Cães, Histórias, views públicas e policies do Storage; os testes atuais concentram Eventos e Configurações.
+- `done` Adicionar pgTAP específico para Cães, Histórias, views públicas e policies do Storage: 56 testes novos em `caes_historias_test.sql` e `storage_test.sql`, mais 13 do teto por IP em `eventos_test.sql` (126 no total).
 - `todo` Adicionar testes frontend/E2E dos fluxos críticos e auditoria de acessibilidade por teclado, foco, leitores de tela e contraste.
 - `done` Medir e reduzir bundles/assets grandes, aplicar carregamento sob demanda por rota e validar desempenho em conexão móvel.
-- `todo` Definir proteção de borda contra abuso de reservas por IP; a limitação atual é somente por sessão do navegador.
-- `todo` Documentar recuperação de acesso em perda do TOTP, backup/restauração e verificação periódica de cron, quotas e auditoria no ambiente hospedado.
+- `done` Definir proteção de borda contra abuso de reservas por IP: triggers em `sessoes_reserva` e `reservas` limitam 60 sessões e 20 reservas por IP/hora, sobre hash com sal.
+- `done` Documentar recuperação de acesso em perda do TOTP, backup/restauração e verificação periódica de cron, quotas e auditoria no ambiente hospedado (`OPERATIONS.md`).
 
 ## Base implementada — Landing
 
