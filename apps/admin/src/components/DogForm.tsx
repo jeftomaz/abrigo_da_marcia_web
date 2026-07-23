@@ -3,6 +3,7 @@ import {
   Action,
   Icon,
   Switch,
+  TextField,
   toEditableDogPhotos,
   useAdminSiteSettings,
 } from '@abrigo/shared'
@@ -57,8 +58,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   const [saveError, setSaveError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<DogField, string>>>({})
   const isPanel = layout === 'panel'
-  const fieldClasses =
-    'mt-1 h-8 w-full rounded-lg border-2 border-cinza-medio bg-transparent px-3 text-sm text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50'
+  const fieldClasses = 'mt-1 h-8 px-3 text-sm'
   const selectClasses = `${
     isPanel
       ? 'bg-marca-clara text-marca dark:bg-marca-escura dark:text-marca'
@@ -127,7 +127,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       <label htmlFor={`${formId}-name`} className={labelClasses}>
         Nome*
       </label>
-      <input
+      <TextField
         id={`${formId}-name`}
         value={name}
         onChange={(event) => setName(event.target.value)}
@@ -203,7 +203,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
           <label htmlFor={`${formId}-birth-year`} className={nestedLabelClasses}>
             Ano de Nascimento*
           </label>
-          <input
+          <TextField
             id={`${formId}-birth-year`}
             type="number"
             value={birthYear}
@@ -224,7 +224,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
           <label htmlFor={`${formId}-approx-age`} className={nestedLabelClasses}>
             Idade (aprox.)*
           </label>
-          <input
+          <TextField
             id={`${formId}-approx-age`}
             type="number"
             value={approxAge}
@@ -254,7 +254,8 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
           {description.length}/{MAX_DESCRIPTION_LENGTH}
         </output>
       </div>
-      <textarea
+      <TextField
+        as="textarea"
         id={`${formId}-description`}
         value={description}
         onChange={(event) => setDescription(event.target.value)}
@@ -264,7 +265,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         aria-describedby={`${formId}-description-count${fieldErrors.description ? ` ${formId}-description-error` : ''}`}
         rows={2}
         required
-        className="mt-1 w-full resize-y rounded-lg border-2 border-cinza-medio bg-transparent px-3 py-2 text-sm text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50"
+        className="mt-1 resize-y px-3 py-2 text-sm"
       />
       <FieldError id={`${formId}-description-error`} message={fieldErrors.description} />
     </section>

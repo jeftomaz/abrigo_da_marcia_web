@@ -108,7 +108,7 @@ export function Header() {
           type="button"
           onClick={toggleTheme}
           aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
-          className="order-1 flex size-11 shrink-0 items-center justify-center rounded-full text-on-brand transition-colors hover:bg-marca-escura focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara lg:order-3"
+          className="order-1 flex size-11 shrink-0 items-center justify-center rounded-full text-on-brand transition-colors hover:bg-marca-escura active:bg-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara lg:order-3"
         >
           <Icon name={theme === 'dark' ? 'half-moon' : 'sun-light'} className="h-8 w-8" />
         </button>

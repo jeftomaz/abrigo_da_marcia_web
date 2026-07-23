@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Action, Icon, Logo, supabase } from '@abrigo/shared'
+import { Action, Icon, Logo, supabase, TextField } from '@abrigo/shared'
 import { AdminAuthContext } from './AdminAuthContext'
 
 const LAST_ACTIVITY_KEY = 'abrigo-admin-last-activity-at'
@@ -31,7 +31,7 @@ function AuthLayout({ children }: { children: ReactNode }) {
   )
 }
 
-const fieldClasses = 'mt-1 h-11 w-full rounded-lg border-2 border-cinza-medio bg-transparent px-4 text-current outline-none focus-visible:border-marca dark:border-cinza-claro'
+const fieldClasses = 'mt-1 h-11 px-4'
 const isStrongPassword = (password: string) => password.length >= 12
   && /[a-z]/.test(password)
   && /[A-Z]/.test(password)
@@ -64,12 +64,12 @@ function Login({ onSubmit }: { onSubmit: (email: string, password: string) => Pr
         <h1 className="text-3xl font-medium text-marca">Acesso administrativo</h1>
         <label className="mt-6 block font-medium">
           E-mail
-          <input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} className={fieldClasses} />
+          <TextField type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} className={fieldClasses} />
         </label>
         <label className="mt-4 block font-medium">
           Senha
           <div className="relative">
-            <input
+            <TextField
               type={showPassword ? 'text' : 'password'}
               autoComplete="current-password"
               required
@@ -136,11 +136,11 @@ function Registration({
         <p className="mt-3">Defina sua senha para acessar a administração do Abrigo da Márcia.</p>
         <label className="mt-6 block font-medium">
           E-mail
-          <input type="email" autoComplete="username" readOnly value={email} className={fieldClasses} />
+          <TextField type="email" autoComplete="username" readOnly value={email} className={fieldClasses} />
         </label>
         <label className="mt-4 block font-medium">
           Senha
-          <input
+          <TextField
             type="password"
             autoComplete="new-password"
             minLength={12}
@@ -156,7 +156,7 @@ function Registration({
         </p>
         <label className="mt-4 block font-medium">
           Confirmar senha
-          <input
+          <TextField
             type="password"
             autoComplete="new-password"
             minLength={12}
@@ -215,7 +215,7 @@ function CodeForm({
       <p className="mt-3">{description}</p>
       <label className="mt-6 block font-medium">
         Código do autenticador
-        <input
+        <TextField
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}

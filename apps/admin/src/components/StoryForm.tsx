@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Action, toEditableStoryPhotos } from '@abrigo/shared'
+import { Action, TextField, toEditableStoryPhotos } from '@abrigo/shared'
 import type { Story, StoryDraft } from '@abrigo/shared'
 import { PhotoGalleryField } from './PhotoGalleryField'
 
@@ -24,9 +24,7 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
   const [saveError, setSaveError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ description?: string; name?: string }>({})
   const isPanel = layout === 'panel'
-  const fieldClasses = `${
-    isPanel ? 'h-8 px-3 text-sm' : 'h-10 px-4'
-  } mt-1 w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50`
+  const fieldClasses = `mt-1 ${isPanel ? 'h-8 px-3 text-sm' : 'h-10 px-4'}`
   const labelClasses = `${isPanel ? 'mt-2 text-sm' : 'mt-3'} block font-medium`
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -67,7 +65,7 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
       <label htmlFor={`${formId}-name`} className={labelClasses}>
         Nome*
       </label>
-      <input
+      <TextField
         id={`${formId}-name`}
         value={name}
         onChange={(event) => setName(event.target.value)}
@@ -92,7 +90,8 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
           {description.length}/{MAX_DESCRIPTION_LENGTH}
         </output>
       </div>
-      <textarea
+      <TextField
+        as="textarea"
         id={`${formId}-description`}
         value={description}
         onChange={(event) => setDescription(event.target.value)}
@@ -102,7 +101,7 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
         aria-describedby={`${formId}-description-count${fieldErrors.description ? ` ${formId}-description-error` : ''}`}
         rows={isPanel ? 4 : 5}
         required
-        className={`mt-1 w-full resize-y rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50 ${isPanel ? 'px-3 py-2 text-sm' : 'px-4 py-3'}`}
+        className={`mt-1 resize-y ${isPanel ? 'px-3 py-2 text-sm' : 'px-4 py-3'}`}
       />
       {fieldErrors.description && <p id={`${formId}-description-error`} role="alert" className="mt-1 text-xs font-medium text-marca">{fieldErrors.description}</p>}
     </section>

@@ -29,9 +29,9 @@ const CONTROL_CLASSES = {
 
 const SELECT_CLASSES = {
   filter:
-    'min-h-11 w-full appearance-none rounded-full bg-marca-escura px-5 py-2 text-center text-base font-medium text-marca-clara outline-none focus-visible:ring-2 focus-visible:ring-marca-clara dark:bg-marca',
+    'min-h-11 w-full appearance-none rounded-full bg-marca-escura px-5 py-2 text-center text-base font-medium text-marca-clara outline-none enabled:hover:bg-marca focus-visible:ring-2 focus-visible:ring-marca-clara disabled:cursor-not-allowed disabled:opacity-40 dark:bg-marca dark:enabled:hover:bg-marca-escura',
   product:
-    'min-h-11 w-full appearance-none rounded-full bg-marca pr-2 pl-7 text-center text-xs font-medium text-marca-clara outline-none focus-visible:ring-2 focus-visible:ring-marca-clara sm:text-sm',
+    'min-h-11 w-full appearance-none rounded-full bg-marca pr-2 pl-7 text-center text-xs font-medium text-marca-clara outline-none enabled:hover:bg-marca-escura focus-visible:ring-2 focus-visible:ring-marca-clara disabled:cursor-not-allowed disabled:opacity-40 sm:text-sm',
 }
 
 const ICON_CLASSES = {

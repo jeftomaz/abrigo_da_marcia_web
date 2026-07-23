@@ -93,7 +93,7 @@ export function AdocaoPreview() {
         })}
       </div>
 
-      {isLoading && <p className="mt-8 text-center">Carregando cães...</p>}
+      {isLoading && <p role="status" className="mt-8 text-center">Carregando cães...</p>}
       {error && <p role="alert" className="mt-8 text-center">Não foi possível carregar os cães.</p>}
 
       <div className="mt-8 flex justify-center">

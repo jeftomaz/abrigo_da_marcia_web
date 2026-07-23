@@ -155,14 +155,14 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
                 {event.kind === 'raffle' ? reservation.numbers.map((number) => <span key={number} className="min-w-12 rounded-md bg-cinza-medio px-2 py-1 text-center text-xs text-cinza-claro">Nº {String(number).padStart(2, '0')}</span>) : <span className="text-sm">{productItemLabel(reservation)}</span>}
               </div>
               <div className="col-start-2 row-span-2 row-start-1 flex flex-col items-end gap-2 desk:col-start-3 desk:row-span-1 desk:items-center">
-                <label className="relative"><span className={`block rounded-lg px-4 py-1 text-sm font-medium ${status.classes}`}>{status.label}</span>
-                  <select value={reservation.status} disabled={isPending || reservation.status === 'canceled' || reservation.status === 'delivered'} onChange={(event) => void updateReservation(reservation.id, { status: event.target.value as ReservationStatus })} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0">
+                <label className="relative rounded-lg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marca"><span className={`block rounded-lg px-4 py-1 text-sm font-medium ${status.classes}`}>{status.label}</span>
+                  <select value={reservation.status} disabled={isPending || reservation.status === 'canceled' || reservation.status === 'delivered'} onChange={(event) => void updateReservation(reservation.id, { status: event.target.value as ReservationStatus })} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed">
                     <option value={reservation.status}>{status.label}</option>
                     {reservation.status === 'reserved' && <><option value="paid">Pago</option><option value="canceled">Cancelado</option></>}
                     {reservation.status === 'paid' && <><option value="canceled">Cancelado</option>{event.status !== 'active' && <option value="delivered">Entregue</option>}</>}
                   </select>
                 </label>
-                <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={reservation.receiptSaved} disabled={isPending} onChange={(event) => void updateReservation(reservation.id, { receiptSaved: event.target.checked })} className="accent-marca" />{isPending ? 'Salvando...' : 'Comprovante salvo'}</label>
+                <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={reservation.receiptSaved} disabled={isPending} onChange={(event) => void updateReservation(reservation.id, { receiptSaved: event.target.checked })} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-40 disabled:cursor-not-allowed accent-marca" />{isPending ? 'Salvando...' : 'Comprovante salvo'}</label>
                 <strong className="text-sm">{formatMoney(reservation.totalCents)}</strong>
               </div>
             </article>

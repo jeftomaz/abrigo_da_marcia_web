@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Action, Switch } from '@abrigo/shared'
+import { Action, Switch, TextField } from '@abrigo/shared'
 import type { EventSettings } from '@abrigo/shared'
 
 type EventSettingsFormProps = {
@@ -43,9 +43,7 @@ export function EventSettingsForm({
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const isPanel = layout === 'panel'
-  const fieldClasses = `${
-    isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'
-  } mt-1 w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50`
+  const fieldClasses = `mt-1 ${isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'}`
   const labelClasses = `${isPanel ? 'text-sm' : 'text-base'} block font-medium`
 
   const changeExpirationUnit = (nextUnit: ExpirationUnit) => {
@@ -130,7 +128,7 @@ export function EventSettingsForm({
             <div className="mt-3 grid grid-cols-2 gap-4">
               <label htmlFor={`${formId}-products`} className={labelClasses}>
                 Produtos
-                <input
+                <TextField
                   id={`${formId}-products`}
                   type="number"
                   min={1}
@@ -146,7 +144,7 @@ export function EventSettingsForm({
               </label>
               <label htmlFor={`${formId}-raffle`} className={labelClasses}>
                 Números de rifa
-                <input
+                <TextField
                   id={`${formId}-raffle`}
                   type="number"
                   min={1}
@@ -192,7 +190,7 @@ export function EventSettingsForm({
             </div>
             <label htmlFor={`${formId}-expiration`} className={`${labelClasses} mt-3`}>
               Tempo padrão
-              <input
+              <TextField
                 id={`${formId}-expiration`}
                 type="number"
                 min={expirationUnit === 'minutes' ? 1 : 1 / 60}
@@ -215,7 +213,7 @@ export function EventSettingsForm({
             <div className="mt-3 grid grid-cols-2 gap-4">
               <label htmlFor={`${formId}-pix-key`} className={labelClasses}>
                 Chave Pix
-                <input
+                <TextField
                   id={`${formId}-pix-key`}
                   value={pixKey}
                   onChange={(event) => setPixKey(event.target.value)}
@@ -224,7 +222,7 @@ export function EventSettingsForm({
               </label>
               <label htmlFor={`${formId}-pix-city`} className={labelClasses}>
                 Cidade
-                <input
+                <TextField
                   id={`${formId}-pix-city`}
                   value={pixCity}
                   onChange={(event) => setPixCity(event.target.value)}
@@ -233,7 +231,7 @@ export function EventSettingsForm({
               </label>
               <label htmlFor={`${formId}-pix-receiver`} className={`${labelClasses} col-span-2`}>
                 Recebedor
-                <input
+                <TextField
                   id={`${formId}-pix-receiver`}
                   value={pixReceiver}
                   onChange={(event) => setPixReceiver(event.target.value)}
@@ -242,7 +240,7 @@ export function EventSettingsForm({
               </label>
               <label htmlFor={`${formId}-pix-code`} className={`${labelClasses} col-span-2`}>
                 Pix copia-e-cola
-                <input
+                <TextField
                   id={`${formId}-pix-code`}
                   value={pixCopyPaste}
                   onChange={(event) => setPixCopyPaste(event.target.value)}
@@ -251,7 +249,8 @@ export function EventSettingsForm({
               </label>
               <label htmlFor={`${formId}-payment-instructions`} className={`${labelClasses} col-span-2`}>
                 Instrução pós-pagamento
-                <textarea
+                <TextField
+                  as="textarea"
                   id={`${formId}-payment-instructions`}
                   value={postPaymentInstructions}
                   onChange={(event) => setPostPaymentInstructions(event.target.value)}
@@ -268,7 +267,7 @@ export function EventSettingsForm({
             </h3>
             <label htmlFor={`${formId}-email`} className={`${labelClasses} mt-3`}>
               E-mail para exportação automática
-              <input
+              <TextField
                 id={`${formId}-email`}
                 type="email"
                 value={eventExportEmail}

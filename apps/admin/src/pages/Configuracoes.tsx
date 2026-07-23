@@ -18,6 +18,7 @@ import { EventSettingsForm } from '../components/EventSettingsForm'
 import { GlobalSettingsForm } from '../components/GlobalSettingsForm'
 import { StatusBadge } from '../components/StatusBadge'
 import { useIsDesktop } from '../hooks/useIsDesktop'
+import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
 type Editor = 'dogs' | 'events' | 'landing'
 
@@ -67,17 +68,20 @@ export function Configuracoes() {
   const [editor, setEditor] = useState<Editor | null>(null)
   const [securityError, setSecurityError] = useState('')
   const [confirmMfaRemoval, setConfirmMfaRemoval] = useState(false)
+  const [successMessage, showSuccess] = useSuccessMessage()
   const isDesktop = useIsDesktop()
 
   const saveGlobalSettings = async (settings: SiteSettings, links: SocialLinks) => {
     if (editor === 'landing') await saveSocialLinks.mutateAsync(links)
     await saveSiteSettings.mutateAsync(settings)
     setEditor(null)
+    showSuccess('Configurações salvas.')
   }
 
   const saveEvents = async (settings: EventSettings) => {
     await saveEventSettings.mutateAsync(settings)
     setEditor(null)
+    showSuccess('Configurações salvas.')
   }
 
   const removeMfa = async () => {
@@ -127,6 +131,7 @@ export function Configuracoes() {
       <div className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-8 desk:items-start desk:gap-10 ${editor ? 'desk:max-w-[80rem] desk:grid-cols-[29rem_minmax(36rem,45rem)] desk:justify-between' : 'desk:max-w-[29rem]'}`}>
         <section aria-labelledby="settings-title" className="min-w-0">
           <h1 id="settings-title" className="text-4xl font-medium sm:text-5xl desk:text-4xl">Configurações</h1>
+          {successMessage && <p role="status" className="mt-3 text-sm font-medium text-status-verde-texto">{successMessage}</p>}
           <div className="mt-6 flex flex-col gap-6 desk:mt-3 desk:gap-4">
             <section aria-labelledby="landing-settings-title">
               <h2 id="landing-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Landing Page</h2>
@@ -136,6 +141,7 @@ export function Configuracoes() {
                 isEditing={editor === 'landing'}
                 actions={<Action onClick={() => setEditor('landing')} disabled={!siteSettings || !socialLinks || isLoadingSite || isLoadingSocial} icon="edit-pencil" size="small" variant="neutral-adaptive" className="h-11 px-5">Editar</Action>}
               />
+              {(isLoadingSite || isLoadingSocial) && <p role="status" className="mt-2 text-sm">Carregando...</p>}
               {(siteError || socialError) && <p role="alert" className="mt-2 text-sm font-medium text-marca">Não foi possível carregar os links públicos.</p>}
             </section>
 
@@ -147,6 +153,7 @@ export function Configuracoes() {
                 isEditing={editor === 'dogs'}
                 actions={<Action onClick={() => setEditor('dogs')} disabled={!siteSettings || isLoadingSite} icon="edit-pencil" size="small" variant="neutral-adaptive" className="h-11 px-5">Editar</Action>}
               />
+              {isLoadingSite && <p role="status" className="mt-2 text-sm">Carregando...</p>}
               {siteError && <p role="alert" className="mt-2 text-sm font-medium text-marca">Não foi possível carregar o link global de adoção.</p>}
             </section>
 
@@ -158,6 +165,7 @@ export function Configuracoes() {
                 isEditing={editor === 'events'}
                 actions={<Action onClick={() => setEditor('events')} disabled={!eventSettings || isLoadingEvents} icon="edit-pencil" size="small" variant="neutral-adaptive" className="h-11 px-5">Editar</Action>}
               />
+              {isLoadingEvents && <p role="status" className="mt-2 text-sm">Carregando...</p>}
               {eventError && <p role="alert" className="mt-2 text-sm font-medium text-marca">Não foi possível carregar os valores padrão de Eventos.</p>}
             </section>
 

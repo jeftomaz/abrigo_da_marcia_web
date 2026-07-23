@@ -13,6 +13,7 @@ import { StatCards } from '../components/StatCards'
 import { StoryForm } from '../components/StoryForm'
 import { StoryRow } from '../components/StoryRow'
 import { useIsDesktop } from '../hooks/useIsDesktop'
+import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
 export function Historias() {
   const { data: stories = [], isLoading, error } = useAdminStories()
@@ -24,6 +25,7 @@ export function Historias() {
   const [editingTarget, setEditingTarget] = useState<Story | null | undefined>(undefined)
   const [operationError, setOperationError] = useState('')
   const [confirmation, setConfirmation] = useState<{ action: 'publish' | 'remove'; story: Story } | null>(null)
+  const [successMessage, showSuccess] = useSuccessMessage()
   const isDesktop = useIsDesktop()
   const isEditing = editingTarget !== undefined
 
@@ -39,16 +41,23 @@ export function Historias() {
   )
 
   const handleSave = async (story: StoryDraft) => {
+    const isNew = !editingTarget
     await saveStory.mutateAsync(story)
     setEditingTarget(undefined)
+    showSuccess(isNew ? 'História cadastrada.' : 'História atualizada.')
   }
 
   const confirmAction = async () => {
     if (!confirmation) return
     setOperationError('')
     try {
-      if (confirmation.action === 'remove') await deleteStory.mutateAsync(confirmation.story)
-      else await updateStoryPublished.mutateAsync({ id: confirmation.story.id, published: !confirmation.story.published })
+      if (confirmation.action === 'remove') {
+        await deleteStory.mutateAsync(confirmation.story)
+        showSuccess('História removida.')
+      } else {
+        await updateStoryPublished.mutateAsync({ id: confirmation.story.id, published: !confirmation.story.published })
+        showSuccess(confirmation.story.published ? 'História movida para rascunhos.' : 'História publicada.')
+      }
       setConfirmation(null)
     } catch {
       setOperationError('Não foi possível concluir a ação.')
@@ -119,6 +128,7 @@ export function Historias() {
             {isLoading && <p role="status" className="text-center">Carregando histórias...</p>}
             {error && <p role="alert" className="text-center">Não foi possível carregar as histórias.</p>}
             {operationError && <p role="alert" className="text-center">{operationError}</p>}
+            {successMessage && <p role="status" className="text-center text-sm font-medium text-status-verde-texto">{successMessage}</p>}
             {filteredStories.map((story) => (
               <StoryRow
                 key={story.id}

@@ -64,7 +64,7 @@ export function HistoriasPreview() {
         ))}
       </div>
 
-      {isLoading && <p className="mt-8 text-center">Carregando histórias...</p>}
+      {isLoading && <p role="status" className="mt-8 text-center">Carregando histórias...</p>}
       {error && (
         <p role="alert" className="mt-8 text-center">
           Não foi possível carregar as histórias.

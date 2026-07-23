@@ -116,7 +116,7 @@ export function RaffleDraw() {
         {prizes.map((prize, index) => {
           const isCurrent = prize.id === currentPrizeId
           const complete = Boolean(prizeWinner(prize))
-          return <button key={prize.id} type="button" disabled={isDrawing} onClick={() => selectPrize(prize)} aria-pressed={isCurrent} className={`flex min-h-20 min-w-64 items-center justify-between gap-3 rounded-2xl px-5 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara desk:min-w-0 ${isCurrent ? 'bg-marca-escura text-marca-clara' : complete ? 'bg-marca-clara text-marca' : 'bg-marca-clara/70 text-marca-escura'}`}><span className="min-w-0"><strong className="block truncate text-2xl font-medium">{prize.name}</strong><span className="text-sm">Prêmio {index + 1}{complete ? ' · Realizado' : ''}</span></span><span aria-hidden="true" className="text-4xl">›</span></button>
+          return <button key={prize.id} type="button" disabled={isDrawing} onClick={() => selectPrize(prize)} aria-pressed={isCurrent} className={`flex min-h-20 min-w-64 items-center justify-between gap-3 rounded-2xl px-5 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:opacity-50 desk:min-w-0 ${isCurrent ? 'bg-marca-escura text-marca-clara' : complete ? 'bg-marca-clara text-marca' : 'bg-marca-clara/70 text-marca-escura'}`}><span className="min-w-0"><strong className="block truncate text-2xl font-medium">{prize.name}</strong><span className="text-sm">Prêmio {index + 1}{complete ? ' · Realizado' : ''}</span></span><span aria-hidden="true" className="text-4xl">›</span></button>
         })}
       </div>
     </section>

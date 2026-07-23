@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Action } from '@abrigo/shared'
+import { Action, TextField } from '@abrigo/shared'
 import type { SiteSettings, SocialLinks } from '@abrigo/shared'
 import { ConfirmationDialog } from './ConfirmationDialog'
 
@@ -43,7 +43,7 @@ export function GlobalSettingsForm({
   const [saveError, setSaveError] = useState('')
   const [pendingRemoval, setPendingRemoval] = useState<{ links: SocialLinks; settings: SiteSettings } | null>(null)
   const isPanel = layout === 'panel'
-  const fieldClasses = `${isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'} mt-1 w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50`
+  const fieldClasses = `${isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'} mt-1`
   const labelClasses = `${isPanel ? 'text-sm' : 'text-base'} block font-medium`
 
   const persist = async (nextSettings: SiteSettings, nextSocialLinks: SocialLinks) => {
@@ -109,7 +109,7 @@ export function GlobalSettingsForm({
           {mode === 'dogs' ? (
             <label htmlFor={`${formId}-adoption`} className={labelClasses}>
               Formulário global de adoção
-              <input
+              <TextField
                 id={`${formId}-adoption`}
                 type="url"
                 required
@@ -126,15 +126,15 @@ export function GlobalSettingsForm({
                 <h3 className={`${isPanel ? 'text-xl' : 'text-2xl'} font-medium`}>Doação única via Pix</h3>
                 <label htmlFor={`${formId}-pix-key`} className={`${labelClasses} mt-3`}>
                   Chave Pix
-                  <input id={`${formId}-pix-key`} maxLength={77} value={donationPixKey} onChange={(event) => setDonationPixKey(event.target.value)} className={fieldClasses} />
+                  <TextField id={`${formId}-pix-key`} maxLength={77} value={donationPixKey} onChange={(event) => setDonationPixKey(event.target.value)} className={fieldClasses} />
                 </label>
                 <label htmlFor={`${formId}-pix-receiver`} className={`${labelClasses} mt-3`}>
                   Nome do recebedor
-                  <input id={`${formId}-pix-receiver`} maxLength={25} value={donationPixReceiver} onChange={(event) => setDonationPixReceiver(event.target.value)} className={fieldClasses} />
+                  <TextField id={`${formId}-pix-receiver`} maxLength={25} value={donationPixReceiver} onChange={(event) => setDonationPixReceiver(event.target.value)} className={fieldClasses} />
                 </label>
                 <label htmlFor={`${formId}-pix-city`} className={`${labelClasses} mt-3`}>
                   Cidade
-                  <input id={`${formId}-pix-city`} maxLength={15} value={donationPixCity} onChange={(event) => setDonationPixCity(event.target.value)} className={fieldClasses} />
+                  <TextField id={`${formId}-pix-city`} maxLength={15} value={donationPixCity} onChange={(event) => setDonationPixCity(event.target.value)} className={fieldClasses} />
                 </label>
               </section>
               <section className="mt-5 border-t border-cinza-medio pt-4 dark:border-cinza-claro">
@@ -142,7 +142,7 @@ export function GlobalSettingsForm({
                 {DONATION_AMOUNTS.map((value) => (
                   <label key={value} htmlFor={`${formId}-recurring-${value}`} className={`${labelClasses} mt-3`}>
                     Link mensal de R$ {value}
-                    <input
+                    <TextField
                       id={`${formId}-recurring-${value}`}
                       type="url"
                       value={recurringDonationUrls[String(value)] ?? ''}
@@ -157,7 +157,7 @@ export function GlobalSettingsForm({
                 <h3 className={`${isPanel ? 'text-xl' : 'text-2xl'} font-medium`}>Outros links da página</h3>
                 <label htmlFor={`${formId}-volunteer`} className={`${labelClasses} mt-3`}>
                   Formulário de voluntariado
-                  <input id={`${formId}-volunteer`} type="url" value={volunteerFormUrl} onChange={(event) => setVolunteerFormUrl(event.target.value)} placeholder="https://forms.gle/..." className={fieldClasses} />
+                  <TextField id={`${formId}-volunteer`} type="url" value={volunteerFormUrl} onChange={(event) => setVolunteerFormUrl(event.target.value)} placeholder="https://forms.gle/..." className={fieldClasses} />
                 </label>
                 <p className="mt-2 text-xs">Valores recorrentes sem link e CTAs sem destino ficam indisponíveis no site.</p>
               </section>
@@ -165,11 +165,11 @@ export function GlobalSettingsForm({
                 <h3 className={`${isPanel ? 'text-xl' : 'text-2xl'} font-medium`}>Redes sociais</h3>
                 <label htmlFor={`${formId}-facebook`} className={`${labelClasses} mt-3`}>
                   Facebook
-                  <input id={`${formId}-facebook`} type="url" value={facebook} onChange={(event) => setFacebook(event.target.value)} placeholder="https://facebook.com/..." className={fieldClasses} />
+                  <TextField id={`${formId}-facebook`} type="url" value={facebook} onChange={(event) => setFacebook(event.target.value)} placeholder="https://facebook.com/..." className={fieldClasses} />
                 </label>
                 <label htmlFor={`${formId}-instagram`} className={`${labelClasses} mt-3`}>
                   Instagram
-                  <input id={`${formId}-instagram`} type="url" value={instagram} onChange={(event) => setInstagram(event.target.value)} placeholder="https://instagram.com/..." className={fieldClasses} />
+                  <TextField id={`${formId}-instagram`} type="url" value={instagram} onChange={(event) => setInstagram(event.target.value)} placeholder="https://instagram.com/..." className={fieldClasses} />
                 </label>
               </section>
             </>

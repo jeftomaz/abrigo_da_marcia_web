@@ -8,7 +8,7 @@ import {
 import eventosPhoto from '../assets/landing_eventos.jpg'
 
 export function RecaopensaPreview() {
-  const { data: events = [] } = usePublicEvents()
+  const { data: events = [], isLoading, error } = usePublicEvents()
   const activeEvent = events.find((event) => event.status === 'active')
   const activeEventPhoto = activeEvent?.gallery[0]
 
@@ -50,6 +50,9 @@ export function RecaopensaPreview() {
           }
         />
       )}
+
+      {isLoading && <p role="status" className="mt-8 text-center">Carregando evento...</p>}
+      {error && <p role="alert" className="mt-8 text-center">Não foi possível carregar o evento.</p>}
 
       <div className="mt-20 flex justify-center">
         <Action to="/eventos" icon="calendar">

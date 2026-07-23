@@ -19,12 +19,16 @@ type SwitchProps = Omit<
 //   `marca`  → fundos de marca (marca-clara, marca, marca-escura): trilho neutro, knob colorido.
 // Ligado (checked) → knob à direita; Desligado → à esquerda, nas duas variantes.
 const TRACK: Record<SwitchVariant, { on: string; off: string }> = {
-  neutra: { on: 'bg-marca', off: 'bg-marca-escura' },
-  marca: { on: 'bg-white', off: 'bg-black' },
+  neutra: { on: 'bg-marca enabled:hover:bg-marca-escura', off: 'bg-marca-escura enabled:hover:bg-marca-clara' },
+  marca: { on: 'bg-white enabled:hover:bg-cinza-claro', off: 'bg-black enabled:hover:bg-cinza-medio' },
 }
 const KNOB: Record<SwitchVariant, { on: string; off: string }> = {
   neutra: { on: 'bg-white', off: 'bg-black' },
   marca: { on: 'bg-marca', off: 'bg-marca-escura' },
+}
+const FOCUS: Record<SwitchVariant, string> = {
+  neutra: 'focus-visible:outline-marca',
+  marca: 'focus-visible:outline-marca-clara',
 }
 
 export function Switch({
@@ -41,7 +45,7 @@ export function Switch({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative h-9 w-16 shrink-0 rounded-full transition-colors ${
+      className={`relative h-9 w-16 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-40 ${FOCUS[variant]} ${
         checked ? TRACK[variant].on : TRACK[variant].off
       } ${className}`}
     >

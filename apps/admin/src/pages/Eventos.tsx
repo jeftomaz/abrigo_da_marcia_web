@@ -21,6 +21,7 @@ import { EventManagement } from '../components/EventManagement'
 import { EventRow } from '../components/EventRow'
 import type { EventDraft, EventStatus, FundraisingEvent, ReservationStatus } from '../events/events'
 import { useIsDesktop } from '../hooks/useIsDesktop'
+import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
 type EventConfirmation = { action: 'archive' | 'end' | 'publish' | 'remove'; event: FundraisingEvent }
 
@@ -34,6 +35,7 @@ export function Eventos() {
   const [managingEventId, setManagingEventId] = useState<string | null>(null)
   const [eventConfirmation, setEventConfirmation] = useState<EventConfirmation | null>(null)
   const [actionError, setActionError] = useState('')
+  const [successMessage, showSuccess] = useSuccessMessage()
   const eventFormRef = useRef<EventFormHandle>(null)
   const editorCardRef = useRef<HTMLElement>(null)
   const isDesktop = useIsDesktop()
@@ -48,8 +50,10 @@ export function Eventos() {
   const displayedEvents = !isDesktop && managingEvent ? [managingEvent] : events
 
   const handleSave = async (draft: EventDraft) => {
+    const isNew = !editingTarget
     await saveEvent.mutateAsync(draft)
     setEditingTarget(undefined)
+    showSuccess(isNew ? 'Evento cadastrado.' : 'Evento atualizado.')
   }
 
   const handleAutoSave = async (draft: EventDraft) => {
@@ -91,6 +95,12 @@ export function Eventos() {
       if (managingEventId === event.id) setManagingEventId(null)
       if (editingTarget?.id === event.id) setEditingTarget(undefined)
       setEventConfirmation(null)
+      showSuccess(
+        action === 'publish' ? 'Evento publicado.'
+          : action === 'end' ? 'Evento encerrado.'
+          : action === 'archive' ? 'Evento arquivado.'
+          : 'Evento removido.',
+      )
     } catch (error) {
       setActionError(getEventErrorMessage(error, 'A ação não foi concluída.'))
     }
@@ -141,6 +151,7 @@ export function Eventos() {
           {isLoading && <p role="status" className="py-6 text-center">Carregando eventos...</p>}
           {loadError && <p role="alert" className="py-6 text-center text-marca">Não foi possível carregar os eventos.</p>}
           {actionError && <p role="alert" className="text-sm font-medium text-marca">{actionError}</p>}
+          {successMessage && <p role="status" className="text-sm font-medium text-status-verde-texto">{successMessage}</p>}
           <div className="flex min-w-0 flex-col gap-5 sm:gap-6 desk:gap-3">
             {displayedEvents.map((event) => (
               <EventRow

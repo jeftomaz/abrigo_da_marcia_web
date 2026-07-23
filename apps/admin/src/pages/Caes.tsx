@@ -13,6 +13,7 @@ import { DogForm } from '../components/DogForm'
 import { DogRow } from '../components/DogRow'
 import { StatCards } from '../components/StatCards'
 import { useIsDesktop } from '../hooks/useIsDesktop'
+import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
 type StatusConfirmation = { dog: Dog; status: DogStatus }
 
@@ -27,6 +28,7 @@ export function Caes() {
   const [statusConfirmation, setStatusConfirmation] = useState<StatusConfirmation | null>(null)
   const [deletionTarget, setDeletionTarget] = useState<Dog | null>(null)
   const [operationError, setOperationError] = useState('')
+  const [successMessage, showSuccess] = useSuccessMessage()
   const isDesktop = useIsDesktop()
   const isEditing = editingTarget !== undefined
 
@@ -51,8 +53,10 @@ export function Caes() {
   )
 
   const handleSave = async (dog: DogDraft) => {
+    const isNew = !editingTarget
     await saveDog.mutateAsync(dog)
     setEditingTarget(undefined)
+    showSuccess(isNew ? 'Cão cadastrado.' : 'Cão atualizado.')
   }
 
   const confirmDeletion = async () => {
@@ -61,6 +65,7 @@ export function Caes() {
     try {
       await deleteDog.mutateAsync(deletionTarget)
       setDeletionTarget(null)
+      showSuccess('Cão removido.')
     } catch {
       setOperationError('Não foi possível remover o cão.')
     }
@@ -72,6 +77,7 @@ export function Caes() {
     try {
       await updateDogStatus.mutateAsync({ id: deletionTarget.id, status })
       setDeletionTarget(null)
+      showSuccess('Status do cão atualizado.')
     } catch {
       setOperationError('Não foi possível atualizar o status do cão.')
     }
@@ -86,6 +92,7 @@ export function Caes() {
         status: statusConfirmation.status,
       })
       setStatusConfirmation(null)
+      showSuccess('Status do cão atualizado.')
     } catch {
       setOperationError('Não foi possível atualizar o status do cão.')
     }
@@ -167,6 +174,7 @@ export function Caes() {
             {isLoading && <p role="status" className="text-center">Carregando cães...</p>}
             {error && <p role="alert" className="text-center">Não foi possível carregar os cães.</p>}
             {operationError && <p role="alert" className="text-center">{operationError}</p>}
+            {successMessage && <p role="status" className="text-center text-sm font-medium text-status-verde-texto">{successMessage}</p>}
             {filteredDogs.map((dog) => (
               <DogRow
                 key={dog.id}

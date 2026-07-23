@@ -6,6 +6,7 @@ import {
   Icon,
   ImagePlaceholder,
   Switch,
+  TextField,
   compressImage,
   getEventErrorMessage,
   useEventSettings,
@@ -175,7 +176,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const createdPrizeUrls = useRef(new Set<string>())
   const appliedPaymentDefaults = useRef(false)
   const isPanel = layout === 'panel'
-  const fieldClasses = `${isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'} w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 focus-visible:border-marca dark:border-cinza-claro dark:placeholder:text-cinza-claro/50`
+  const fieldClasses = isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'
   const sectionClasses = 'border-t border-cinza-medio pt-3 dark:border-cinza-claro'
   const sectionTitleClasses = `${isPanel ? 'text-xl' : 'text-3xl'} font-medium`
 
@@ -546,7 +547,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
               value={draft.kind}
               disabled={Boolean(event && event.status !== 'draft')}
               onChange={(changeEvent) => setField('kind', changeEvent.target.value as EventKind)}
-              className="h-10 w-full appearance-none rounded-full bg-marca px-4 text-center text-sm text-marca-clara outline-none focus-visible:ring-2 focus-visible:ring-marca"
+              className="h-10 w-full appearance-none rounded-full bg-marca px-4 text-center text-sm text-marca-clara outline-none focus-visible:ring-2 focus-visible:ring-marca disabled:cursor-not-allowed disabled:opacity-40"
             >
               <option value="product">Venda de Produto</option>
               <option value="raffle">Rifa</option>
@@ -558,7 +559,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           </span>
         </FormField>
         <FormField htmlFor={`${formId}-title`} label="Título">
-          <input
+          <TextField
             id={`${formId}-title`}
             value={draft.title}
             onChange={(changeEvent) => setField('title', changeEvent.target.value)}
@@ -568,7 +569,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           />
         </FormField>
         <FormField htmlFor={`${formId}-description`} label="Descrição" wide>
-          <textarea
+          <TextField
+            as="textarea"
             id={`${formId}-description`}
             value={draft.description}
             onChange={(changeEvent) => setField('description', changeEvent.target.value)}
@@ -587,7 +589,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       <h3 className={sectionTitleClasses}>Objetivos</h3>
       <div className="mt-3 grid grid-cols-2 gap-3 desk:grid-cols-5">
         <FormField htmlFor={`${formId}-start-date`} label="Data de início">
-          <input
+          <TextField
             id={`${formId}-start-date`}
             type="date"
             value={draft.startDate || today}
@@ -597,7 +599,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           />
         </FormField>
         <FormField htmlFor={`${formId}-end-date`} label="Data de fim">
-          <input
+          <TextField
             id={`${formId}-end-date`}
             type="date"
             value={draft.endDate}
@@ -607,7 +609,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           />
         </FormField>
         <FormField htmlFor={`${formId}-goal`} label="Arrecadação (R$)">
-          <input
+          <TextField
             id={`${formId}-goal`}
             inputMode="decimal"
             value={draft.fundraisingGoal}
@@ -618,7 +620,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           />
         </FormField>
         <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
-          <input
+          <TextField
             id={`${formId}-max-items`}
             inputMode="numeric"
             value={draft.maxItemsPerReservation}
@@ -629,7 +631,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
         </FormField>
         <FormField htmlFor={`${formId}-ttl`} label="Expiração da reserva">
           <div>
-            <input
+            <TextField
               id={`${formId}-ttl`}
               inputMode={expirationUnit === 'hours' ? 'decimal' : 'numeric'}
               value={expirationUnit === 'hours' ? expirationHours : draft.reservationTtlMinutes}
@@ -688,19 +690,19 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <FormField htmlFor={`${formId}-product-name-${product.id}`} label="Nome*">
-                  <input id={`${formId}-product-name-${product.id}`} value={product.name} onChange={(event) => updateProduct(product.id, { name: event.target.value })} required className={fieldClasses} />
+                  <TextField id={`${formId}-product-name-${product.id}`} value={product.name} onChange={(event) => updateProduct(product.id, { name: event.target.value })} required className={fieldClasses} />
                 </FormField>
                 <FormField htmlFor={`${formId}-product-price-${product.id}`} label="Preço (R$)*">
-                  <input id={`${formId}-product-price-${product.id}`} inputMode="decimal" value={product.price} onChange={(event) => updateProduct(product.id, { price: formatCurrencyInput(event.target.value) })} placeholder="0,00" required className={fieldClasses} />
+                  <TextField id={`${formId}-product-price-${product.id}`} inputMode="decimal" value={product.price} onChange={(event) => updateProduct(product.id, { price: formatCurrencyInput(event.target.value) })} placeholder="0,00" required className={fieldClasses} />
                 </FormField>
                 <FormField htmlFor={`${formId}-product-description-${product.id}`} label="Descrição*" wide>
-                  <textarea id={`${formId}-product-description-${product.id}`} value={product.description} onChange={(event) => updateProduct(product.id, { description: event.target.value })} required rows={2} className={`${fieldClasses} h-auto resize-y py-2`} />
+                  <TextField as="textarea" id={`${formId}-product-description-${product.id}`} value={product.description} onChange={(event) => updateProduct(product.id, { description: event.target.value })} required rows={2} className={`${fieldClasses} h-auto resize-y py-2`} />
                 </FormField>
                 <FormField htmlFor={`${formId}-discount-price-${product.id}`} label="Preço com desconto">
-                  <input id={`${formId}-discount-price-${product.id}`} inputMode="decimal" value={product.discountPrice} onChange={(event) => updateProduct(product.id, { discountPrice: formatCurrencyInput(event.target.value) })} placeholder="0,00" className={fieldClasses} />
+                  <TextField id={`${formId}-discount-price-${product.id}`} inputMode="decimal" value={product.discountPrice} onChange={(event) => updateProduct(product.id, { discountPrice: formatCurrencyInput(event.target.value) })} placeholder="0,00" className={fieldClasses} />
                 </FormField>
                 <FormField htmlFor={`${formId}-discount-minimum-${product.id}`} label="Qtd. mínima p/ desconto">
-                  <input id={`${formId}-discount-minimum-${product.id}`} inputMode="numeric" value={product.discountMinimum} onChange={(event) => updateProduct(product.id, { discountMinimum: event.target.value })} className={fieldClasses} />
+                  <TextField id={`${formId}-discount-minimum-${product.id}`} inputMode="numeric" value={product.discountMinimum} onChange={(event) => updateProduct(product.id, { discountMinimum: event.target.value })} className={fieldClasses} />
                 </FormField>
               </div>
 
@@ -719,7 +721,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                 {product.variations.map((variation, index) => (
                   <div key={variation.id} className="grid grid-cols-2 gap-3 rounded-2xl bg-surface-raised p-3 text-on-surface-raised">
                     <FormField htmlFor={`${formId}-variation-${variation.id}`} label="Nome da variação">
-                      <input id={`${formId}-variation-${variation.id}`} value={variation.name} onChange={(event) => updateVariation(product, variation.id, { name: event.target.value })} placeholder={index === 0 ? 'Tamanho' : 'Cor'} className={fieldClasses} />
+                      <TextField id={`${formId}-variation-${variation.id}`} value={variation.name} onChange={(event) => updateVariation(product, variation.id, { name: event.target.value })} placeholder={index === 0 ? 'Tamanho' : 'Cor'} className={fieldClasses} />
                     </FormField>
                     <FormField htmlFor={`${formId}-variation-values-${variation.id}`} label="Valores">
                       <TagInput
@@ -737,7 +739,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
 
               <div className="mt-4 border-t border-cinza-medio pt-3 dark:border-cinza-claro">
                 <label htmlFor={`${formId}-measurement-kind-${product.id}`} className="text-sm font-medium">Guia de medidas</label>
-                <select
+                <TextField
+                  as="select"
                   id={`${formId}-measurement-kind-${product.id}`}
                   value={guideKind}
                   onChange={(event) => {
@@ -762,13 +765,14 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                   <option value="none">Sem guia</option>
                   <option value="table">Tabela manual</option>
                   <option value="image">Imagem</option>
-                </select>
+                </TextField>
                 {product.measurementGuide?.kind === 'table' && (
                   <div className="mt-3 grid gap-3">
                     <label htmlFor={`${formId}-measurement-variation-${product.id}`} className="text-sm font-medium">
                       Variação usada na tabela
                     </label>
-                    <select
+                    <TextField
+                      as="select"
                       id={`${formId}-measurement-variation-${product.id}`}
                       value={selectedMeasurementVariationId}
                       onChange={(event) => {
@@ -789,7 +793,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                           {variation.name || 'Variação sem nome'} ({variation.options.map((option) => option.name).join(', ')})
                         </option>
                       ))}
-                    </select>
+                    </TextField>
                     {product.variations.every((variation) => variation.options.length === 0) && (
                       <p className="text-sm">Adicione antes uma variação e transforme seus valores em tags.</p>
                     )}
@@ -807,7 +811,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                             {tableRows.map((row, rowIndex) => (
                               <tr key={rowIndex}>
                                 <td>
-                                  <input
+                                  <TextField
                                     id={`${formId}-measurement-label-${product.id}-${rowIndex}`}
                                     value={row.label}
                                     onChange={(event) => updateProduct(product.id, { measurementGuide: { kind: 'table', table: { ...tableGuide, sections: [{ title: 'Medidas', rows: tableRows.map((item, index) => index === rowIndex ? { ...item, label: event.target.value } : item) }] } } })}
@@ -817,7 +821,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                                 </td>
                                 {tableGuide.sizes.map((size, valueIndex) => (
                                   <td key={size}>
-                                    <input
+                                    <TextField
                                       id={`${formId}-measurement-value-${product.id}-${rowIndex}-${valueIndex}`}
                                       value={row.values[valueIndex] ?? ''}
                                       onChange={(event) => updateProduct(product.id, { measurementGuide: { kind: 'table', table: { ...tableGuide, sections: [{ title: 'Medidas', rows: tableRows.map((item, index) => index === rowIndex ? { ...item, values: tableGuide.sizes.map((_, itemValueIndex) => itemValueIndex === valueIndex ? event.target.value : item.values[itemValueIndex] ?? '') } : item) }] } } })}
@@ -831,7 +835,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                                     type="button"
                                     onClick={() => updateProduct(product.id, { measurementGuide: { kind: 'table', table: { ...tableGuide, sections: [{ title: 'Medidas', rows: tableRows.filter((_, index) => index !== rowIndex) }] } } })}
                                     aria-label={`Remover medida ${row.label || rowIndex + 1}`}
-                                    className="rounded-full p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
+                                    className="rounded-full p-2 hover:bg-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca dark:hover:bg-cinza-medio"
                                   >
                                     <Icon name="trash-solid" className="size-4" />
                                   </button>
@@ -873,7 +877,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       <h3 className={sectionTitleClasses}>Detalhes - Rifa</h3>
       <div className="mt-3 grid grid-cols-3 gap-3">
         <FormField htmlFor={`${formId}-raffle-total`} label="Quantidade de números*">
-          <input
+          <TextField
             id={`${formId}-raffle-total`}
             inputMode="numeric"
             value={draft.raffleTotalNumbers}
@@ -883,7 +887,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           />
         </FormField>
         <FormField htmlFor={`${formId}-raffle-price`} label="Valor por número (R$)*">
-          <input
+          <TextField
             id={`${formId}-raffle-price`}
             inputMode="decimal"
             value={draft.raffleNumberPrice}
@@ -924,7 +928,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                     setField('prizes', prizes)
                   }}
                   aria-label={`Mover ${prize.name} para cima`}
-                  className="rounded-lg bg-cinza-medio px-2 py-1 text-xs text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-30"
+                  className="rounded-lg bg-cinza-medio px-2 py-1 text-xs text-cinza-claro enabled:hover:bg-cinza-escuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-30"
                 >
                   ←
                 </button>
@@ -937,20 +941,20 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                     setField('prizes', prizes)
                   }}
                   aria-label={`Mover ${prize.name} para baixo`}
-                  className="rounded-lg bg-cinza-medio px-2 py-1 text-xs text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-30"
+                  className="rounded-lg bg-cinza-medio px-2 py-1 text-xs text-cinza-claro enabled:hover:bg-cinza-escuro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-30"
                 >
                   →
                 </button>
               </div>
-              <button type="button" onClick={() => setField('prizes', draft.prizes.filter((item) => item.id !== prize.id))} className="mt-1 w-full rounded text-xs underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca">Remover</button>
+              <button type="button" onClick={() => setField('prizes', draft.prizes.filter((item) => item.id !== prize.id))} className="mt-1 w-full rounded text-xs underline hover:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca">Remover</button>
             </div>
           ))}
           <button
             type="button"
             onClick={() => openPrizeDialog()}
-            className={`${isPanel ? 'w-20' : 'w-32'} flex flex-col gap-2 rounded-lg text-left font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca`}
+            className={`${isPanel ? 'w-20' : 'w-32'} group flex flex-col gap-2 rounded-lg text-left font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca`}
           >
-            <span className="flex aspect-square w-full items-center justify-center rounded-2xl bg-cinza-medio text-cinza-escuro">
+            <span className="flex aspect-square w-full items-center justify-center rounded-2xl bg-cinza-medio text-cinza-escuro group-hover:bg-cinza-escuro group-hover:text-cinza-claro">
               <Icon name="plus-circle-solid" className="size-10" />
             </span>
             <span>Adicionar prêmio</span>
@@ -968,7 +972,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       </p>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <FormField htmlFor={`${formId}-payment-key`} label="Chave PIX">
-          <input
+          <TextField
             id={`${formId}-payment-key`}
             value={draft.paymentKey}
             onChange={(changeEvent) => setField('paymentKey', changeEvent.target.value)}
@@ -976,7 +980,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           />
         </FormField>
         <FormField htmlFor={`${formId}-city`} label="Cidade do recebedor">
-          <input
+          <TextField
             id={`${formId}-city`}
             value={draft.city}
             onChange={(changeEvent) => setField('city', changeEvent.target.value)}
@@ -984,7 +988,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           />
         </FormField>
         <FormField htmlFor={`${formId}-receiver`} label="Nome do recebedor">
-          <input
+          <TextField
             id={`${formId}-receiver`}
             value={draft.paymentReceiver}
             onChange={(changeEvent) => setField('paymentReceiver', changeEvent.target.value)}
@@ -992,7 +996,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           />
         </FormField>
         <FormField htmlFor={`${formId}-pix-code`} label="Pix copia-e-cola" wide>
-          <input
+          <TextField
             id={`${formId}-pix-code`}
             value={draft.pixCode}
             onChange={(changeEvent) => setField('pixCode', changeEvent.target.value)}
@@ -1002,7 +1006,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           />
         </FormField>
         <FormField htmlFor={`${formId}-instructions`} label="Instruções pós-pagamento" wide>
-          <input
+          <TextField
             id={`${formId}-instructions`}
             value={draft.postPaymentInstructions}
             onChange={(changeEvent) => setField('postPaymentInstructions', changeEvent.target.value)}
@@ -1015,7 +1019,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           <summary className="cursor-pointer text-sm font-medium">
             Link externo dos comprovantes (opcional)
           </summary>
-          <input
+          <TextField
             id={`${formId}-receipts-url`}
             type="url"
             value={draft.receiptFolderUrl}
@@ -1126,7 +1130,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       <label htmlFor={`${formId}-prize-name`} className="mt-5 block font-medium">
         Nome do Prêmio
       </label>
-      <input
+      <TextField
         id={`${formId}-prize-name`}
         value={prizeDraft}
         onChange={(changeEvent) => setPrizeDraft(changeEvent.target.value)}
