@@ -5,6 +5,10 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(38);
 
+-- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
+-- já que só um evento pode ficar ativo por vez.
+update public.eventos set status = 'encerrado' where status = 'ativo';
+
 select throws_ok(
   $$update public.event_settings set default_reservation_ttl = interval '30 seconds' where singleton$$,
   '23514', null, 'rejeita prazo padrão abaixo de um minuto inteiro'

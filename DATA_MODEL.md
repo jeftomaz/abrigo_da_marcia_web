@@ -6,6 +6,7 @@ Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eve
 
 - Todo arquivo passa por `compressImage` de `packages/shared` no client antes do upload; somente JPG, PNG e WebP com até 500.000 bytes seguem ao Storage.
 - Cães, Histórias, Eventos, Produtos, prêmios e guias de medidas usam o bucket público `dog-photos` (limite 500.000 bytes; JPG, PNG e WebP), sempre via `compressImage`; os CRUDs removem objetos descartados.
+- Local: `supabase/seed-storage/` guarda as imagens fictícias referenciadas pelo `seed.sql`; `supabase/config.toml` (`[storage.buckets.dog-photos]`) reenvia essa pasta ao bucket a cada `supabase db reset`.
 
 ## DER
 
