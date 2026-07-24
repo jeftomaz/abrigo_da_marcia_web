@@ -18,7 +18,7 @@ type ActionVariant =
   | 'neutral'
   | 'neutral-adaptive'
   | 'neutral-inverted'
-type ActionSize = 'compact' | 'default' | 'small'
+type ActionSize = 'compact' | 'default' | 'medium' | 'small'
 
 type CommonActionProps = {
   children: ReactNode
@@ -92,9 +92,13 @@ const VARIANT_CLASSES: Record<ActionVariant, string> = {
     'bg-cinza-escuro text-cinza-claro hover:bg-cinza-claro hover:text-cinza-escuro active:bg-cinza-medio active:text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio disabled:pointer-events-none disabled:opacity-40',
 }
 
+// Padding vem sempre daqui: `className` não sobrepõe estas classes, porque quem decide é a
+// ordem na folha de estilo, não a ordem no atributo — `px-16` de `default` vence um `px-7`
+// passado por fora. Precisou de outro espaçamento? Adicione um tamanho.
 const SIZE_CLASSES: Record<ActionSize, string> = {
   compact: 'px-10 py-1 text-base',
   default: 'px-16 py-2',
+  medium: 'px-7 py-3 text-base',
   small: 'px-6 py-4 text-sm',
 }
 

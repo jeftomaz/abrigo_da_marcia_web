@@ -89,7 +89,8 @@ export function Header() {
                 to={item.to}
                 variant={variant}
                 aria-current={isActive ? 'page' : undefined}
-                className="min-h-12 shrink-0 px-7 py-3 text-base"
+                size="medium"
+                className="min-h-12 shrink-0"
               >
                 {item.label}
               </Action>
@@ -98,7 +99,8 @@ export function Header() {
                 key={item.label}
                 to={{ pathname: '/', hash: item.hash }}
                 variant={variant}
-                className="min-h-12 shrink-0 px-7 py-3 text-base"
+                size="medium"
+                className="min-h-12 shrink-0"
               >
                 {item.label}
               </Action>
