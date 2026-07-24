@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eventos estão materializados em `supabase/migrations/` e validados localmente e na homologação hospedada `banco_site_abrigo`. A produção legada `site-do-abrigo` ainda não foi auditada nem migrada.
+Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eventos estão materializados em `supabase/migrations/` e validados localmente e na produção hospedada `banco_site_abrigo`. O projeto legado `site-do-abrigo` permanece fora de uso.
 
 ## Imagens no Storage
 

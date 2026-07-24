@@ -31,6 +31,9 @@ select throws_ok(
   $$update public.site_settings set pix_receiver = 'Nome de recebedor acima do limite permitido' where singleton$$,
   '23514', null, 'respeita o limite do recebedor no Pix'
 );
+update public.site_settings
+set pix_key = null, pix_receiver = null, pix_city = null
+where singleton;
 select throws_ok(
   $$update public.site_settings set pix_key = 'pix@example.com' where singleton$$,
   '23514', null, 'exige os três dados do Pix em conjunto'

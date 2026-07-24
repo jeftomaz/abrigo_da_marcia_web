@@ -9,7 +9,7 @@ export const ADMIN_URL = 'http://127.0.0.1:5174'
 // a suíte leria — e a reserva escreveria — no banco hospedado. `process.env` com prefixo
 // VITE_ vence o arquivo `.env`, e `reuseExistingServer: false` impede aproveitar um
 // servidor que já esteja de pé apontando para o remoto.
-const SUPABASE_LOCAL = { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '' }
+const SUPABASE_LOCAL = { VITE_SUPABASE_URL: '', VITE_SUPABASE_PUBLISHABLE_KEY: '' }
 
 export default defineConfig({
   testDir: './e2e',

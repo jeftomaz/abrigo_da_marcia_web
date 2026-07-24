@@ -9,12 +9,23 @@ function toBase64(value: string) {
   return btoa(binary)
 }
 
+function getSupabasePublicKey() {
+  const publishableKeys = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')
+  if (publishableKeys) {
+    const defaultKey = (JSON.parse(publishableKeys) as Record<string, string>).default
+    if (defaultKey) return defaultKey
+  }
+  const localLegacyKey = Deno.env.get('SUPABASE_ANON_KEY')
+  if (!localLegacyKey) throw new Error('Chave pública do Supabase ausente.')
+  return localLegacyKey
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   try {
     const authorization = request.headers.get('Authorization')
     if (!authorization) throw new Error('Sessão administrativa ausente.')
-    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: authorization } } })
+    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, getSupabasePublicKey(), { global: { headers: { Authorization: authorization } } })
     const { data: claims, error: claimsError } = await supabase.auth.getClaims(authorization.replace('Bearer ', ''))
     if (claimsError || claims?.claims?.aal !== 'aal2' || claims.claims.app_metadata?.role !== 'admin') throw new Error('Sessão administrativa com MFA obrigatória.')
     const { eventId } = await request.json() as { eventId?: string }
