@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(56);
+select plan(61);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -149,6 +149,25 @@ select lives_ok($$
   where session_id = '12000000-0000-0000-0000-000000000003'
 $$, 'confirma pagamento pendente');
 
+-- Reverter pagamento marcado por engano: paga -> pendente antes de qualquer sorteio.
+select lives_ok($$
+  update public.reservas set status = 'pendente'
+  where session_id = '12000000-0000-0000-0000-000000000003'
+$$, 'reverte pagamento para pendente');
+select is(
+  (select status from public.reservas where session_id = '12000000-0000-0000-0000-000000000003'),
+  'pendente'::public.reserva_status,
+  'a reserva revertida volta a pendente'
+);
+select ok(
+  (select paid_at is null and expires_at > now() from public.reservas where session_id = '12000000-0000-0000-0000-000000000003'),
+  'a reversão limpa paid_at e renova o prazo de expiração'
+);
+select lives_ok($$
+  update public.reservas set status = 'paga'
+  where session_id = '12000000-0000-0000-0000-000000000003'
+$$, 'volta a marcar como paga para o sorteio');
+
 select lives_ok(
   $$select * from public.draw_raffle_prize('11000000-0000-0000-0000-000000000001')$$,
   'persiste o primeiro sorteio entre reservas pagas'
@@ -162,6 +181,16 @@ select isnt(
   (select winning_number from public.rifa_premios where id = '11000000-0000-0000-0000-000000000002'),
   'um número não ganha dois prêmios'
 );
+
+select throws_ok($$
+  update public.reservas set status = 'pendente'
+  where id = (
+    select rn.reservation_id
+    from public.reserva_numeros rn
+    join public.rifa_premios rp on rp.event_id = rn.raffle_id and rp.winning_number = rn.number
+    where rp.id = '11000000-0000-0000-0000-000000000001' and rn.released_at is null
+  )
+$$, 'P0001', 'Uma reserva sorteada não pode voltar para pendente.', 'reserva sorteada não volta para pendente');
 
 select throws_ok($$
   update public.eventos set type = 'produtos'

@@ -166,7 +166,7 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
                   <select value={reservation.status} disabled={isPending || reservation.status === 'canceled' || reservation.status === 'delivered'} onChange={(changeEvent) => { const next = changeEvent.target.value as ReservationStatus; if (next === 'paid') setPaidConfirmation(reservation); else void updateReservation(reservation.id, { status: next }) }} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed">
                     <option value={reservation.status}>{status.label}</option>
                     {reservation.status === 'reserved' && <><option value="paid">Pago</option><option value="canceled">Cancelado</option></>}
-                    {reservation.status === 'paid' && <><option value="canceled">Cancelado</option>{event.status !== 'active' && <option value="delivered">Entregue</option>}</>}
+                    {reservation.status === 'paid' && <><option value="reserved">Reservado</option><option value="canceled">Cancelado</option>{event.status !== 'active' && <option value="delivered">Entregue</option>}</>}
                   </select>
                 </label>
                 <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={reservation.receiptSaved} disabled={isPending} onChange={(event) => void updateReservation(reservation.id, { receiptSaved: event.target.checked })} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-40 disabled:cursor-not-allowed accent-marca" />{isPending ? 'Salvando...' : 'Comprovante salvo'}</label>

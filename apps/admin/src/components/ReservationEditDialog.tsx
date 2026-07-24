@@ -144,7 +144,7 @@ export function ReservationEditDialog({
           <TextField as="select" value={status} onChange={(changeEvent) => setStatus(changeEvent.target.value as ReservationStatus)} disabled={isSaving || isTerminal} className="mt-1 px-3 py-2 font-normal">
             <option value={reservation.status}>{reservation.status === 'reserved' ? 'Reservado' : reservation.status === 'paid' ? 'Pago' : reservation.status === 'delivered' ? 'Entregue' : 'Cancelado'}</option>
             {reservation.status === 'reserved' && <><option value="paid">Pago</option><option value="canceled">Cancelado</option></>}
-            {reservation.status === 'paid' && <><option value="canceled">Cancelado</option>{event.status !== 'active' && <option value="delivered">Entregue</option>}</>}
+            {reservation.status === 'paid' && <><option value="reserved">Reservado</option><option value="canceled">Cancelado</option>{event.status !== 'active' && <option value="delivered">Entregue</option>}</>}
           </TextField>
         </label>
         <label className="flex items-end gap-2 pb-3 font-medium">
