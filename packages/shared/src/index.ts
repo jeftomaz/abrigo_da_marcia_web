@@ -100,6 +100,7 @@ export type {
   EventKind,
   EventProduct,
   EventReservation,
+  EventReservationUpdate,
   EventSettings,
   EventStatus,
   FundraisingEvent,

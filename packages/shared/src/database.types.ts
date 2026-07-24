@@ -1207,6 +1207,18 @@ export type Database = {
           total_cents: number
         }[]
       }
+      update_event_reservation: {
+        Args: {
+          p_customer_contact: string
+          p_customer_name: string
+          p_items: Json
+          p_numbers: number[]
+          p_receipt_saved: boolean
+          p_reservation_id: string
+          p_status: Database["public"]["Enums"]["reserva_status"]
+        }
+        Returns: undefined
+      }
       valid_recurring_donation_urls: { Args: { urls: Json }; Returns: boolean }
     }
     Enums: {
@@ -1357,4 +1369,3 @@ export const Constants = {
     },
   },
 } as const
-

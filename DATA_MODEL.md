@@ -468,6 +468,8 @@ O trigger `reservas_validate_contact` protege inserções e alterações de qual
 
 O limite efetivo é resolvido no momento da reserva: override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` ou `default_max_product_units`. Reservas pendentes que ultrapassam `expires_at` passam automaticamente para `cancelada` via `pg_cron`; reservas pagas não expiram. Cancelamento libera números da rifa. `entregue` só sucede `paga` após o encerramento: para produto, em qualquer reserva paga; para rifa, apenas na reserva ganhadora. Os valores e rótulos selecionados ficam registrados como snapshots. `receipt_saved` é somente o controle administrativo do destino externo.
 
+`update_event_reservation` (`security invoker`, somente `authenticated`) edita uma reserva `pendente|paga` em uma única transação. A função valida e normaliza os dados pessoais, substitui números ou unidades/opções, rejeita conflitos e alterações de números já sorteados, recalcula preços/descontos pelo catálogo atual e respeita as transições de status existentes. RLS continua exigindo admin com AAL2.
+
 ### `reserva_produtos` e `reserva_produto_opcoes`
 
 Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_price_cents` guardam os snapshots do produto e do preço calculado para aquela reserva.

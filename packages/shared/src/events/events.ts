@@ -108,6 +108,16 @@ export type EventReservation = {
   totalCents: number
 }
 
+export type EventReservationUpdate = {
+  contact: string
+  id: string
+  name: string
+  numbers: number[]
+  productItems: { options: Record<string, string>; productId: string }[]
+  receiptSaved: boolean
+  status: ReservationStatus
+}
+
 export type ReservationResult = {
   expiresAt: string
   pixCity: string
@@ -911,7 +921,20 @@ async function listRaffleNumbers(eventId: string) {
   }))
 }
 
-async function updateReservation(input: { id: string; receiptSaved?: boolean; status?: ReservationStatus }) {
+async function updateReservation(input: { id: string; receiptSaved?: boolean; status?: ReservationStatus } | EventReservationUpdate) {
+  if ('name' in input) {
+    const { error } = await supabase.rpc('update_event_reservation', {
+      p_reservation_id: input.id,
+      p_customer_name: input.name,
+      p_customer_contact: input.contact,
+      p_status: RESERVATION_STATUS_TO_DB[input.status],
+      p_receipt_saved: input.receiptSaved,
+      p_numbers: input.numbers,
+      p_items: input.productItems as Json,
+    })
+    if (error) throw error
+    return
+  }
   const values: { receipt_saved?: boolean; status?: Tables<'reservas'>['status'] } = {}
   if (input.receiptSaved !== undefined) values.receipt_saved = input.receiptSaved
   if (input.status) values.status = RESERVATION_STATUS_TO_DB[input.status]

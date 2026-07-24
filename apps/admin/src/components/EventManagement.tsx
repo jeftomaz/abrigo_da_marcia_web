@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Action, Dialog, Icon, ImagePlaceholder, formatReservationContact } from '@abrigo/shared'
-import type { EventReservation, FundraisingEvent, ReservationStatus } from '../events/events'
+import type { EventReservation, EventReservationUpdate, FundraisingEvent, ReservationStatus } from '../events/events'
 import { getEventPhotoUrl } from '../events/events'
+import { ReservationEditDialog } from './ReservationEditDialog'
 import { StatusBadge } from './StatusBadge'
 
 type EventManagementProps = {
   event: FundraisingEvent
   layout: 'mobile' | 'panel'
   onUpdateReservation: (id: string, changes: { receiptSaved?: boolean; status?: ReservationStatus }) => Promise<void> | void
+  onSaveReservation: (update: EventReservationUpdate) => Promise<void>
   reservations: EventReservation[]
 }
 
@@ -34,12 +36,13 @@ function productItemLabel(reservation: EventReservation) {
   }).join(' | ')
 }
 
-export function EventManagement({ event, layout, onUpdateReservation, reservations }: EventManagementProps) {
+export function EventManagement({ event, layout, onSaveReservation, onUpdateReservation, reservations }: EventManagementProps) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | ''>('')
   const [actionError, setActionError] = useState('')
   const [pendingReservationIds, setPendingReservationIds] = useState<Set<string>>(new Set())
   const [paidConfirmation, setPaidConfirmation] = useState<EventReservation | null>(null)
+  const [editingReservation, setEditingReservation] = useState<EventReservation | null>(null)
   const isPanel = layout === 'panel'
   // A opção "Entregue" só é alcançável após o encerramento; o filtro reflete essa condição.
   const canHaveDelivered = event.status !== 'active' || reservations.some((reservation) => reservation.status === 'delivered')
@@ -158,6 +161,7 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
                 {event.kind === 'raffle' ? reservation.numbers.map((number) => <span key={number} className="min-w-12 rounded-md bg-cinza-medio px-2 py-1 text-center text-xs text-cinza-claro">Nº {String(number).padStart(2, '0')}</span>) : <span className="text-sm">{productItemLabel(reservation)}</span>}
               </div>
               <div className="col-start-2 row-span-2 row-start-1 flex flex-col items-end gap-2 desk:col-start-3 desk:row-span-1 desk:items-center">
+                <Action onClick={() => setEditingReservation(reservation)} disabled={isPending || reservation.status === 'canceled' || reservation.status === 'delivered'} icon="edit-pencil" size="small" variant="neutral-adaptive" className="min-w-28 px-3 text-xs">Editar</Action>
                 <label className="relative rounded-lg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marca"><span className={`block rounded-lg px-4 py-1 text-sm font-medium ${status.classes}`}>{status.label}</span>
                   <select value={reservation.status} disabled={isPending || reservation.status === 'canceled' || reservation.status === 'delivered'} onChange={(changeEvent) => { const next = changeEvent.target.value as ReservationStatus; if (next === 'paid') setPaidConfirmation(reservation); else void updateReservation(reservation.id, { status: next }) }} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed">
                     <option value={reservation.status}>{status.label}</option>
@@ -188,6 +192,15 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
             <Action onClick={() => { const reservation = paidConfirmation; setPaidConfirmation(null); void updateReservation(reservation.id, { status: 'paid', receiptSaved: true }) }} disabled={pendingReservationIds.has(paidConfirmation.id)} size="small" variant="primary-adaptive" icon="check-circle-solid" className="min-w-0 flex-1">Sim, foi salvo</Action>
           </div>
         </Dialog>
+      )}
+      {editingReservation && (
+        <ReservationEditDialog
+          event={event}
+          reservation={editingReservation}
+          reservations={reservations}
+          onClose={() => setEditingReservation(null)}
+          onSave={onSaveReservation}
+        />
       )}
     </section>
   )

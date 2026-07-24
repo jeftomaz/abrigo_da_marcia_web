@@ -19,7 +19,7 @@ import { EventForm } from '../components/EventForm'
 import type { EventFormHandle } from '../components/EventForm'
 import { EventManagement } from '../components/EventManagement'
 import { EventRow } from '../components/EventRow'
-import type { EventDraft, EventStatus, FundraisingEvent, ReservationStatus } from '../events/events'
+import type { EventDraft, EventReservationUpdate, EventStatus, FundraisingEvent, ReservationStatus } from '../events/events'
 import { useIsDesktop } from '../hooks/useIsDesktop'
 import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
@@ -124,6 +124,9 @@ export function Eventos() {
   const updateManagedReservation = async (id: string, changes: { receiptSaved?: boolean; status?: ReservationStatus }) => {
     await updateReservation.mutateAsync({ id, ...changes })
   }
+  const saveManagedReservation = async (update: EventReservationUpdate) => {
+    await updateReservation.mutateAsync(update)
+  }
 
   const formTitle = editingTarget ? 'Editar Evento' : 'Novo Evento'
   const isConfirming = updateStatus.isPending || deleteEvent.isPending
@@ -177,7 +180,7 @@ export function Eventos() {
             ))}
             {!isLoading && events.length === 0 && <p className="py-6 text-center">Nenhum evento cadastrado.</p>}
           </div>
-          {managingEvent && !isDesktop && (reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="mobile" reservations={reservationsQuery.data ?? []} onUpdateReservation={updateManagedReservation} />)}
+          {managingEvent && !isDesktop && (reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="mobile" reservations={reservationsQuery.data ?? []} onSaveReservation={saveManagedReservation} onUpdateReservation={updateManagedReservation} />)}
         </section>
 
         {hasDetail && isDesktop && (
@@ -185,7 +188,7 @@ export function Eventos() {
             {isEditing ? (
               <EventForm ref={eventFormRef} key={editingTarget?.id ?? 'new'} event={editingTarget ?? null} layout="panel" title={formTitle} onAutoSave={handleAutoSave} onCancel={() => setEditingTarget(undefined)} onSave={handleSave} />
             ) : managingEvent ? (
-              reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="panel" reservations={reservationsQuery.data ?? []} onUpdateReservation={updateManagedReservation} />
+              reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="panel" reservations={reservationsQuery.data ?? []} onSaveReservation={saveManagedReservation} onUpdateReservation={updateManagedReservation} />
             ) : null}
           </aside>
         )}

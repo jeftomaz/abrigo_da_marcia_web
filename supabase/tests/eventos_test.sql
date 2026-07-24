@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(51);
+select plan(56);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -224,6 +224,35 @@ select is(
   )),
   1600::bigint,
   'aplica desconto por quantidade do mesmo produto'
+);
+
+select lives_ok($$
+  select public.update_event_reservation(
+    (select id from public.reservas where session_id = '24000000-0000-0000-0000-000000000001'),
+    'Cliente editado', 'editado@example.com', 'pendente', true, array[]::integer[],
+    '[{"productId":"21000000-0000-0000-0000-000000000001","options":{"22000000-0000-0000-0000-000000000001":"23000000-0000-0000-0000-000000000001"}}]'::jsonb
+  )
+$$, 'edita os dados e itens da reserva em uma transação');
+select is(
+  (select customer_name from public.reservas where session_id = '24000000-0000-0000-0000-000000000001'),
+  'Cliente editado',
+  'persiste o nome editado'
+);
+select is(
+  (select customer_contact from public.reservas where session_id = '24000000-0000-0000-0000-000000000001'),
+  'editado@example.com',
+  'persiste e normaliza o contato editado'
+);
+select is(
+  (select total_cents from public.reservas where session_id = '24000000-0000-0000-0000-000000000001'),
+  1000::bigint,
+  'recalcula o total ao editar os itens'
+);
+select is(
+  (select count(*) from public.reserva_produtos rp join public.reservas r on r.id = rp.reservation_id
+    where r.session_id = '24000000-0000-0000-0000-000000000001'),
+  1::bigint,
+  'substitui as unidades da reserva sem duplicar itens'
 );
 
 select throws_ok($$

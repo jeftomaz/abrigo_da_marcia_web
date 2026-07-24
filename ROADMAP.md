@@ -97,7 +97,7 @@ Ajustes levantados em uso real, todos anteriores ao lançamento.
 ### Eventos — gestão e reservas
 
 - `done` Botão "Exportar CSV" deixou de usar `neutral-adaptive` e passou à variante primária, visível no tema claro.
-- `todo` Permitir ao admin editar uma reserva por completo, incluindo os itens que a compõem. **Aguarda o exemplo visual de referência** antes de implementar.
+- `done` Permitir ao admin editar uma reserva por completo, incluindo cliente, contato, status, comprovante e os números/itens que a compõem.
 - `done` Listagem ordena o evento ativo no topo e os demais por data de encerramento, do mais recente para o mais antigo.
 - `done` Cada card de reserva ganhou atalho para o link dos comprovantes do evento.
 - `done` Marcar reserva como paga passa por `Dialog` que pergunta se o comprovante foi salvo, marca a checkbox junto e oferece o atalho para os comprovantes.
