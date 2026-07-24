@@ -98,7 +98,6 @@ export function Adocao() {
         <div className="mt-6 flex justify-center lg:mt-5">
           <Action
             onClick={() => setFiltersExpanded((expanded) => !expanded)}
-            variant="neutral-adaptive"
             size="small"
             aria-expanded={filtersExpanded}
             aria-controls="dog-filters"
