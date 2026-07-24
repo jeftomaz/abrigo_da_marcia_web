@@ -61,7 +61,7 @@
 - `done` Aumentar o respiro vertical das seções da Landing no mobile, especialmente “Conheça o abrigo”.
 - `done` Fazer a passada final claro/escuro e mobile/desktop em Landing, Adoção, Histórias, Eventos, Admin, autenticação e Configurações.
 - `done` Padronizar estados hover, foco, ativo, desabilitado, carregando, vazio, erro e sucesso de todos os controles interativos.
-- `todo` **Decidir com o Abrigo o contraste da marca.** O coral `#f15a55` não alcança AA sobre nenhuma superfície do tema — 2,38:1 sobre `marca-clara`, 2,87:1 sobre `marca-escura`, 2,66:1 sobre `cinza-claro` e 3,32:1 até sobre branco puro (AA exige 4,5:1 em texto normal e 3:1 em texto grande). Atinge o texto dos botões, pílulas do header, títulos e CTAs dos dois apps. Escurecer o coral para `#a43d3a` resolveria o texto normal, mas muda a identidade aprovada; a suíte E2E trava o débito nesses tokens para impedir que ele se espalhe.
+- `done` **Contraste da marca: débito aceito por decisão de projeto.** O coral `#f15a55` não alcança AA sobre nenhuma superfície do tema — 2,38:1 sobre `marca-clara`, 2,87:1 sobre `marca-escura`, 2,66:1 sobre `cinza-claro` e 3,32:1 até sobre branco puro (AA exige 4,5:1 em texto normal e 3:1 em texto grande), atingindo botões, pílulas do header, títulos e CTAs dos dois apps. Atingir AA exigiria escurecer o coral a `#a43d3a` (32% mais escuro) e mudar a identidade aprovada pelo Abrigo; optou-se por preservá-la. A suíte E2E trava o débito exatamente nesses tokens: qualquer combinação de contraste fora deles reprova, impedindo que se espalhe. Rever se a identidade visual for repactuada.
 
 ### P2 — Qualidade, segurança e operação
 
