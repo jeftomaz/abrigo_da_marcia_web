@@ -14,6 +14,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - **Monorepo:** pnpm workspaces — `apps/public`, `apps/admin`, `packages/shared`.
 - **Dev local do banco:** `supabase start` (requer Docker) sobe o stack; `supabase db reset` aplica `supabase/migrations/` + `supabase/seed.sql`. Studio em `localhost:54323`.
 - **Bootstrap local removível:** `./scripts/dev-local.sh` inicia Supabase, público (`5173`) e admin (`5174`). O arquivo não participa de build/deploy.
+- **Testes:** `supabase test db` (pgTAP) e `pnpm e2e` (Playwright + axe, em `e2e/`). Os dois exigem `supabase start`; o E2E sobe os apps sozinho e força o Supabase local, ignorando o `.env` da raiz. Primeira execução: `npx playwright install chromium webkit`.
 - **Admin:** entrada exclusiva por convite, definição de senha, TOTP obrigatório e RLS condicionada a `app_metadata.role = admin` + `aal2`. Cadastro público permanece desabilitado; convites são enviados pelo Dashboard ou Admin API.
 
 ## Regras específicas
