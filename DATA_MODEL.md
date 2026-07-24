@@ -468,7 +468,19 @@ O trigger `reservas_validate_contact` protege inserções e alterações de qual
 
 O limite efetivo é resolvido no momento da reserva: override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` ou `default_max_product_units`. Reservas pendentes que ultrapassam `expires_at` passam automaticamente para `cancelada` via `pg_cron`; reservas pagas não expiram. Cancelamento libera números da rifa. `entregue` só sucede `paga` após o encerramento: para produto, em qualquer reserva paga; para rifa, apenas na reserva ganhadora. Os valores e rótulos selecionados ficam registrados como snapshots. `receipt_saved` é somente o controle administrativo do destino externo.
 
-Transições de status permitidas pelo trigger `validate_reservation_status`: `pendente → paga` (grava `paid_at`); `paga → pendente` (reverte pagamento marcado por engano — limpa `paid_at`, renova `expires_at` com um TTL fresco e é bloqueada se a reserva já foi sorteada); `pendente|paga → cancelada` (grava `canceled_at`; bloqueada em reserva sorteada); `paga → entregue` (grava `delivered_at`; exige evento encerrado e, na rifa, reserva ganhadora). Qualquer outra transição é rejeitada. `cancelada` e `entregue` são terminais.
+Transições de status permitidas pelo trigger `validate_reservation_status`:
+
+- `pendente → paga` (grava `paid_at`);
+- `pendente|paga → cancelada` (grava `canceled_at`; bloqueada em reserva sorteada);
+- `paga → entregue` (grava `delivered_at`; exige evento encerrado e, na rifa, reserva ganhadora).
+
+Reversões de estados marcados por engano (todas renovam o `expires_at` com um TTL fresco quando voltam a `pendente`, senão o cron cancelaria a reserva no ato):
+
+- `paga → pendente` (limpa `paid_at`; bloqueada se a reserva já foi sorteada);
+- `cancelada → pendente` (limpa `canceled_at`; reconquista os números liberados em bloco — se algum já foi retomado por outra reserva, o índice único aborta e a reversão falha);
+- `entregue → paga` (limpa `delivered_at`).
+
+Qualquer outra transição é rejeitada. Não há estado terminal: cancelada e entregue podem ser revertidas, mas voltar de `paga → pendente` fica indisponível assim que a reserva é sorteada.
 
 `update_event_reservation` (`security invoker`, somente `authenticated`) edita uma reserva `pendente|paga` em uma única transação. A função valida e normaliza os dados pessoais, substitui números ou unidades/opções, rejeita conflitos e alterações de números já sorteados, recalcula preços/descontos pelo catálogo atual e respeita as transições de status existentes. RLS continua exigindo admin com AAL2.
 

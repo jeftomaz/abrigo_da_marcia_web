@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(61);
+select plan(69);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -168,6 +168,34 @@ select lives_ok($$
   where session_id = '12000000-0000-0000-0000-000000000003'
 $$, 'volta a marcar como paga para o sorteio');
 
+-- Reverter cancelamento acidental na rifa quando os números ainda estão livres.
+insert into public.sessoes_reserva (id) values ('12000000-0000-0000-0000-000000000004');
+select is(
+  (select total_cents from public.reserve_raffle_numbers(
+    '10000000-0000-0000-0000-000000000001',
+    '12000000-0000-0000-0000-000000000004',
+    'Pessoa cancelável', 'cancelavel@example.com', array[7, 8]
+  )),
+  2000::bigint,
+  'cria reserva para testar a reversão de cancelamento na rifa'
+);
+select lives_ok($$
+  update public.reservas set status = 'cancelada'
+  where session_id = '12000000-0000-0000-0000-000000000004'
+$$, 'cancela a reserva da rifa');
+select lives_ok($$
+  update public.reservas set status = 'pendente'
+  where session_id = '12000000-0000-0000-0000-000000000004'
+$$, 'reverte o cancelamento reconquistando os números livres');
+select ok(
+  (select bool_and(released_at is null) from public.reserva_numeros rn
+    join public.reservas r on r.id = rn.reservation_id
+    where r.session_id = '12000000-0000-0000-0000-000000000004')
+  and (select canceled_at is null and expires_at > now()
+    from public.reservas where session_id = '12000000-0000-0000-0000-000000000004'),
+  'a reversão do cancelamento reconquista os números e renova o prazo'
+);
+
 select lives_ok(
   $$select * from public.draw_raffle_prize('11000000-0000-0000-0000-000000000001')$$,
   'persiste o primeiro sorteio entre reservas pagas'
@@ -206,6 +234,28 @@ select lives_ok($$
   update public.reservas set status = 'entregue'
   where session_id = '12000000-0000-0000-0000-000000000003'
 $$, 'permite entrega da reserva paga e sorteada após o encerramento');
+
+-- Reverter entrega marcada por engano: entregue -> paga.
+select lives_ok($$
+  update public.reservas set status = 'paga'
+  where session_id = '12000000-0000-0000-0000-000000000003'
+$$, 'reverte a entrega para paga');
+select ok(
+  (select status = 'paga' and delivered_at is null
+    from public.reservas where session_id = '12000000-0000-0000-0000-000000000003'),
+  'a reversão da entrega limpa delivered_at'
+);
+select lives_ok($$
+  update public.reservas set status = 'entregue'
+  where session_id = '12000000-0000-0000-0000-000000000003'
+$$, 'remarca a entrega após a reversão');
+
+-- Reverter cancelamento é bloqueado quando o número já foi retomado por outra reserva:
+-- a reserva 0001 foi cancelada e seus números 1 e 2 já estão com a reserva 0003.
+select throws_ok($$
+  update public.reservas set status = 'pendente'
+  where session_id = '12000000-0000-0000-0000-000000000001'
+$$, 'P0001', 'Um ou mais números desta reserva já foram reservados por outra pessoa.', 'cancelamento não volta se o número já foi retomado');
 
 select lives_ok($$
   insert into public.eventos (
