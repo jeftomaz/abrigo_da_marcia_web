@@ -5,8 +5,8 @@
 3. Adoção (público + admin) — `doing` (fluxos prontos; refinamentos e produção pendentes)
 4. Histórias (público + admin) — `doing` (fluxos prontos; refinamentos e produção pendentes)
 5. Eventos/arrecadação — `doing` (fluxos principais prontos; lacunas abaixo pendentes)
-6. Configurações admin — `doing` (fluxos prontos; card de configurações gerais pendente)
-7. Fechamento funcional, design e publicação — `doing` (P0 de publicação e revisão de 2026-07-24 pendentes) **← atual**
+6. Configurações admin — `doing` (fluxos prontos; card de configurações gerais entregue)
+7. Fechamento funcional, design e publicação — `doing` (P0 de publicação pendente; revisão de 2026-07-24 concluída, exceto a edição completa de reservas que aguarda modelo visual) **← atual**
 
 ## Pendências abertas — auditoria de 2026-07-22
 
@@ -79,31 +79,31 @@ Ajustes levantados em uso real, todos anteriores ao lançamento.
 
 ### Adoção e Gestão de Cães
 
-- `todo` Permitir que o admin edite o link do formulário de adoção por cão. Hoje o valor vem só de `site_settings.adoption_form_url` e não é editável no card do cão. Deve ser override opcional por cão, com o global como padrão — não voltar à coluna obrigatória duplicada removida na migration de Configurações.
-- `todo` Mover "destacar no catálogo" do formulário de edição para o card compacto do cão, junto das demais ações da listagem.
-- `todo` Aproximar o card de edição de Cães do de Histórias, em especial o botão de adicionar foto: o de Histórias tem mais espaço interno e é o visual desejado.
+- `done` Link do formulário de adoção editável por cão: `caes.adoption_form_url` voltou como override opcional (nullable, CHECK HTTPS), com o global de `site_settings` como padrão dos CTAs.
+- `done` "Destacar no catálogo" saiu do formulário e virou ação da listagem, ao lado de Editar/Remover; `useUpdateDogStatus` foi generalizado em `useUpdateDog`.
+- `done` Galeria do formulário de Cães perdeu a densidade compacta e passou a usar as mesmas miniaturas de Histórias.
 
 ### Configurações e dados compartilhados
 
-- `todo` Criar card de configurações gerais, para valores usados por várias páginas: links das redes sociais (o Footer aparece em todas as rotas, não só na Landing) e os dados do Pix, que são os mesmos para reservas de evento e para doação única. Hoje estão espalhados entre Landing e padrões de Eventos.
-- `todo` Gerar o Pix copia-e-cola automaticamente a partir de chave, recebedor e cidade, sem o admin digitar o código. Vale para doação e para eventos. **A confirmar antes de implementar:** o Banco Central publica a especificação do BR Code (EMV MPM), não uma biblioteca oficial — decidir entre implementar o payload pela especificação ou adotar uma biblioteca de terceiros, que exigiria aprovação de dependência.
+- `done` Card "Configurações gerais" reúne o Pix (chave, recebedor, cidade) e as redes sociais; o Pix tem fonte única em `site_settings`, `event_settings` perdeu as colunas de pagamento e os eventos guardam só os três dados com override por evento.
+- `done` Pix copia-e-cola gerado no client pela especificação BR Code (EMV MPM) — decidiu-se reusar o gerador próprio (`createPixCode`, valor opcional), sem dependência nova; a coluna `pix_copy_paste` deixou de existir e o código sai já com o valor de cada doação/reserva.
 
 ### Eventos — formulário
 
-- `todo` Mover "Máx. por reserva" para dentro de "Detalhes da rifa", junto da quantidade de números.
-- `todo` Calcular em tempo real o terceiro campo entre meta de arrecadação, quantidade de números e valor por número sempre que dois estiverem preenchidos. O campo calculado continua editável e recalcula os demais a cada alteração.
-- `todo` Bloquear em tempo real, no cadastro e na edição, um "Máx. por reserva" maior que a quantidade de números da rifa. A validação atual não impede.
+- `done` "Máx. por reserva" migrou de Objetivos para "Detalhes - Rifa"; nos eventos de produto o campo permanece em Objetivos.
+- `done` Meta, quantidade e valor por número se autocompletam (meta = quantidade × valor): preencher dois calcula o terceiro e editar qualquer um recalcula outro.
+- `done` "Máx. por reserva" acima da quantidade de números é bloqueado em tempo real e na validação de publicação.
 
 ### Eventos — gestão e reservas
 
-- `todo` Corrigir o botão "Exportar CSV", que usa `neutral-adaptive` (`bg-cinza-claro`) e some sobre o fundo da página no tema claro — mesmo defeito já corrigido no botão de filtros da Adoção.
-- `todo` Permitir ao admin editar uma reserva por completo, incluindo os itens que a compõem. Exemplo visual de referência a ser fornecido.
-- `todo` Ordenar a listagem da gestão com o evento ativo no topo e os encerrados por data de encerramento, do mais recente para o mais antigo.
-- `todo` Adicionar no card de cada reserva um atalho para o link dos comprovantes, além do que já existe no card do evento.
-- `todo` Confirmar a marcação de reserva como paga em `Dialog`, perguntando se o comprovante já foi salvo, com cancelar (mantém o status anterior), "Sim, foi salvo" (marca também a checkbox de comprovante) e atalho para o link dos comprovantes.
-- `todo` Rever a disponibilidade do status "Entregue". A opção existe, mas só aparece para reserva paga e evento encerrado, conforme a regra registrada em `DATA_MODEL.md`; o filtro "Entregues", esse sim, aparece sempre. Definir se a regra muda ou se apenas o filtro deve refletir a condição.
-- `todo` Remover o `/∞` da métrica de itens reservados em eventos de produto, exibindo só a quantidade; a rifa mantém `vendidos/total`.
-- `todo` Exigir uma segunda confirmação ao arquivar evento, destacando que a ação não é reversível.
+- `done` Botão "Exportar CSV" deixou de usar `neutral-adaptive` e passou à variante primária, visível no tema claro.
+- `todo` Permitir ao admin editar uma reserva por completo, incluindo os itens que a compõem. **Aguarda o exemplo visual de referência** antes de implementar.
+- `done` Listagem ordena o evento ativo no topo e os demais por data de encerramento, do mais recente para o mais antigo.
+- `done` Cada card de reserva ganhou atalho para o link dos comprovantes do evento.
+- `done` Marcar reserva como paga passa por `Dialog` que pergunta se o comprovante foi salvo, marca a checkbox junto e oferece o atalho para os comprovantes.
+- `done` Filtro "Entregues" só aparece quando o evento pode ter reservas entregues (encerrado/arquivado ou já com entrega); a regra do status "Entregue" foi preservada.
+- `done` Métrica de itens de evento de produto exibe só a quantidade, sem `/∞`; a rifa mantém `vendidos/total`.
+- `done` Arquivar evento exige segunda confirmação (checkbox) destacando que a ação não é reversível.
 
 ## Base implementada — Landing
 
