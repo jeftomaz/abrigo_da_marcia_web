@@ -15,7 +15,7 @@ import {
 } from '@abrigo/shared'
 import type { EditablePhoto } from '@abrigo/shared'
 import type { EditableEventProduct, EditableRafflePrize, EventDraft, EventKind, FundraisingEvent, MeasurementTable } from '../events/events'
-import { formatCurrencyInput, parseCurrencyToCents, toEditableEventDraft } from '../events/events'
+import { formatCentsForInput, formatCurrencyInput, parseCurrencyToCents, toEditableEventDraft } from '../events/events'
 import { PhotoGalleryField } from './PhotoGalleryField'
 import { ConfirmationDialog } from './ConfirmationDialog'
 import { TagInput } from './TagInput'
@@ -107,6 +107,35 @@ function hasDraftContent(draft: EventDraft, photos: EditablePhoto[]) {
 
 function isPositiveInteger(value: string) {
   return /^\d+$/.test(value) && Number(value) > 0
+}
+
+// Meta = quantidade × valor por número. Editar um dos três recalcula outro quando há dados
+// suficientes, preferindo recalcular a meta ao mexer em quantidade/valor.
+function recalculateRaffleField(
+  edited: 'goal' | 'price' | 'total',
+  values: { goal: string; price: string; total: string },
+): Partial<EventDraft> | null {
+  const goalCents = parseCurrencyToCents(values.goal)
+  const priceCents = parseCurrencyToCents(values.price)
+  const total = Number(values.total)
+  const hasGoal = goalCents > 0
+  const hasPrice = priceCents > 0
+  const hasTotal = isPositiveInteger(values.total)
+
+  if ((edited === 'total' || edited === 'price') && hasTotal && hasPrice) {
+    return { fundraisingGoal: formatCentsForInput(total * priceCents) }
+  }
+  if (edited === 'total' && hasGoal && hasTotal) {
+    return { raffleNumberPrice: formatCentsForInput(Math.round(goalCents / total)) }
+  }
+  if (edited === 'price' && hasGoal && hasPrice) {
+    return { raffleTotalNumbers: String(Math.max(1, Math.round(goalCents / priceCents))) }
+  }
+  if (edited === 'goal') {
+    if (hasGoal && hasTotal) return { raffleNumberPrice: formatCentsForInput(Math.round(goalCents / total)) }
+    if (hasGoal && hasPrice) return { raffleTotalNumbers: String(Math.max(1, Math.round(goalCents / priceCents))) }
+  }
+  return null
 }
 
 function formatMinutesAsHours(value: string) {
@@ -202,6 +231,23 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
     setDraft((current) => ({ ...current, [key]: value }))
   }
 
+  const updateRaffleField = (field: 'goal' | 'price' | 'total', rawValue: string) => {
+    setSaveError('')
+    setDraft((current) => {
+      const next = { ...current }
+      if (field === 'goal') next.fundraisingGoal = formatCurrencyInput(rawValue)
+      else if (field === 'price') next.raffleNumberPrice = formatCurrencyInput(rawValue)
+      else next.raffleTotalNumbers = rawValue.replace(/\D/g, '')
+      if (current.kind !== 'raffle') return next
+      const computed = recalculateRaffleField(field, {
+        goal: next.fundraisingGoal,
+        price: next.raffleNumberPrice,
+        total: next.raffleTotalNumbers,
+      })
+      return computed ? { ...next, ...computed } : next
+    })
+  }
+
   const updateProduct = (id: string, changes: Partial<EditableEventProduct>) => {
     setSaveError('')
     setDraft((current) => ({
@@ -293,6 +339,9 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       }
       if (parseCurrencyToCents(draft.raffleNumberPrice) <= 0) {
         return { fieldId: `${formId}-raffle-price`, message: 'Informe um valor por número maior que zero.' }
+      }
+      if (isPositiveInteger(draft.maxItemsPerReservation) && Number(draft.maxItemsPerReservation) > Number(draft.raffleTotalNumbers)) {
+        return { fieldId: `${formId}-max-items`, message: 'O máximo por reserva não pode ser maior que a quantidade de números da rifa.' }
       }
       if (draft.prizes.length === 0) return { fieldId: `${formId}-prizes`, message: 'Adicione ao menos um prêmio à rifa.' }
     } else {
@@ -613,22 +662,24 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             id={`${formId}-goal`}
             inputMode="decimal"
             value={draft.fundraisingGoal}
-            onChange={(changeEvent) => setField('fundraisingGoal', formatCurrencyInput(changeEvent.target.value))}
+            onChange={(changeEvent) => updateRaffleField('goal', changeEvent.target.value)}
             placeholder="0,00"
             required
             className={fieldClasses}
           />
         </FormField>
-        <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
-          <TextField
-            id={`${formId}-max-items`}
-            inputMode="numeric"
-            value={draft.maxItemsPerReservation}
-            onChange={(changeEvent) => setField('maxItemsPerReservation', changeEvent.target.value)}
-            placeholder="Padrão"
-            className={fieldClasses}
-          />
-        </FormField>
+        {draft.kind === 'product' && (
+          <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
+            <TextField
+              id={`${formId}-max-items`}
+              inputMode="numeric"
+              value={draft.maxItemsPerReservation}
+              onChange={(changeEvent) => setField('maxItemsPerReservation', changeEvent.target.value)}
+              placeholder="Padrão"
+              className={fieldClasses}
+            />
+          </FormField>
+        )}
         <FormField htmlFor={`${formId}-ttl`} label="Expiração da reserva">
           <div>
             <TextField
@@ -872,6 +923,10 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
     </section>
   )
 
+  const maxItemsExceedsTotal = draft.kind === 'raffle'
+    && isPositiveInteger(draft.maxItemsPerReservation)
+    && isPositiveInteger(draft.raffleTotalNumbers)
+    && Number(draft.maxItemsPerReservation) > Number(draft.raffleTotalNumbers)
   const raffleSection = (
     <section className={sectionClasses}>
       <h3 className={sectionTitleClasses}>Detalhes - Rifa</h3>
@@ -881,7 +936,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             id={`${formId}-raffle-total`}
             inputMode="numeric"
             value={draft.raffleTotalNumbers}
-            onChange={(changeEvent) => setField('raffleTotalNumbers', changeEvent.target.value)}
+            onChange={(changeEvent) => updateRaffleField('total', changeEvent.target.value)}
             required={draft.kind === 'raffle'}
             className={fieldClasses}
           />
@@ -891,14 +946,30 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             id={`${formId}-raffle-price`}
             inputMode="decimal"
             value={draft.raffleNumberPrice}
-            onChange={(changeEvent) => setField('raffleNumberPrice', formatCurrencyInput(changeEvent.target.value))}
+            onChange={(changeEvent) => updateRaffleField('price', changeEvent.target.value)}
             placeholder="0,00"
             required={draft.kind === 'raffle'}
             className={fieldClasses}
           />
         </FormField>
-        <div />
+        <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
+          <TextField
+            id={`${formId}-max-items`}
+            inputMode="numeric"
+            value={draft.maxItemsPerReservation}
+            onChange={(changeEvent) => setField('maxItemsPerReservation', changeEvent.target.value.replace(/\D/g, ''))}
+            placeholder="Padrão"
+            aria-invalid={maxItemsExceedsTotal}
+            aria-describedby={maxItemsExceedsTotal ? `${formId}-max-items-error` : undefined}
+            className={fieldClasses}
+          />
+        </FormField>
       </div>
+      {maxItemsExceedsTotal && (
+        <p id={`${formId}-max-items-error`} role="alert" className="mt-2 text-sm font-medium text-marca">
+          O máximo por reserva não pode ser maior que a quantidade de números da rifa.
+        </p>
+      )}
       <div id={`${formId}-prizes`} tabIndex={-1} className="mt-4">
         <h4 className={`${isPanel ? 'text-base' : 'text-2xl'} font-medium`}>Prêmios</h4>
         <div className="mt-3 flex flex-wrap gap-4">
