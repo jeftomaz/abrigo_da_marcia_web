@@ -33,10 +33,6 @@ export function EventSettingsForm({
     String(settings.defaultReservationTtlMinutes),
   )
   const [eventExportEmail, setEventExportEmail] = useState(settings.eventExportEmail)
-  const [pixKey, setPixKey] = useState(settings.defaultPixKey)
-  const [pixReceiver, setPixReceiver] = useState(settings.defaultPixReceiver)
-  const [pixCity, setPixCity] = useState(settings.defaultPixCity)
-  const [pixCopyPaste, setPixCopyPaste] = useState(settings.defaultPixCopyPaste)
   const [postPaymentInstructions, setPostPaymentInstructions] = useState(
     settings.defaultPostPaymentInstructions,
   )
@@ -93,10 +89,6 @@ export function EventSettingsForm({
       await onSave({
         defaultMaxProductUnits: productLimit,
         defaultMaxRaffleNumbers: raffleLimit,
-        defaultPixCity: pixCity.trim(),
-        defaultPixCopyPaste: pixCopyPaste.trim(),
-        defaultPixKey: pixKey.trim(),
-        defaultPixReceiver: pixReceiver.trim(),
         defaultPostPaymentInstructions: postPaymentInstructions.trim(),
         defaultReservationTtlMinutes: expirationMinutes,
         eventExportEmail: eventExportEmail.trim(),
@@ -210,55 +202,20 @@ export function EventSettingsForm({
             <h3 className={`${isPanel ? 'text-xl' : 'text-2xl'} font-medium`}>
               Pagamento padrão de novos eventos
             </h3>
-            <div className="mt-3 grid grid-cols-2 gap-4">
-              <label htmlFor={`${formId}-pix-key`} className={labelClasses}>
-                Chave Pix
-                <TextField
-                  id={`${formId}-pix-key`}
-                  value={pixKey}
-                  onChange={(event) => setPixKey(event.target.value)}
-                  className={fieldClasses}
-                />
-              </label>
-              <label htmlFor={`${formId}-pix-city`} className={labelClasses}>
-                Cidade
-                <TextField
-                  id={`${formId}-pix-city`}
-                  value={pixCity}
-                  onChange={(event) => setPixCity(event.target.value)}
-                  className={fieldClasses}
-                />
-              </label>
-              <label htmlFor={`${formId}-pix-receiver`} className={`${labelClasses} col-span-2`}>
-                Recebedor
-                <TextField
-                  id={`${formId}-pix-receiver`}
-                  value={pixReceiver}
-                  onChange={(event) => setPixReceiver(event.target.value)}
-                  className={fieldClasses}
-                />
-              </label>
-              <label htmlFor={`${formId}-pix-code`} className={`${labelClasses} col-span-2`}>
-                Pix copia-e-cola
-                <TextField
-                  id={`${formId}-pix-code`}
-                  value={pixCopyPaste}
-                  onChange={(event) => setPixCopyPaste(event.target.value)}
-                  className={fieldClasses}
-                />
-              </label>
-              <label htmlFor={`${formId}-payment-instructions`} className={`${labelClasses} col-span-2`}>
-                Instrução pós-pagamento
-                <TextField
-                  as="textarea"
-                  id={`${formId}-payment-instructions`}
-                  value={postPaymentInstructions}
-                  onChange={(event) => setPostPaymentInstructions(event.target.value)}
-                  rows={2}
-                  className={`${fieldClasses} h-auto py-2`}
-                />
-              </label>
-            </div>
+            <p className="mt-1 text-xs text-cinza-medio dark:text-cinza-claro">
+              A chave, o recebedor e a cidade do Pix vivem em Configurações gerais e valem para doação e eventos.
+            </p>
+            <label htmlFor={`${formId}-payment-instructions`} className={`${labelClasses} mt-3`}>
+              Instrução pós-pagamento
+              <TextField
+                as="textarea"
+                id={`${formId}-payment-instructions`}
+                value={postPaymentInstructions}
+                onChange={(event) => setPostPaymentInstructions(event.target.value)}
+                rows={2}
+                className={`${fieldClasses} h-auto py-2`}
+              />
+            </label>
           </section>
 
           <section className="mt-5 border-t border-cinza-medio pt-4 dark:border-cinza-claro">

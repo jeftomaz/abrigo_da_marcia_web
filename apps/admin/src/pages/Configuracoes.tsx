@@ -20,7 +20,7 @@ import { StatusBadge } from '../components/StatusBadge'
 import { useIsDesktop } from '../hooks/useIsDesktop'
 import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
-type Editor = 'dogs' | 'events' | 'landing'
+type Editor = 'dogs' | 'events' | 'general' | 'landing'
 
 type SettingsCardProps = {
   actions: ReactNode
@@ -72,7 +72,7 @@ export function Configuracoes() {
   const isDesktop = useIsDesktop()
 
   const saveGlobalSettings = async (settings: SiteSettings, links: SocialLinks) => {
-    if (editor === 'landing') await saveSocialLinks.mutateAsync(links)
+    if (editor === 'general') await saveSocialLinks.mutateAsync(links)
     await saveSiteSettings.mutateAsync(settings)
     setEditor(null)
     showSuccess('Configurações salvas.')
@@ -94,28 +94,26 @@ export function Configuracoes() {
     }
   }
 
-  const landingDetails = siteSettings && socialLinks ? [
-    `Pix para doação única: ${configurationStatus(siteSettings.donationPixKey && siteSettings.donationPixReceiver && siteSettings.donationPixCity)}`,
-    `Links de doação recorrente: ${Object.keys(siteSettings.recurringDonationUrls).length}/6 configurados`,
-    `Formulário de voluntariado: ${configurationStatus(siteSettings.volunteerFormUrl)}`,
+  const generalDetails = siteSettings && socialLinks ? [
+    `Pix (doação e eventos): ${configurationStatus(siteSettings.pixKey && siteSettings.pixReceiver && siteSettings.pixCity)}`,
     `Facebook: ${configurationStatus(socialLinks.facebook)}`,
     `Instagram: ${configurationStatus(socialLinks.instagram)}`,
-  ] : ['Doação, voluntariado e redes sociais']
+  ] : ['Pix compartilhado e redes sociais']
+  const landingDetails = siteSettings ? [
+    `Links de doação recorrente: ${Object.keys(siteSettings.recurringDonationUrls).length}/6 configurados`,
+    `Formulário de voluntariado: ${configurationStatus(siteSettings.volunteerFormUrl)}`,
+  ] : ['Doação recorrente e voluntariado']
   const eventDetails = eventSettings ? [
     `Limite de produtos por reserva: ${eventSettings.defaultMaxProductUnits}`,
     `Limite de números de rifa por reserva: ${eventSettings.defaultMaxRaffleNumbers}`,
     `Tempo de expiração: ${formatExpiration(eventSettings.defaultReservationTtlMinutes)}`,
-    `Chave Pix: ${configurationStatus(eventSettings.defaultPixKey)}`,
-    `Recebedor do Pix: ${configurationStatus(eventSettings.defaultPixReceiver)}`,
-    `Cidade do Pix: ${configurationStatus(eventSettings.defaultPixCity)}`,
-    `Pix copia-e-cola: ${configurationStatus(eventSettings.defaultPixCopyPaste)}`,
     `Instrução pós-pagamento: ${configurationStatus(eventSettings.defaultPostPaymentInstructions)}`,
     `E-mail para exportação automática: ${configurationStatus(eventSettings.eventExportEmail)}`,
   ] : ['Limites, pagamento, expiração e auditoria das reservas']
 
   const editorContent = editor === 'events' && eventSettings ? (
     <EventSettingsForm layout={isDesktop ? 'panel' : 'modal'} settings={eventSettings} onCancel={() => setEditor(null)} onSave={saveEvents} />
-  ) : editor && editor !== 'events' && siteSettings && (editor === 'dogs' || socialLinks) ? (
+  ) : editor && editor !== 'events' && siteSettings && ((editor !== 'general') || socialLinks) ? (
     <GlobalSettingsForm
       layout={isDesktop ? 'panel' : 'modal'}
       mode={editor}
@@ -133,16 +131,28 @@ export function Configuracoes() {
           <h1 id="settings-title" className="text-4xl font-medium sm:text-5xl desk:text-4xl">Configurações</h1>
           {successMessage && <p role="status" className="mt-3 text-sm font-medium text-status-verde-on-surface">{successMessage}</p>}
           <div className="mt-6 flex flex-col gap-6 desk:mt-3 desk:gap-4">
-            <section aria-labelledby="landing-settings-title">
-              <h2 id="landing-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Landing Page</h2>
+            <section aria-labelledby="general-settings-title">
+              <h2 id="general-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Configurações gerais</h2>
               <SettingsCard
-                title="Links e redes sociais"
-                details={landingDetails}
-                isEditing={editor === 'landing'}
-                actions={<Action onClick={() => setEditor('landing')} disabled={!siteSettings || !socialLinks || isLoadingSite || isLoadingSocial} icon="edit-pencil" size="small" variant="neutral-adaptive" className="h-11 px-5">Editar</Action>}
+                title="Pix e redes sociais"
+                details={generalDetails}
+                isEditing={editor === 'general'}
+                actions={<Action onClick={() => setEditor('general')} disabled={!siteSettings || !socialLinks || isLoadingSite || isLoadingSocial} icon="edit-pencil" size="small" variant="neutral-adaptive" className="h-11 px-5">Editar</Action>}
               />
               {(isLoadingSite || isLoadingSocial) && <p role="status" className="mt-2 text-sm">Carregando...</p>}
               {(siteError || socialError) && <p role="alert" className="mt-2 text-sm font-medium text-marca">Não foi possível carregar os links públicos.</p>}
+            </section>
+
+            <section aria-labelledby="landing-settings-title">
+              <h2 id="landing-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Landing Page</h2>
+              <SettingsCard
+                title="Doação recorrente e voluntariado"
+                details={landingDetails}
+                isEditing={editor === 'landing'}
+                actions={<Action onClick={() => setEditor('landing')} disabled={!siteSettings || isLoadingSite} icon="edit-pencil" size="small" variant="neutral-adaptive" className="h-11 px-5">Editar</Action>}
+              />
+              {isLoadingSite && <p role="status" className="mt-2 text-sm">Carregando...</p>}
+              {siteError && <p role="alert" className="mt-2 text-sm font-medium text-marca">Não foi possível carregar os links públicos.</p>}
             </section>
 
             <section aria-labelledby="dogs-settings-title">

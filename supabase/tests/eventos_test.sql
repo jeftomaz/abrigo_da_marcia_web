@@ -57,17 +57,17 @@ select throws_ok($$
   );
   update public.eventos set status = 'ativo'
   where id = '40000000-0000-0000-0000-000000000002';
-$$, 'P0001', 'Informe um código Pix copia e cola real antes de publicar.', 'explica publicação bloqueada por Pix ausente');
+$$, 'P0001', 'Informe chave, recebedor e cidade do Pix antes de publicar.', 'explica publicação bloqueada por Pix ausente');
 delete from public.eventos where id = '40000000-0000-0000-0000-000000000002';
 
 select lives_ok($$
   insert into public.eventos (
     id, name, description, type, photos, start_date, end_date,
-    fundraising_goal_cents, pix_copy_paste, post_payment_instructions, data_verified_at
+    fundraising_goal_cents, pix_key, pix_receiver, pix_city, post_payment_instructions, data_verified_at
   ) values (
     '10000000-0000-0000-0000-000000000001', 'Rifa teste', 'Validação transacional',
     'rifa', '{eventos/teste.jpg}', current_date - 1, current_date + 1,
-    100000, 'PIX-VALIDO-NO-CONTEXTO-DO-TESTE', 'Envie o comprovante.', now()
+    100000, 'chave-teste@example.com', 'Abrigo (teste)', 'Ribeirao Preto', 'Envie o comprovante.', now()
   );
   insert into public.rifas (event_id, total_numbers, number_price_cents)
     values ('10000000-0000-0000-0000-000000000001', 10, 1000);
@@ -181,11 +181,11 @@ $$, 'permite entrega da reserva paga e sorteada após o encerramento');
 select lives_ok($$
   insert into public.eventos (
     id, name, description, type, photos, start_date, end_date,
-    fundraising_goal_cents, pix_copy_paste, post_payment_instructions, data_verified_at
+    fundraising_goal_cents, pix_key, pix_receiver, pix_city, post_payment_instructions, data_verified_at
   ) values (
     '20000000-0000-0000-0000-000000000001', 'Produtos teste', 'Validação de desconto',
     'produtos', '{eventos/produto.jpg}', current_date - 1, current_date + 1,
-    100000, 'PIX-VALIDO-NO-CONTEXTO-DO-TESTE', 'Envie o comprovante.', now()
+    100000, 'chave-teste@example.com', 'Abrigo (teste)', 'Ribeirao Preto', 'Envie o comprovante.', now()
   );
   insert into public.produtos (
     id, event_id, name, description, photos, unit_price_cents,
@@ -238,11 +238,11 @@ $$, 'P0001', 'Escolha uma opção de cada variação de Camiseta.', 'rejeita pro
 select throws_ok($$
   insert into public.eventos (
     id, name, description, type, photos, start_date, end_date,
-    fundraising_goal_cents, pix_copy_paste, post_payment_instructions, data_verified_at
+    fundraising_goal_cents, pix_key, pix_receiver, pix_city, post_payment_instructions, data_verified_at
   ) values (
     '30000000-0000-0000-0000-000000000001', 'Evento passado', 'Teste de período',
     'rifa', '{eventos/passado.jpg}', current_date - 10, current_date - 5,
-    100000, 'PIX-VALIDO-NO-CONTEXTO-DO-TESTE', 'Envie o comprovante.', now()
+    100000, 'chave-teste@example.com', 'Abrigo (teste)', 'Ribeirao Preto', 'Envie o comprovante.', now()
   );
   insert into public.rifas values ('30000000-0000-0000-0000-000000000001', 10, 1000);
   insert into public.rifa_premios (event_id, name, photo, display_order)

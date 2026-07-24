@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Action, createDonationPixCode, FeatureSection, Switch, usePublicSiteSettings } from '@abrigo/shared'
+import { Action, createPixCode, FeatureSection, Switch, usePublicSiteSettings } from '@abrigo/shared'
 import { PixConfirmationDialog } from './ReservationDialogs'
 import doacaoPhoto from '../assets/landing_doacao.jpg'
 
@@ -13,7 +13,7 @@ export function Doacao() {
   const { data: settings } = usePublicSiteSettings()
   const selectedAmount = amount ?? Number(customAmount.replace(',', '.'))
   const validAmount = Number.isFinite(selectedAmount) && selectedAmount > 0 && selectedAmount <= 99_999_999.99
-  const pixConfigured = Boolean(settings?.donationPixKey && settings.donationPixReceiver && settings.donationPixCity)
+  const pixConfigured = Boolean(settings?.pixKey && settings.pixReceiver && settings.pixCity)
   const recurringUrl = amount ? settings?.recurringDonationUrls[String(amount)] : undefined
 
   const donate = () => {
@@ -22,7 +22,7 @@ export function Doacao() {
       return
     }
     if (!recurring && settings && pixConfigured && validAmount) {
-      setPixCode(createDonationPixCode(settings.donationPixKey, settings.donationPixReceiver, settings.donationPixCity, selectedAmount))
+      setPixCode(createPixCode(settings.pixKey, settings.pixReceiver, settings.pixCity, selectedAmount))
     }
   }
 
@@ -108,9 +108,6 @@ export function Doacao() {
         <PixConfirmationDialog
           title="Pix para doação"
           pixCode={pixCode}
-          pixKey={settings?.donationPixKey ?? ''}
-          pixReceiver={settings?.donationPixReceiver ?? ''}
-          pixCity={settings?.donationPixCity ?? ''}
           onClose={() => setPixCode('')}
         >
           <p className="mt-4">Valor: R$ {selectedAmount.toFixed(2).replace('.', ',')}</p>

@@ -28,11 +28,11 @@ select throws_ok(
   '23514', null, 'rejeita valor recorrente não suportado'
 );
 select throws_ok(
-  $$update public.site_settings set donation_pix_receiver = 'Nome de recebedor acima do limite permitido' where singleton$$,
+  $$update public.site_settings set pix_receiver = 'Nome de recebedor acima do limite permitido' where singleton$$,
   '23514', null, 'respeita o limite do recebedor no Pix'
 );
 select throws_ok(
-  $$update public.site_settings set donation_pix_key = 'pix@example.com' where singleton$$,
+  $$update public.site_settings set pix_key = 'pix@example.com' where singleton$$,
   '23514', null, 'exige os três dados do Pix em conjunto'
 );
 select throws_ok(
@@ -40,11 +40,11 @@ select throws_ok(
   '23514', null, 'rejeita protocolo inválido nas redes sociais'
 );
 select lives_ok(
-  $$update public.site_settings set donation_pix_key = 'pix@example.com', donation_pix_receiver = 'Abrigo da Marcia', donation_pix_city = 'Ribeirao Preto', recurring_donation_urls = '{"10":"https://pagseguro.example/10"}', volunteer_form_url = null where singleton$$,
+  $$update public.site_settings set pix_key = 'pix@example.com', pix_receiver = 'Abrigo da Marcia', pix_city = 'Ribeirao Preto', recurring_donation_urls = '{"10":"https://pagseguro.example/10"}', volunteer_form_url = null where singleton$$,
   'permite ocultar CTAs opcionais sem destino'
 );
 select lives_ok(
-  $$update public.event_settings set default_pix_key = 'pix@example.com', default_pix_receiver = 'Abrigo da Márcia', default_pix_city = 'Ribeirão Preto', default_pix_copy_paste = 'PIX-TESTE', default_post_payment_instructions = 'Envie o comprovante.' where singleton$$,
+  $$update public.event_settings set default_post_payment_instructions = 'Envie o comprovante.' where singleton$$,
   'persiste padrões de pagamento de novos eventos'
 );
 

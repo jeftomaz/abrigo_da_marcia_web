@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react'
-import { Dialog, ImagePlaceholder, getEventPhotoUrl, parseCurrencyToCents, useRaffleNumbers, useReserveRaffle } from '@abrigo/shared'
+import { Dialog, ImagePlaceholder, createPixCode, getEventPhotoUrl, parseCurrencyToCents, useRaffleNumbers, useReserveRaffle } from '@abrigo/shared'
 import type { FundraisingEvent, ReservationResult } from '@abrigo/shared'
 import { PixConfirmationDialog, ReservationCheckoutDialog } from './ReservationDialogs'
 import { ReservationBar } from './ReservationBar'
@@ -88,10 +88,7 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
     <PixConfirmationDialog
       title="Reserva confirmada!"
       expiresAt={result.expiresAt}
-      pixCode={result.pixCode}
-      pixCity={event.city}
-      pixKey={event.paymentKey}
-      pixReceiver={event.paymentReceiver}
+      pixCode={createPixCode(result.pixKey, result.pixReceiver, result.pixCity, result.totalCents / 100)}
       postPaymentInstructions={result.postPaymentInstructions}
       onClose={onClose}
     >

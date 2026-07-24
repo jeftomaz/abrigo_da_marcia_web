@@ -8,11 +8,13 @@ import {
   Switch,
   TextField,
   compressImage,
+  createPixCode,
   getEventErrorMessage,
+  useAdminSiteSettings,
   useEventSettings,
 } from '@abrigo/shared'
 import type { EditablePhoto } from '@abrigo/shared'
-import type { EditableEventProduct, EditableRafflePrize, EventDraft, EventKind, EventSettings, FundraisingEvent, MeasurementTable } from '../events/events'
+import type { EditableEventProduct, EditableRafflePrize, EventDraft, EventKind, FundraisingEvent, MeasurementTable } from '../events/events'
 import { formatCurrencyInput, parseCurrencyToCents, toEditableEventDraft } from '../events/events'
 import { PhotoGalleryField } from './PhotoGalleryField'
 import { ConfirmationDialog } from './ConfirmationDialog'
@@ -53,7 +55,7 @@ function emptyProduct(): EditableEventProduct {
   }
 }
 
-function emptyEvent(settings?: EventSettings): EventDraft {
+function emptyEvent(): EventDraft {
   return {
     kind: 'product',
     title: '',
@@ -68,11 +70,10 @@ function emptyEvent(settings?: EventSettings): EventDraft {
     raffleTotalNumbers: '',
     raffleNumberPrice: '',
     prizes: [],
-    paymentKey: settings?.defaultPixKey ?? '',
-    city: settings?.defaultPixCity ?? '',
-    paymentReceiver: settings?.defaultPixReceiver ?? '',
-    pixCode: settings?.defaultPixCopyPaste ?? '',
-    postPaymentInstructions: settings?.defaultPostPaymentInstructions ?? '',
+    paymentKey: '',
+    city: '',
+    paymentReceiver: '',
+    postPaymentInstructions: '',
     receiptFolderUrl: '',
   }
 }
@@ -92,7 +93,6 @@ function hasDraftContent(draft: EventDraft, photos: EditablePhoto[]) {
     draft.paymentKey,
     draft.city,
     draft.paymentReceiver,
-    draft.pixCode,
     draft.postPaymentInstructions,
     draft.receiptFolderUrl,
   ].some((value) => value.trim())) return true
@@ -157,7 +157,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const formId = useId()
   const today = new Date().toISOString().slice(0, 10)
   const { data: eventSettings } = useEventSettings()
-  const initial: EventDraft = event ? toEditableEventDraft(event) : emptyEvent(eventSettings)
+  const { data: siteSettings } = useAdminSiteSettings()
+  const initial: EventDraft = event ? toEditableEventDraft(event) : emptyEvent()
   const [draft, setDraft] = useState<EventDraft>(initial)
   const [photos, setPhotos] = useState(() => initial.gallery)
   const [expirationUnit, setExpirationUnit] = useState<ExpirationUnit>('minutes')
@@ -185,17 +186,16 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   }, [])
 
   useEffect(() => {
-    if (event || !eventSettings || appliedPaymentDefaults.current) return
+    if (event || !eventSettings || !siteSettings || appliedPaymentDefaults.current) return
     appliedPaymentDefaults.current = true
     setDraft((current) => ({
       ...current,
-      paymentKey: current.paymentKey || eventSettings.defaultPixKey,
-      city: current.city || eventSettings.defaultPixCity,
-      paymentReceiver: current.paymentReceiver || eventSettings.defaultPixReceiver,
-      pixCode: current.pixCode || eventSettings.defaultPixCopyPaste,
+      paymentKey: current.paymentKey || siteSettings.pixKey,
+      city: current.city || siteSettings.pixCity,
+      paymentReceiver: current.paymentReceiver || siteSettings.pixReceiver,
       postPaymentInstructions: current.postPaymentInstructions || eventSettings.defaultPostPaymentInstructions,
     }))
-  }, [event, eventSettings])
+  }, [event, eventSettings, siteSettings])
 
   const setField = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {
     setSaveError('')
@@ -365,7 +365,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
     }
 
     if (!draft.postPaymentInstructions.trim()) return { fieldId: `${formId}-instructions`, message: 'Preencha as instruções pós-pagamento.' }
-    if (event?.status === 'active' && !draft.pixCode.trim()) return { fieldId: `${formId}-pix-code`, message: 'Informe o Pix copia-e-cola do evento ativo.' }
+    if (event?.status === 'active' && (!draft.paymentKey.trim() || !draft.paymentReceiver.trim() || !draft.city.trim())) return { fieldId: `${formId}-payment-key`, message: 'Informe chave, recebedor e cidade do Pix do evento ativo.' }
     if (draft.receiptFolderUrl) {
       try {
         if (new URL(draft.receiptFolderUrl).protocol !== 'https:') throw new Error()
@@ -964,26 +964,22 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
     </section>
   )
 
+  const pixPreview = draft.paymentKey.trim() && draft.paymentReceiver.trim() && draft.city.trim()
+    ? createPixCode(draft.paymentKey, draft.paymentReceiver, draft.city)
+    : ''
   const paymentSection = (
     <section className={sectionClasses}>
       <h3 className={sectionTitleClasses}>Pagamento</h3>
       <p className="mt-1 text-xs text-cinza-medio dark:text-cinza-claro">
-        O Pix copia-e-cola é obrigatório para publicar. Chave, cidade e recebedor são referências opcionais.
+        Chave, recebedor e cidade são obrigatórios para publicar. O Pix copia-e-cola é gerado a partir deles, já com o valor de cada reserva.
       </p>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <FormField htmlFor={`${formId}-payment-key`} label="Chave PIX">
+        <FormField htmlFor={`${formId}-payment-key`} label="Chave PIX" wide>
           <TextField
             id={`${formId}-payment-key`}
             value={draft.paymentKey}
             onChange={(changeEvent) => setField('paymentKey', changeEvent.target.value)}
-            className={fieldClasses}
-          />
-        </FormField>
-        <FormField htmlFor={`${formId}-city`} label="Cidade do recebedor">
-          <TextField
-            id={`${formId}-city`}
-            value={draft.city}
-            onChange={(changeEvent) => setField('city', changeEvent.target.value)}
+            required={event?.status === 'active'}
             className={fieldClasses}
           />
         </FormField>
@@ -992,19 +988,26 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             id={`${formId}-receiver`}
             value={draft.paymentReceiver}
             onChange={(changeEvent) => setField('paymentReceiver', changeEvent.target.value)}
-            className={fieldClasses}
-          />
-        </FormField>
-        <FormField htmlFor={`${formId}-pix-code`} label="Pix copia-e-cola" wide>
-          <TextField
-            id={`${formId}-pix-code`}
-            value={draft.pixCode}
-            onChange={(changeEvent) => setField('pixCode', changeEvent.target.value)}
-            placeholder="Obrigatório para publicar"
+            maxLength={25}
             required={event?.status === 'active'}
             className={fieldClasses}
           />
         </FormField>
+        <FormField htmlFor={`${formId}-city`} label="Cidade do recebedor">
+          <TextField
+            id={`${formId}-city`}
+            value={draft.city}
+            onChange={(changeEvent) => setField('city', changeEvent.target.value)}
+            maxLength={15}
+            required={event?.status === 'active'}
+            className={fieldClasses}
+          />
+        </FormField>
+        {pixPreview && (
+          <p className="col-span-2 rounded-lg bg-cinza-claro px-3 py-2 text-xs break-all text-cinza-escuro dark:bg-cinza-medio dark:text-cinza-claro">
+            <span className="font-medium">Pix copia-e-cola (sem valor):</span> {pixPreview}
+          </p>
+        )}
         <FormField htmlFor={`${formId}-instructions`} label="Instruções pós-pagamento" wide>
           <TextField
             id={`${formId}-instructions`}

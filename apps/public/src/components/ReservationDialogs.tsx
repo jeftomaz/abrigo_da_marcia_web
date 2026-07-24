@@ -25,9 +25,6 @@ type PixConfirmationDialogProps = {
   expiresAt?: string
   onClose: () => void
   pixCode: string
-  pixCity: string
-  pixKey: string
-  pixReceiver: string
   postPaymentInstructions?: string
   title: string
 }

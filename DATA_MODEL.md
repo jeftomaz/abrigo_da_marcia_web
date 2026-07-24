@@ -16,9 +16,9 @@ Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eve
 erDiagram
   SITE_SETTINGS {
     boolean singleton PK
-    text donation_pix_key "nullable"
-    text donation_pix_receiver "nullable"
-    text donation_pix_city "nullable"
+    text pix_key "nullable; doação e eventos"
+    text pix_receiver "nullable"
+    text pix_city "nullable"
     jsonb recurring_donation_urls
     text volunteer_form_url "nullable"
     text adoption_form_url
@@ -59,10 +59,6 @@ erDiagram
     integer default_max_product_units
     interval default_reservation_ttl
     text event_export_email
-    text default_pix_key "nullable"
-    text default_pix_receiver "nullable"
-    text default_pix_city "nullable"
-    text default_pix_copy_paste "nullable"
     text default_post_payment_instructions "nullable"
     timestamptz updated_at
   }
@@ -78,7 +74,9 @@ erDiagram
     bigint fundraising_goal_cents
     integer max_items_per_reservation "nullable; override"
     interval reservation_ttl "nullable; override"
-    text pix_copy_paste "nullable em rascunho"
+    text pix_key "nullable em rascunho"
+    text pix_receiver "nullable em rascunho"
+    text pix_city "nullable em rascunho"
     text post_payment_instructions
     text receipt_folder_url "nullable"
     timestamptz data_verified_at "nullable em rascunho"
@@ -205,15 +203,15 @@ Configuração singleton compartilhada pelos CTAs públicos e pela gestão de C�
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `singleton` | `boolean` | PK; sempre `true` |
-| `donation_pix_key` | `text` | nullable; chave usada para gerar o Pix de doação única |
-| `donation_pix_receiver` | `text` | nullable; 1–25 caracteres; nome no Pix |
-| `donation_pix_city` | `text` | nullable; 1–15 caracteres; cidade no Pix |
+| `pix_key` | `text` | nullable; 1–77 caracteres; chave Pix compartilhada por doação e por padrão dos eventos |
+| `pix_receiver` | `text` | nullable; 1–25 caracteres; nome no Pix |
+| `pix_city` | `text` | nullable; 1–15 caracteres; cidade no Pix |
 | `recurring_donation_urls` | `jsonb` | mapa HTTPS opcional para os valores `10`, `20`, `30`, `50`, `100` e `150` |
 | `volunteer_form_url` | `text` | nullable; URL HTTPS; CTA de voluntariado é ocultado quando null |
 | `adoption_form_url` | `text` | not null; URL HTTPS; padrão dos CTAs de adoção sem override por cão |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-`site_settings_public` expõe os campos usados pelos CTAs públicos. O link de adoção é o padrão global: cada cão pode sobrescrevê-lo por `caes.adoption_form_url`, que é anulável e nunca substitui a fonte global. Os três campos Pix precisam estar preenchidos para habilitar a doação única; cada valor recorrente só é habilitado quando possui seu próprio link.
+`site_settings_public` expõe os campos usados pelos CTAs públicos. O link de adoção é o padrão global: cada cão pode sobrescrevê-lo por `caes.adoption_form_url`, que é anulável e nunca substitui a fonte global. Os três campos Pix precisam estar preenchidos para habilitar a doação única (a mesma chave alimenta os novos eventos); cada valor recorrente só é habilitado quando possui seu próprio link. O código Pix copia-e-cola nunca é persistido: é gerado no client pela especificação BR Code (EMV MPM), já com o valor de cada doação ou reserva.
 
 ## `social_links`
 
@@ -298,7 +296,7 @@ Cada evento é exclusivamente `rifa` ou `produtos`. Pode existir no máximo um e
 
 ### `event_settings`
 
-Configuração singleton editável pelo admin. Os limites são por reserva, não por pessoa: uma mesma sessão pode criar outras reservas depois do intervalo antissobrecarga.
+Configuração singleton editável pelo admin. Os limites são por reserva, não por pessoa: uma mesma sessão pode criar outras reservas depois do intervalo antissobrecarga. Os dados do Pix (chave, recebedor e cidade) usados como padrão de novos eventos vivem em `site_settings`, não aqui.
 
 | Coluna | Tipo | Regra |
 |---|---|---|
@@ -307,8 +305,6 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `default_max_product_units` | `integer` | not null; `> 0`; máximo padrão de unidades, somando todos os produtos da reserva |
 | `default_reservation_ttl` | `interval` | not null; mínimo de 1 minuto e somente minutos inteiros; prazo padrão de expiração |
 | `event_export_email` | `text` | nullable até ser configurado; obrigatório para excluir evento arquivado |
-| `default_pix_key` / `default_pix_receiver` / `default_pix_city` | `text` | nullable; referências preenchidas em novos eventos |
-| `default_pix_copy_paste` | `text` | nullable; código preenchido em novos eventos |
 | `default_post_payment_instructions` | `text` | nullable; instrução preenchida em novos eventos |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
@@ -327,8 +323,7 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `fundraising_goal_cents` | `bigint` | nullable somente enquanto rascunho; `> 0`; meta em centavos |
 | `max_items_per_reservation` | `integer` | nullable; `> 0`; substitui o padrão correspondente ao tipo do evento |
 | `reservation_ttl` | `interval` | nullable; mínimo de 1 minuto e somente minutos inteiros; substitui `default_reservation_ttl` |
-| `pix_key` / `pix_receiver` / `pix_city` | `text` | nullable; referência administrativa do recebedor |
-| `pix_copy_paste` | `text` | nullable em rascunho; obrigatório para ativar e retornado após a reserva |
+| `pix_key` / `pix_receiver` / `pix_city` | `text` | nullable em rascunho; os três obrigatórios para ativar; preenchidos pelo padrão de `site_settings` com override por evento; o código copia-e-cola é gerado no client, nunca persistido |
 | `post_payment_instructions` | `text` | nullable somente enquanto rascunho; orienta o envio do comprovante e é obrigatório para ativar |
 | `receipt_folder_url` | `text` | nullable; atalho HTTPS externo dos comprovantes |
 | `draft_payload` | `jsonb` | nullable; estado integral do formulário parcial, incluindo caminhos de imagens; deve ser removido pela gravação completa antes de ativar |

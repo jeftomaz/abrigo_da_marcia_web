@@ -5,6 +5,7 @@ import {
   ExpandedCardDialog,
   Icon,
   SelectField,
+  createPixCode,
   getEventPhotoUrl,
   parseCurrencyToCents,
   useReserveProducts,
@@ -156,10 +157,7 @@ export function ProductReservationFlow({ event, onClose }: ProductReservationFlo
     <PixConfirmationDialog
       title="Reserva confirmada!"
       expiresAt={result.expiresAt}
-      pixCode={result.pixCode}
-      pixCity={event.city}
-      pixKey={event.paymentKey}
-      pixReceiver={event.paymentReceiver}
+      pixCode={createPixCode(result.pixKey, result.pixReceiver, result.pixCity, result.totalCents / 100)}
       postPaymentInstructions={result.postPaymentInstructions}
       onClose={onClose}
     >

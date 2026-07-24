@@ -113,10 +113,6 @@ export type Database = {
         Row: {
           default_max_product_units: number
           default_max_raffle_numbers: number
-          default_pix_city: string | null
-          default_pix_copy_paste: string | null
-          default_pix_key: string | null
-          default_pix_receiver: string | null
           default_post_payment_instructions: string | null
           default_reservation_ttl: string
           event_export_email: string | null
@@ -126,10 +122,6 @@ export type Database = {
         Insert: {
           default_max_product_units?: number
           default_max_raffle_numbers?: number
-          default_pix_city?: string | null
-          default_pix_copy_paste?: string | null
-          default_pix_key?: string | null
-          default_pix_receiver?: string | null
           default_post_payment_instructions?: string | null
           default_reservation_ttl?: string
           event_export_email?: string | null
@@ -139,10 +131,6 @@ export type Database = {
         Update: {
           default_max_product_units?: number
           default_max_raffle_numbers?: number
-          default_pix_city?: string | null
-          default_pix_copy_paste?: string | null
-          default_pix_key?: string | null
-          default_pix_receiver?: string | null
           default_post_payment_instructions?: string | null
           default_reservation_ttl?: string
           event_export_email?: string | null
@@ -167,7 +155,6 @@ export type Database = {
           name: string | null
           photos: string[]
           pix_city: string | null
-          pix_copy_paste: string | null
           pix_key: string | null
           pix_receiver: string | null
           post_payment_instructions: string | null
@@ -193,7 +180,6 @@ export type Database = {
           name?: string | null
           photos?: string[]
           pix_city?: string | null
-          pix_copy_paste?: string | null
           pix_key?: string | null
           pix_receiver?: string | null
           post_payment_instructions?: string | null
@@ -219,7 +205,6 @@ export type Database = {
           name?: string | null
           photos?: string[]
           pix_city?: string | null
-          pix_copy_paste?: string | null
           pix_key?: string | null
           pix_receiver?: string | null
           post_payment_instructions?: string | null
@@ -777,9 +762,9 @@ export type Database = {
       site_settings: {
         Row: {
           adoption_form_url: string
-          donation_pix_city: string | null
-          donation_pix_key: string | null
-          donation_pix_receiver: string | null
+          pix_city: string | null
+          pix_key: string | null
+          pix_receiver: string | null
           recurring_donation_urls: Json
           singleton: boolean
           updated_at: string
@@ -787,9 +772,9 @@ export type Database = {
         }
         Insert: {
           adoption_form_url: string
-          donation_pix_city?: string | null
-          donation_pix_key?: string | null
-          donation_pix_receiver?: string | null
+          pix_city?: string | null
+          pix_key?: string | null
+          pix_receiver?: string | null
           recurring_donation_urls?: Json
           singleton?: boolean
           updated_at?: string
@@ -797,9 +782,9 @@ export type Database = {
         }
         Update: {
           adoption_form_url?: string
-          donation_pix_city?: string | null
-          donation_pix_key?: string | null
-          donation_pix_receiver?: string | null
+          pix_city?: string | null
+          pix_key?: string | null
+          pix_receiver?: string | null
           recurring_donation_urls?: Json
           singleton?: boolean
           updated_at?: string
@@ -876,7 +861,9 @@ export type Database = {
           max_items_per_reservation: number | null
           name: string | null
           photos: string[] | null
-          pix_copy_paste: string | null
+          pix_city: string | null
+          pix_key: string | null
+          pix_receiver: string | null
           post_payment_instructions: string | null
           reservation_ttl_seconds: number | null
           start_date: string | null
@@ -892,7 +879,9 @@ export type Database = {
           max_items_per_reservation?: number | null
           name?: string | null
           photos?: string[] | null
-          pix_copy_paste?: string | null
+          pix_city?: string | null
+          pix_key?: string | null
+          pix_receiver?: string | null
           post_payment_instructions?: string | null
           reservation_ttl_seconds?: never
           start_date?: string | null
@@ -908,7 +897,9 @@ export type Database = {
           max_items_per_reservation?: number | null
           name?: string | null
           photos?: string[] | null
-          pix_copy_paste?: string | null
+          pix_city?: string | null
+          pix_key?: string | null
+          pix_receiver?: string | null
           post_payment_instructions?: string | null
           reservation_ttl_seconds?: never
           start_date?: string | null
@@ -1101,25 +1092,25 @@ export type Database = {
       site_settings_public: {
         Row: {
           adoption_form_url: string | null
-          donation_pix_city: string | null
-          donation_pix_key: string | null
-          donation_pix_receiver: string | null
+          pix_city: string | null
+          pix_key: string | null
+          pix_receiver: string | null
           recurring_donation_urls: Json | null
           volunteer_form_url: string | null
         }
         Insert: {
           adoption_form_url?: string | null
-          donation_pix_city?: string | null
-          donation_pix_key?: string | null
-          donation_pix_receiver?: string | null
+          pix_city?: string | null
+          pix_key?: string | null
+          pix_receiver?: string | null
           recurring_donation_urls?: Json | null
           volunteer_form_url?: string | null
         }
         Update: {
           adoption_form_url?: string | null
-          donation_pix_city?: string | null
-          donation_pix_key?: string | null
-          donation_pix_receiver?: string | null
+          pix_city?: string | null
+          pix_key?: string | null
+          pix_receiver?: string | null
           recurring_donation_urls?: Json | null
           volunteer_form_url?: string | null
         }
@@ -1190,7 +1181,9 @@ export type Database = {
         }
         Returns: {
           expires_at: string
-          pix_copy_paste: string
+          pix_city: string
+          pix_key: string
+          pix_receiver: string
           post_payment_instructions: string
           reservation_id: string
           total_cents: number
@@ -1206,7 +1199,9 @@ export type Database = {
         }
         Returns: {
           expires_at: string
-          pix_copy_paste: string
+          pix_city: string
+          pix_key: string
+          pix_receiver: string
           post_payment_instructions: string
           reservation_id: string
           total_cents: number
