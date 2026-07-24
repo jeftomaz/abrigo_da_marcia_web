@@ -61,13 +61,14 @@
 - `done` Aumentar o respiro vertical das seções da Landing no mobile, especialmente “Conheça o abrigo”.
 - `done` Fazer a passada final claro/escuro e mobile/desktop em Landing, Adoção, Histórias, Eventos, Admin, autenticação e Configurações.
 - `done` Padronizar estados hover, foco, ativo, desabilitado, carregando, vazio, erro e sucesso de todos os controles interativos.
+- `done` **Contraste da marca: débito aceito por decisão de projeto.** O coral `#f15a55` não alcança AA sobre nenhuma superfície do tema — 2,38:1 sobre `marca-clara`, 2,87:1 sobre `marca-escura`, 2,66:1 sobre `cinza-claro` e 3,32:1 até sobre branco puro (AA exige 4,5:1 em texto normal e 3:1 em texto grande), atingindo botões, pílulas do header, títulos e CTAs dos dois apps. Atingir AA exigiria escurecer o coral a `#a43d3a` (32% mais escuro) e mudar a identidade aprovada pelo Abrigo; optou-se por preservá-la. A suíte E2E trava o débito exatamente nesses tokens: qualquer combinação de contraste fora deles reprova, impedindo que se espalhe. Rever se a identidade visual for repactuada.
 
 ### P2 — Qualidade, segurança e operação
 
 - `done` Criar rotas de página não encontrada para público e admin e finalizar favicon, descrição, Open Graph e demais metadados de compartilhamento.
 - `done` Tornar o seed local autocontido: fotos de Histórias e Eventos carregadas no Storage via seed de bucket do CLI, e fixtures de Eventos (rifa ativa e bazar encerrado) cobrindo reserva, pagamento, cancelamento, entrega e sorteio.
 - `done` Adicionar pgTAP específico para Cães, Histórias, views públicas e policies do Storage: 56 testes novos em `caes_historias_test.sql` e `storage_test.sql`, mais 13 do teto por IP em `eventos_test.sql` (126 no total).
-- `todo` Adicionar testes frontend/E2E dos fluxos críticos e auditoria de acessibilidade por teclado, foco, leitores de tela e contraste.
+- `done` Adicionar testes frontend/E2E dos fluxos críticos e auditoria de acessibilidade por teclado, foco, leitores de tela e contraste: 39 testes Playwright (`pnpm e2e`) em Chromium desktop e WebKit iPhone 12, cobrindo navegação, catálogo, histórias, reserva de rifa ponta a ponta, login com TOTP real e auditoria axe (WCAG 2.1 AA) das páginas públicas e da gestão nos dois temas.
 - `done` Medir e reduzir bundles/assets grandes, aplicar carregamento sob demanda por rota e validar desempenho em conexão móvel.
 - `done` Definir proteção de borda contra abuso de reservas por IP: triggers em `sessoes_reserva` e `reservas` limitam 60 sessões e 20 reservas por IP/hora, sobre hash com sal.
 - `done` Documentar recuperação de acesso em perda do TOTP, backup/restauração e verificação periódica de cron, quotas e auditoria no ambiente hospedado (`OPERATIONS.md`).

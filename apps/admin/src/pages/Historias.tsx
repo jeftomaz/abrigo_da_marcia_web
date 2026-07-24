@@ -128,7 +128,7 @@ export function Historias() {
             {isLoading && <p role="status" className="text-center">Carregando histórias...</p>}
             {error && <p role="alert" className="text-center">Não foi possível carregar as histórias.</p>}
             {operationError && <p role="alert" className="text-center">{operationError}</p>}
-            {successMessage && <p role="status" className="text-center text-sm font-medium text-status-verde-texto">{successMessage}</p>}
+            {successMessage && <p role="status" className="text-center text-sm font-medium text-status-verde-on-surface">{successMessage}</p>}
             {filteredStories.map((story) => (
               <StoryRow
                 key={story.id}
