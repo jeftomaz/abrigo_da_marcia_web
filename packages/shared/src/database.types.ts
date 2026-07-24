@@ -36,6 +36,7 @@ export type Database = {
     Tables: {
       caes: {
         Row: {
+          adoption_form_url: string | null
           birth_year: number
           created_at: string
           description: string
@@ -49,6 +50,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          adoption_form_url?: string | null
           birth_year: number
           created_at?: string
           description: string
@@ -62,6 +64,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          adoption_form_url?: string | null
           birth_year?: number
           created_at?: string
           description?: string
@@ -829,6 +832,7 @@ export type Database = {
     Views: {
       caes_public: {
         Row: {
+          adoption_form_url: string | null
           birth_year: number | null
           description: string | null
           featured: boolean | null
@@ -839,6 +843,7 @@ export type Database = {
           size: Database["public"]["Enums"]["cae_porte"] | null
         }
         Insert: {
+          adoption_form_url?: string | null
           birth_year?: number | null
           description?: string | null
           featured?: boolean | null
@@ -849,6 +854,7 @@ export type Database = {
           size?: Database["public"]["Enums"]["cae_porte"] | null
         }
         Update: {
+          adoption_form_url?: string | null
           birth_year?: number | null
           description?: string | null
           featured?: boolean | null

@@ -40,6 +40,7 @@ erDiagram
     cae_status status
     text photos "text[] ordenado; [0]=capa"
     boolean featured
+    text adoption_form_url "nullable; override do global"
     timestamptz created_at
     timestamptz updated_at
   }
@@ -209,10 +210,10 @@ Configuração singleton compartilhada pelos CTAs públicos e pela gestão de C�
 | `donation_pix_city` | `text` | nullable; 1–15 caracteres; cidade no Pix |
 | `recurring_donation_urls` | `jsonb` | mapa HTTPS opcional para os valores `10`, `20`, `30`, `50`, `100` e `150` |
 | `volunteer_form_url` | `text` | nullable; URL HTTPS; CTA de voluntariado é ocultado quando null |
-| `adoption_form_url` | `text` | not null; URL HTTPS; fonte única de todos os CTAs de adoção |
+| `adoption_form_url` | `text` | not null; URL HTTPS; padrão dos CTAs de adoção sem override por cão |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-`site_settings_public` expõe os campos usados pelos CTAs públicos. O link de adoção foi migrado de `caes.adoption_form_url`; a coluna por cão foi removida. Os três campos Pix precisam estar preenchidos para habilitar a doação única; cada valor recorrente só é habilitado quando possui seu próprio link.
+`site_settings_public` expõe os campos usados pelos CTAs públicos. O link de adoção é o padrão global: cada cão pode sobrescrevê-lo por `caes.adoption_form_url`, que é anulável e nunca substitui a fonte global. Os três campos Pix precisam estar preenchidos para habilitar a doação única; cada valor recorrente só é habilitado quando possui seu próprio link.
 
 ## `social_links`
 
@@ -254,14 +255,15 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 | `size` | `cae_porte` | not null |
 | `status` | `cae_status` | not null; default `disponivel` |
 | `photos` | `text[]` | not null; default `'{}'`; 0–5 caminhos ordenados no Storage, `[0]` = capa quando existir |
-| `featured` | `boolean` | not null; default `false`; destacados aparecem primeiro na view pública |
+| `featured` | `boolean` | not null; default `false`; destacados aparecem primeiro na view pública; alternado direto no card da listagem admin |
+| `adoption_form_url` | `text` | nullable; CHECK HTTPS quando preenchido; override opcional — vazio faz o CTA usar `site_settings.adoption_form_url` |
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
 ### Exposição e acesso
 
 - RLS habilitada na tabela; as migrations não concedem acesso direto a `anon`.
-- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos` e `featured`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status`.
+- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, `featured` e `adoption_form_url`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status`.
 - CRUD e Storage exigem admin autenticado com `aal2`; `anon` não possui acesso direto.
 
 ## `historias`

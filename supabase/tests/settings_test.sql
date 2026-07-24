@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(19);
+select plan(21);
 
 select is((select count(*) from public.site_settings), 1::bigint, 'mantém uma única configuração global');
 select is(
@@ -11,7 +11,12 @@ select is(
   'https://forms.gle/nLSjXJyeLGUJXZj27',
   'migra o formulário de adoção para a fonte global'
 );
-select hasnt_column('public', 'caes', 'adoption_form_url', 'remove a duplicação do link por cão');
+select col_is_null('public', 'caes', 'adoption_form_url', 'mantém o link por cão como override opcional');
+select throws_ok(
+  $$insert into public.caes (name, description, birth_year, gender, size, adoption_form_url)
+    values ('Override', 'Cão de teste', 2020, 'macho', 'medio', 'http://destino-inseguro.example')$$,
+  '23514', null, 'rejeita override do formulário sem HTTPS'
+);
 select is((select count(*) from public.social_links), 2::bigint, 'materializa as redes suportadas');
 
 select throws_ok(
@@ -111,6 +116,7 @@ select set_config('request.jwt.claims', '{"app_metadata":{"role":"admin"},"aal":
 select is((select count(*) from public.site_settings), 1::bigint, 'autoriza admin com aal2');
 
 set local role anon;
+select has_column('public', 'caes_public', 'adoption_form_url', 'expõe o override do formulário ao catálogo público');
 select is((select count(*) from public.site_settings_public), 1::bigint, 'mantém somente a view necessária disponível ao público');
 select is((select recurring_donation_urls ->> '10' from public.site_settings_public), 'https://pagseguro.example/10', 'expõe o destino recorrente por valor');
 

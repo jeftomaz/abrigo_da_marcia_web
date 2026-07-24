@@ -24,12 +24,13 @@ export {
   useDeleteDog,
   usePublicDogs,
   useSaveDog,
-  useUpdateDogStatus,
+  useUpdateDog,
 } from './dogs/dogs'
 export type {
   Dog,
   DogDraft,
   DogGender,
+  DogPatch,
   DogSize,
   DogStatus,
   EditableDogPhoto,

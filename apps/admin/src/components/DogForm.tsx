@@ -2,7 +2,6 @@ import { useId, useState } from 'react'
 import {
   Action,
   Icon,
-  Switch,
   TextField,
   toEditableDogPhotos,
   useAdminSiteSettings,
@@ -29,7 +28,7 @@ const CURRENT_YEAR = new Date().getFullYear()
 const MIN_BIRTH_YEAR = 1990
 const MAX_APPROX_AGE = CURRENT_YEAR - MIN_BIRTH_YEAR
 
-type DogField = 'approxAge' | 'birthYear' | 'description' | 'gender' | 'name' | 'size'
+type DogField = 'adoptionFormUrl' | 'approxAge' | 'birthYear' | 'description' | 'gender' | 'name' | 'size'
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   return message ? <p id={id} role="alert" className="mt-1 text-xs font-medium text-marca">{message}</p> : null
@@ -51,7 +50,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   )
   const [description, setDescription] = useState(dog?.description ?? '')
   const { data: siteSettings } = useAdminSiteSettings()
-  const [featured, setFeatured] = useState(dog?.featured ?? false)
+  const [adoptionFormUrl, setAdoptionFormUrl] = useState(dog?.adoptionFormUrl ?? '')
   const [photos, setPhotos] = useState(() => toEditableDogPhotos(dog))
   const [isCompressing, setIsCompressing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -86,9 +85,13 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
     event.preventDefault()
     const normalizedName = name.trim()
     const normalizedDescription = description.trim()
+    const normalizedAdoptionFormUrl = adoptionFormUrl.trim()
     const validBirthYear = parseBoundedInteger(birthYear, MIN_BIRTH_YEAR, CURRENT_YEAR)
     const validApproxAge = parseBoundedInteger(approxAge, 0, MAX_APPROX_AGE)
     const errors: Partial<Record<DogField, string>> = {}
+    if (normalizedAdoptionFormUrl && !/^https:\/\//i.test(normalizedAdoptionFormUrl)) {
+      errors.adoptionFormUrl = 'O link precisa começar com https://.'
+    }
     if (!normalizedName) errors.name = 'Informe o nome do cão.'
     else if (normalizedName.length > MAX_NAME_LENGTH) errors.name = `Use no máximo ${MAX_NAME_LENGTH} caracteres.`
     if (!normalizedDescription) errors.description = 'Informe uma descrição.'
@@ -111,7 +114,8 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         birthYear: validBirthYear,
         description: normalizedDescription,
         status: dog?.status ?? 'disponivel',
-        featured,
+        featured: dog?.featured ?? false,
+        adoptionFormUrl: normalizedAdoptionFormUrl,
         photos,
       })
     } catch {
@@ -280,8 +284,22 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
       }`}
     >
       <h3 className={sectionHeadingClasses}>Adoção</h3>
-      <p className="mt-2 text-sm">
-        O formulário global é definido em Configurações.
+      <label htmlFor={`${formId}-adoption-form-url`} className={labelClasses}>
+        Formulário deste cão
+      </label>
+      <TextField
+        id={`${formId}-adoption-form-url`}
+        type="url"
+        value={adoptionFormUrl}
+        onChange={(event) => setAdoptionFormUrl(event.target.value)}
+        placeholder="Vazio usa o formulário global"
+        aria-invalid={Boolean(fieldErrors.adoptionFormUrl)}
+        aria-describedby={`${formId}-adoption-form-hint${fieldErrors.adoptionFormUrl ? ` ${formId}-adoption-form-url-error` : ''}`}
+        className={fieldClasses}
+      />
+      <FieldError id={`${formId}-adoption-form-url-error`} message={fieldErrors.adoptionFormUrl} />
+      <p id={`${formId}-adoption-form-hint`} className="mt-1 text-xs text-cinza-medio dark:text-cinza-claro">
+        Sem preenchimento, o CTA usa o formulário global definido em Configurações.
         {siteSettings && (
           <a
             href={siteSettings.adoptionFormUrl}
@@ -293,19 +311,11 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
           </a>
         )}
       </p>
-
-      <div
-        className={`${isPanel ? 'flex-row items-center justify-between' : 'flex-col items-start'} mt-2 flex gap-2`}
-      >
-        <span className="text-sm font-medium">Destacar no catálogo</span>
-        <Switch checked={featured} onChange={setFeatured} className="origin-left scale-75" />
-      </div>
     </section>
   )
 
   const imagensSection = (
     <PhotoGalleryField
-      density="compact"
       error={saveError}
       formId={formId}
       layout={layout}
