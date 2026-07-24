@@ -67,7 +67,6 @@ export type FundraisingEvent = {
   maxItemsPerReservation: string
   paymentKey: string
   paymentReceiver: string
-  pixCode: string
   postPaymentInstructions: string
   products: EventProduct[]
   prizes: RafflePrize[]
@@ -109,9 +108,21 @@ export type EventReservation = {
   totalCents: number
 }
 
+export type EventReservationUpdate = {
+  contact: string
+  id: string
+  name: string
+  numbers: number[]
+  productItems: { options: Record<string, string>; productId: string }[]
+  receiptSaved: boolean
+  status: ReservationStatus
+}
+
 export type ReservationResult = {
   expiresAt: string
-  pixCode: string
+  pixCity: string
+  pixKey: string
+  pixReceiver: string
   postPaymentInstructions: string
   reservationId: string
   totalCents: number
@@ -120,10 +131,6 @@ export type ReservationResult = {
 export type EventSettings = {
   defaultMaxProductUnits: number
   defaultMaxRaffleNumbers: number
-  defaultPixCity: string
-  defaultPixCopyPaste: string
-  defaultPixKey: string
-  defaultPixReceiver: string
   defaultPostPaymentInstructions: string
   defaultReservationTtlMinutes: number
   eventExportEmail: string
@@ -277,7 +284,7 @@ export function getEventPublicationError(
   }
 
   if (!event.postPaymentInstructions.trim()) return 'Preencha as instruções pós-pagamento.'
-  if (!event.pixCode.trim()) return 'Informe o Pix copia-e-cola antes de publicar.'
+  if (!event.paymentKey.trim() || !event.paymentReceiver.trim() || !event.city.trim()) return 'Informe chave, recebedor e cidade do Pix antes de publicar.'
   if (event.receiptFolderUrl) {
     try {
       if (new URL(event.receiptFolderUrl).protocol !== 'https:') throw new Error()
@@ -398,7 +405,6 @@ function composeEvents(
       paymentKey: 'pix_key' in row ? row.pix_key ?? '' : '',
       paymentReceiver: 'pix_receiver' in row ? row.pix_receiver ?? '' : '',
       city: 'pix_city' in row ? row.pix_city ?? '' : '',
-      pixCode: row.pix_copy_paste ?? '',
       postPaymentInstructions: row.post_payment_instructions ?? '',
       receiptFolderUrl: 'receipt_folder_url' in row ? row.receipt_folder_url ?? '' : '',
     }
@@ -545,7 +551,6 @@ async function prepareStoredDraft(
     paymentKey: draft.paymentKey,
     paymentReceiver: draft.paymentReceiver,
     city: draft.city,
-    pixCode: draft.pixCode,
     postPaymentInstructions: draft.postPaymentInstructions,
     receiptFolderUrl: draft.receiptFolderUrl,
   }
@@ -585,7 +590,6 @@ async function saveEventDraft(draft: EventDraft) {
       pix_key: draft.paymentKey.trim() || null,
       pix_receiver: draft.paymentReceiver.trim() || null,
       pix_city: draft.city.trim() || null,
-      pix_copy_paste: draft.pixCode.trim() || null,
       post_payment_instructions: draft.postPaymentInstructions.trim() || null,
       receipt_folder_url: /^https:\/\//i.test(draft.receiptFolderUrl.trim()) ? draft.receiptFolderUrl.trim() : null,
       data_verified_at: null,
@@ -634,7 +638,6 @@ async function saveEvent(draft: EventDraft) {
       pix_key: draft.paymentKey.trim() || null,
       pix_receiver: draft.paymentReceiver.trim() || null,
       pix_city: draft.city.trim() || null,
-      pix_copy_paste: draft.pixCode.trim() || null,
       post_payment_instructions: draft.postPaymentInstructions.trim(),
       receipt_folder_url: draft.receiptFolderUrl.trim() || null,
       data_verified_at: new Date().toISOString(),
@@ -862,7 +865,9 @@ async function getReservationSession() {
 
 function mapReservationResult(row: {
   expires_at: string
-  pix_copy_paste: string
+  pix_key: string | null
+  pix_receiver: string | null
+  pix_city: string | null
   post_payment_instructions: string
   reservation_id: string
   total_cents: number
@@ -871,7 +876,9 @@ function mapReservationResult(row: {
     reservationId: row.reservation_id,
     totalCents: row.total_cents,
     expiresAt: row.expires_at,
-    pixCode: row.pix_copy_paste,
+    pixKey: row.pix_key ?? '',
+    pixReceiver: row.pix_receiver ?? '',
+    pixCity: row.pix_city ?? '',
     postPaymentInstructions: row.post_payment_instructions,
   }
 }
@@ -914,7 +921,20 @@ async function listRaffleNumbers(eventId: string) {
   }))
 }
 
-async function updateReservation(input: { id: string; receiptSaved?: boolean; status?: ReservationStatus }) {
+async function updateReservation(input: { id: string; receiptSaved?: boolean; status?: ReservationStatus } | EventReservationUpdate) {
+  if ('name' in input) {
+    const { error } = await supabase.rpc('update_event_reservation', {
+      p_reservation_id: input.id,
+      p_customer_name: input.name,
+      p_customer_contact: input.contact,
+      p_status: RESERVATION_STATUS_TO_DB[input.status],
+      p_receipt_saved: input.receiptSaved,
+      p_numbers: input.numbers,
+      p_items: input.productItems as Json,
+    })
+    if (error) throw error
+    return
+  }
   const values: { receipt_saved?: boolean; status?: Tables<'reservas'>['status'] } = {}
   if (input.receiptSaved !== undefined) values.receipt_saved = input.receiptSaved
   if (input.status) values.status = RESERVATION_STATUS_TO_DB[input.status]
@@ -934,10 +954,6 @@ async function loadEventSettings(): Promise<EventSettings> {
   return {
     defaultMaxProductUnits: data.default_max_product_units,
     defaultMaxRaffleNumbers: data.default_max_raffle_numbers,
-    defaultPixCity: data.default_pix_city ?? '',
-    defaultPixCopyPaste: data.default_pix_copy_paste ?? '',
-    defaultPixKey: data.default_pix_key ?? '',
-    defaultPixReceiver: data.default_pix_receiver ?? '',
     defaultPostPaymentInstructions: data.default_post_payment_instructions ?? '',
     defaultReservationTtlMinutes: Number(intervalToMinutes(data.default_reservation_ttl)),
     eventExportEmail: data.event_export_email ?? '',
@@ -948,10 +964,6 @@ async function saveEventSettings(settings: EventSettings) {
   const { error } = await supabase.from('event_settings').update({
     default_max_product_units: settings.defaultMaxProductUnits,
     default_max_raffle_numbers: settings.defaultMaxRaffleNumbers,
-    default_pix_city: settings.defaultPixCity.trim() || null,
-    default_pix_copy_paste: settings.defaultPixCopyPaste.trim() || null,
-    default_pix_key: settings.defaultPixKey.trim() || null,
-    default_pix_receiver: settings.defaultPixReceiver.trim() || null,
     default_post_payment_instructions: settings.defaultPostPaymentInstructions.trim() || null,
     default_reservation_ttl: `${settings.defaultReservationTtlMinutes} minutes`,
     event_export_email: settings.eventExportEmail.trim() || null,

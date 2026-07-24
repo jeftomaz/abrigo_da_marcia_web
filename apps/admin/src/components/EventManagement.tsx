@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
-import { Action, Icon, ImagePlaceholder, formatReservationContact } from '@abrigo/shared'
-import type { EventReservation, FundraisingEvent, ReservationStatus } from '../events/events'
+import { Action, Dialog, Icon, ImagePlaceholder, formatReservationContact } from '@abrigo/shared'
+import type { EventReservation, EventReservationUpdate, FundraisingEvent, ReservationStatus } from '../events/events'
 import { getEventPhotoUrl } from '../events/events'
+import { ReservationEditDialog } from './ReservationEditDialog'
 import { StatusBadge } from './StatusBadge'
 
 type EventManagementProps = {
   event: FundraisingEvent
   layout: 'mobile' | 'panel'
   onUpdateReservation: (id: string, changes: { receiptSaved?: boolean; status?: ReservationStatus }) => Promise<void> | void
+  onSaveReservation: (update: EventReservationUpdate) => Promise<void>
   reservations: EventReservation[]
 }
 
@@ -34,12 +36,16 @@ function productItemLabel(reservation: EventReservation) {
   }).join(' | ')
 }
 
-export function EventManagement({ event, layout, onUpdateReservation, reservations }: EventManagementProps) {
+export function EventManagement({ event, layout, onSaveReservation, onUpdateReservation, reservations }: EventManagementProps) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | ''>('')
   const [actionError, setActionError] = useState('')
   const [pendingReservationIds, setPendingReservationIds] = useState<Set<string>>(new Set())
+  const [paidConfirmation, setPaidConfirmation] = useState<EventReservation | null>(null)
+  const [editingReservation, setEditingReservation] = useState<EventReservation | null>(null)
   const isPanel = layout === 'panel'
+  // A opção "Entregue" só é alcançável após o encerramento; o filtro reflete essa condição.
+  const canHaveDelivered = event.status !== 'active' || reservations.some((reservation) => reservation.status === 'delivered')
   const eventStatus = event.status === 'active'
     ? { label: 'Ativo', tone: 'verde' as const }
     : event.status === 'archived'
@@ -93,7 +99,7 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
     <div className={`grid grid-cols-2 gap-3 ${isPanel ? 'desk:grid-cols-4' : ''}`}>
       {[
         ['Reservas ativas', String(activeReservations), ''],
-        [event.kind === 'raffle' ? 'Números vendidos' : 'Itens reservados', `${soldItems}/${event.kind === 'raffle' ? event.raffleTotalNumbers : '∞'}`, ''],
+        [event.kind === 'raffle' ? 'Números vendidos' : 'Itens reservados', event.kind === 'raffle' ? `${soldItems}/${event.raffleTotalNumbers}` : String(soldItems), ''],
         ['Reservado', formatMoney(reservedTotal), 'text-status-amarelo-on-surface'],
         ['Pago', formatMoney(paidTotal), 'text-status-verde-on-surface'],
       ].map(([label, value, tone]) => (
@@ -114,7 +120,7 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
               {event.gallery[0] ? <img src={getEventPhotoUrl(event.gallery[0])} alt="" className="size-20 shrink-0 rounded-2xl object-cover" /> : <ImagePlaceholder label={`Sem foto de ${event.title}`} className="size-20 shrink-0 rounded-2xl" />}
               <div className="min-w-0"><h2 className="truncate text-3xl font-medium">{event.title}</h2><StatusBadge tone={eventStatus.tone} size="sm" className="mt-2 px-5">{eventStatus.label}</StatusBadge></div>
             </div>
-            <Action onClick={exportCsv} icon="upload" size="small" variant="neutral-adaptive" className="px-4 py-2 text-xs">Exportar CSV</Action>
+            <Action onClick={exportCsv} icon="upload" size="small" variant="primary" className="px-4 py-2 text-xs">Exportar CSV</Action>
           </div>
           <div className="mt-3 border-t border-cinza-medio pt-2 dark:border-cinza-claro">
             <h3 className="text-lg font-medium">Resumo</h3>
@@ -129,13 +135,13 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
         <h3 className="text-2xl font-medium desk:text-lg">Reservas</h3>
         <div className="relative min-w-0">
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as ReservationStatus | '')} aria-label="Filtrar reservas por status" className="h-10 w-full appearance-none rounded-full bg-surface-raised pr-9 pl-4 text-sm text-on-surface-raised outline-none focus-visible:ring-2 focus-visible:ring-marca desk:h-7 desk:bg-cinza-claro desk:text-xs dark:desk:bg-cinza-medio">
-            <option value="">Todos os status</option><option value="reserved">Reservadas</option><option value="paid">Pagas</option><option value="canceled">Canceladas</option><option value="delivered">Entregues</option>
+            <option value="">Todos os status</option><option value="reserved">Reservadas</option><option value="paid">Pagas</option><option value="canceled">Canceladas</option>{canHaveDelivered && <option value="delivered">Entregues</option>}
           </select>
           <Icon name="arrow-separate-vertical" className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
         </div>
       </div>
 
-      {!isPanel && <Action onClick={exportCsv} icon="upload" size="small" variant="neutral-adaptive" className="mt-3 w-full px-4 py-2 text-xs">Exportar CSV</Action>}
+      {!isPanel && <Action onClick={exportCsv} icon="upload" size="small" variant="primary" className="mt-3 w-full px-4 py-2 text-xs">Exportar CSV</Action>}
 
       {!isPanel && <div className="mt-5">{statCards}</div>}
       <div className="relative mt-4 min-w-0">
@@ -155,14 +161,18 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
                 {event.kind === 'raffle' ? reservation.numbers.map((number) => <span key={number} className="min-w-12 rounded-md bg-cinza-medio px-2 py-1 text-center text-xs text-cinza-claro">Nº {String(number).padStart(2, '0')}</span>) : <span className="text-sm">{productItemLabel(reservation)}</span>}
               </div>
               <div className="col-start-2 row-span-2 row-start-1 flex flex-col items-end gap-2 desk:col-start-3 desk:row-span-1 desk:items-center">
+                <Action onClick={() => setEditingReservation(reservation)} disabled={isPending || reservation.status === 'canceled' || reservation.status === 'delivered'} icon="edit-pencil" size="small" variant="neutral-adaptive" className="min-w-28 px-3 text-xs">Editar</Action>
                 <label className="relative rounded-lg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marca"><span className={`block rounded-lg px-4 py-1 text-sm font-medium ${status.classes}`}>{status.label}</span>
-                  <select value={reservation.status} disabled={isPending || reservation.status === 'canceled' || reservation.status === 'delivered'} onChange={(event) => void updateReservation(reservation.id, { status: event.target.value as ReservationStatus })} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed">
+                  <select value={reservation.status} disabled={isPending} onChange={(changeEvent) => { const next = changeEvent.target.value as ReservationStatus; if (next === 'paid' && reservation.status === 'reserved') setPaidConfirmation(reservation); else void updateReservation(reservation.id, { status: next }) }} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed">
                     <option value={reservation.status}>{status.label}</option>
                     {reservation.status === 'reserved' && <><option value="paid">Pago</option><option value="canceled">Cancelado</option></>}
-                    {reservation.status === 'paid' && <><option value="canceled">Cancelado</option>{event.status !== 'active' && <option value="delivered">Entregue</option>}</>}
+                    {reservation.status === 'paid' && <><option value="reserved">Reservado</option><option value="canceled">Cancelado</option>{event.status !== 'active' && <option value="delivered">Entregue</option>}</>}
+                    {reservation.status === 'canceled' && <option value="reserved">Reservado</option>}
+                    {reservation.status === 'delivered' && <option value="paid">Pago</option>}
                   </select>
                 </label>
                 <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={reservation.receiptSaved} disabled={isPending} onChange={(event) => void updateReservation(reservation.id, { receiptSaved: event.target.checked })} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-40 disabled:cursor-not-allowed accent-marca" />{isPending ? 'Salvando...' : 'Comprovante salvo'}</label>
+                {event.receiptFolderUrl && <Action href={event.receiptFolderUrl} target="_blank" rel="noreferrer" icon="open-book" size="small" variant="neutral-adaptive" className="px-3 py-1 text-xs">Comprovantes</Action>}
                 <strong className="text-sm">{formatMoney(reservation.totalCents)}</strong>
               </div>
             </article>
@@ -170,6 +180,30 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
         })}
         {filteredReservations.length === 0 && <p className="py-5 text-center">Nenhuma reserva encontrada.</p>}
       </div>
+
+      {paidConfirmation && (
+        <Dialog ariaLabel="Confirmar pagamento" onClose={() => setPaidConfirmation(null)} className="w-full max-w-[34rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised">
+          <h2 className="text-3xl font-medium text-marca">Marcar como paga</h2>
+          <h3 className="mt-5 text-2xl font-medium">{paidConfirmation.name}</h3>
+          <p className="mt-3">Você já salvou o comprovante de pagamento desta reserva no destino externo?</p>
+          {event.receiptFolderUrl && (
+            <Action href={event.receiptFolderUrl} target="_blank" rel="noreferrer" icon="open-book" size="small" variant="neutral-adaptive" className="mt-4 px-4">Abrir comprovantes</Action>
+          )}
+          <div className="mt-8 flex gap-4">
+            <Action onClick={() => setPaidConfirmation(null)} disabled={pendingReservationIds.has(paidConfirmation.id)} size="small" variant="secondary-adaptive" className="w-28 shrink-0">Cancelar</Action>
+            <Action onClick={() => { const reservation = paidConfirmation; setPaidConfirmation(null); void updateReservation(reservation.id, { status: 'paid', receiptSaved: true }) }} disabled={pendingReservationIds.has(paidConfirmation.id)} size="small" variant="primary-adaptive" icon="check-circle-solid" className="min-w-0 flex-1">Sim, foi salvo</Action>
+          </div>
+        </Dialog>
+      )}
+      {editingReservation && (
+        <ReservationEditDialog
+          event={event}
+          reservation={editingReservation}
+          reservations={reservations}
+          onClose={() => setEditingReservation(null)}
+          onSave={onSaveReservation}
+        />
+      )}
     </section>
   )
 }

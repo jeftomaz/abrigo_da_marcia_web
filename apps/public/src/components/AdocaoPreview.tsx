@@ -60,7 +60,7 @@ export function AdocaoPreview() {
             ))}
             images={selectedDog.photos.map(getDogPhotoUrl)}
             expandableImages
-            primaryAction={siteSettings ? { label: 'Adote-me', href: siteSettings.adoptionFormUrl } : undefined}
+            primaryAction={siteSettings ? { label: 'Adote-me', href: selectedDog.adoptionFormUrl || siteSettings.adoptionFormUrl } : undefined}
             onClose={() => setSelectedDogId(null)}
             variant="adoption"
           />

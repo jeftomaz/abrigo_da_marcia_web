@@ -22,8 +22,12 @@ export type Dog = {
   description: string
   status: DogStatus
   featured: boolean
+  /** Override opcional do formulário de adoção; vazio usa o link global de Configurações. */
+  adoptionFormUrl: string
   photos: string[]
 }
+
+export type DogPatch = { featured?: boolean; status?: DogStatus }
 
 export type EditableDogPhoto = EditablePhoto
 
@@ -51,6 +55,7 @@ function mapDog(row: Tables<'caes'>): Dog {
     description: row.description,
     status: row.status,
     featured: row.featured,
+    adoptionFormUrl: row.adoption_form_url ?? '',
     photos: row.photos,
   }
 }
@@ -76,6 +81,7 @@ function mapPublicDog(row: Tables<'caes_public'>): Dog {
     description: row.description,
     status: 'disponivel',
     featured: row.featured ?? false,
+    adoptionFormUrl: row.adoption_form_url ?? '',
     photos: row.photos ?? [],
   }
 }
@@ -126,6 +132,7 @@ async function saveDog(draft: DogDraft) {
     description: draft.description,
     status: draft.status,
     featured: draft.featured,
+    adoption_form_url: draft.adoptionFormUrl.trim() || null,
     photos,
   }
 
@@ -145,10 +152,10 @@ async function saveDog(draft: DogDraft) {
   return mapDog(data)
 }
 
-async function updateDogStatus({ id, status }: { id: string; status: DogStatus }) {
+async function updateDog({ id, ...changes }: DogPatch & { id: string }) {
   const { data, error } = await supabase
     .from('caes')
-    .update({ status })
+    .update(changes)
     .eq('id', id)
     .select()
     .single()
@@ -191,11 +198,11 @@ export function useSaveDog() {
   return useMutation({ mutationFn: saveDog, onSuccess: invalidate })
 }
 
-export function useUpdateDogStatus() {
+export function useUpdateDog() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: updateDogStatus,
-    onMutate: async ({ id, status }) => {
+    mutationFn: updateDog,
+    onMutate: async ({ id, ...changes }) => {
       await Promise.all([
         queryClient.cancelQueries({ queryKey: adminDogsKey }),
         queryClient.cancelQueries({ queryKey: publicDogsKey }),
@@ -204,12 +211,12 @@ export function useUpdateDogStatus() {
       const previousPublicDogs = queryClient.getQueryData<Dog[]>(publicDogsKey)
 
       queryClient.setQueryData<Dog[]>(adminDogsKey, (dogs) =>
-        dogs?.map((dog) => (dog.id === id ? { ...dog, status } : dog)),
+        dogs?.map((dog) => (dog.id === id ? { ...dog, ...changes } : dog)),
       )
       queryClient.setQueryData<Dog[]>(publicDogsKey, (dogs) =>
-        status === 'disponivel'
-          ? dogs
-          : dogs?.filter((dog) => dog.id !== id),
+        changes.status && changes.status !== 'disponivel'
+          ? dogs?.filter((dog) => dog.id !== id)
+          : dogs?.map((dog) => (dog.id === id ? { ...dog, ...changes } : dog)),
       )
 
       return { previousAdminDogs, previousPublicDogs }

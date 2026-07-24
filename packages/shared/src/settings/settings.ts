@@ -3,9 +3,9 @@ import { supabase } from '../supabase/client'
 
 export type SiteSettings = {
   adoptionFormUrl: string
-  donationPixCity: string
-  donationPixKey: string
-  donationPixReceiver: string
+  pixCity: string
+  pixKey: string
+  pixReceiver: string
   recurringDonationUrls: Record<string, string>
   volunteerFormUrl: string
 }
@@ -22,18 +22,18 @@ const publicSocialLinksKey = ['settings', 'social', 'public'] as const
 
 function mapSiteSettings(row: {
   adoption_form_url: string | null
-  donation_pix_city: string | null
-  donation_pix_key: string | null
-  donation_pix_receiver: string | null
+  pix_city: string | null
+  pix_key: string | null
+  pix_receiver: string | null
   recurring_donation_urls: unknown
   volunteer_form_url: string | null
 }): SiteSettings {
   if (!row.adoption_form_url) throw new Error('O link global de adoção não foi configurado.')
   return {
     adoptionFormUrl: row.adoption_form_url,
-    donationPixCity: row.donation_pix_city ?? '',
-    donationPixKey: row.donation_pix_key ?? '',
-    donationPixReceiver: row.donation_pix_receiver ?? '',
+    pixCity: row.pix_city ?? '',
+    pixKey: row.pix_key ?? '',
+    pixReceiver: row.pix_receiver ?? '',
     recurringDonationUrls: row.recurring_donation_urls && typeof row.recurring_donation_urls === 'object' && !Array.isArray(row.recurring_donation_urls)
       ? row.recurring_donation_urls as Record<string, string>
       : {},
@@ -46,7 +46,7 @@ async function loadSiteSettings(isPublic: boolean) {
     ? supabase.from('site_settings_public')
     : supabase.from('site_settings')
   const { data, error } = await query
-    .select('adoption_form_url, donation_pix_city, donation_pix_key, donation_pix_receiver, recurring_donation_urls, volunteer_form_url')
+    .select('adoption_form_url, pix_city, pix_key, pix_receiver, recurring_donation_urls, volunteer_form_url')
     .single()
   if (error) throw error
   return mapSiteSettings(data)
@@ -55,9 +55,9 @@ async function loadSiteSettings(isPublic: boolean) {
 async function saveSiteSettings(settings: SiteSettings) {
   const { error } = await supabase.from('site_settings').update({
     adoption_form_url: settings.adoptionFormUrl.trim(),
-    donation_pix_city: settings.donationPixCity.trim() || null,
-    donation_pix_key: settings.donationPixKey.trim() || null,
-    donation_pix_receiver: settings.donationPixReceiver.trim() || null,
+    pix_city: settings.pixCity.trim() || null,
+    pix_key: settings.pixKey.trim() || null,
+    pix_receiver: settings.pixReceiver.trim() || null,
     recurring_donation_urls: settings.recurringDonationUrls,
     volunteer_form_url: settings.volunteerFormUrl.trim() || null,
   }).eq('singleton', true)

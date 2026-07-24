@@ -6,9 +6,9 @@ insert into public.social_links (network, url, display_order) values
 on conflict (network) do update set url = excluded.url, display_order = excluded.display_order;
 
 update public.site_settings set
-  donation_pix_key = null,
-  donation_pix_receiver = null,
-  donation_pix_city = null,
+  pix_key = null,
+  pix_receiver = null,
+  pix_city = null,
   recurring_donation_urls = '{}'::jsonb,
   volunteer_form_url = null,
   adoption_form_url = 'https://forms.gle/nLSjXJyeLGUJXZj27'
@@ -19,10 +19,6 @@ update public.event_settings set
   default_max_product_units = 10,
   default_reservation_ttl = interval '30 minutes',
   event_export_email = null,
-  default_pix_key = null,
-  default_pix_receiver = null,
-  default_pix_city = null,
-  default_pix_copy_paste = null,
   default_post_payment_instructions = null
 where singleton;
 
@@ -47,13 +43,13 @@ insert into public.historias (name, description, photos, published) values
 -- pode ficar ativo por vez.
 insert into public.eventos (
   id, name, description, type, photos, start_date, end_date,
-  fundraising_goal_cents, pix_key, pix_receiver, pix_city, pix_copy_paste,
+  fundraising_goal_cents, pix_key, pix_receiver, pix_city,
   post_payment_instructions, data_verified_at
 ) values (
   'b1000000-0000-0000-0000-000000000001', 'Bazar de Inverno', 'Bazar fictício encerrado para validar histórico, entrega e exportação.',
   'produtos', '{eventos/bazar-teste/capa.jpg}', current_date - 10, current_date,
   300000, 'chave-pix-ficticia@example.com', 'Abrigo da Marcia (teste)', 'São Paulo',
-  'PIX-FICTICIO-BAZAR-INVERNO', 'Envie o comprovante para o número (99) 99999-8888.', now()
+  'Envie o comprovante para o número (99) 99999-8888.', now()
 );
 
 insert into public.produtos (
@@ -111,13 +107,13 @@ update public.reservas set status = 'entregue' where session_id = 'b1400000-0000
 -- expiração automática e sorteio localmente. Prêmios ficam sem vencedor para permitir o sorteio na UI.
 insert into public.eventos (
   id, name, description, type, photos, start_date, end_date,
-  fundraising_goal_cents, pix_key, pix_receiver, pix_city, pix_copy_paste,
+  fundraising_goal_cents, pix_key, pix_receiver, pix_city,
   post_payment_instructions, data_verified_at
 ) values (
   'a1000000-0000-0000-0000-000000000001', 'Rifa de Inverno', 'Rifa fictícia para validar reservas e sorteio localmente.',
   'rifa', '{eventos/rifa-teste/capa.jpg}', current_date - 5, current_date + 25,
   500000, 'chave-pix-ficticia@example.com', 'Abrigo da Marcia (teste)', 'São Paulo',
-  'PIX-FICTICIO-RIFA-INVERNO', 'Envie o comprovante para o número (99) 99999-8888.', now()
+  'Envie o comprovante para o número (99) 99999-8888.', now()
 );
 
 insert into public.rifas (event_id, total_numbers, number_price_cents) values

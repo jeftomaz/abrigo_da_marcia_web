@@ -19,7 +19,7 @@ import { EventForm } from '../components/EventForm'
 import type { EventFormHandle } from '../components/EventForm'
 import { EventManagement } from '../components/EventManagement'
 import { EventRow } from '../components/EventRow'
-import type { EventDraft, EventStatus, FundraisingEvent, ReservationStatus } from '../events/events'
+import type { EventDraft, EventReservationUpdate, EventStatus, FundraisingEvent, ReservationStatus } from '../events/events'
 import { useIsDesktop } from '../hooks/useIsDesktop'
 import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
@@ -34,6 +34,7 @@ export function Eventos() {
   const [editingTarget, setEditingTarget] = useState<FundraisingEvent | null | undefined>(undefined)
   const [managingEventId, setManagingEventId] = useState<string | null>(null)
   const [eventConfirmation, setEventConfirmation] = useState<EventConfirmation | null>(null)
+  const [archiveAcknowledged, setArchiveAcknowledged] = useState(false)
   const [actionError, setActionError] = useState('')
   const [successMessage, showSuccess] = useSuccessMessage()
   const eventFormRef = useRef<EventFormHandle>(null)
@@ -47,7 +48,11 @@ export function Eventos() {
   const hasDetail = isEditing || Boolean(managingEvent)
   const activeEvent = useMemo(() => events.find((event) => event.status === 'active'), [events])
   const { data: eventSettings } = useEventSettings()
-  const displayedEvents = !isDesktop && managingEvent ? [managingEvent] : events
+  const orderedEvents = useMemo(() => {
+    const rank: Record<EventStatus, number> = { active: 0, draft: 1, ended: 2, archived: 3 }
+    return [...events].sort((a, b) => rank[a.status] - rank[b.status] || b.endDate.localeCompare(a.endDate))
+  }, [events])
+  const displayedEvents = !isDesktop && managingEvent ? [managingEvent] : orderedEvents
 
   const handleSave = async (draft: EventDraft) => {
     const isNew = !editingTarget
@@ -119,10 +124,15 @@ export function Eventos() {
   const updateManagedReservation = async (id: string, changes: { receiptSaved?: boolean; status?: ReservationStatus }) => {
     await updateReservation.mutateAsync({ id, ...changes })
   }
+  const saveManagedReservation = async (update: EventReservationUpdate) => {
+    await updateReservation.mutateAsync(update)
+  }
 
   const formTitle = editingTarget ? 'Editar Evento' : 'Novo Evento'
   const isConfirming = updateStatus.isPending || deleteEvent.isPending
   const dismissEditor = () => void eventFormRef.current?.dismiss()
+
+  useEffect(() => { setArchiveAcknowledged(false) }, [eventConfirmation])
 
   useEffect(() => {
     if (!isDesktop || !isEditing) return
@@ -170,7 +180,7 @@ export function Eventos() {
             ))}
             {!isLoading && events.length === 0 && <p className="py-6 text-center">Nenhum evento cadastrado.</p>}
           </div>
-          {managingEvent && !isDesktop && (reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="mobile" reservations={reservationsQuery.data ?? []} onUpdateReservation={updateManagedReservation} />)}
+          {managingEvent && !isDesktop && (reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="mobile" reservations={reservationsQuery.data ?? []} onSaveReservation={saveManagedReservation} onUpdateReservation={updateManagedReservation} />)}
         </section>
 
         {hasDetail && isDesktop && (
@@ -178,7 +188,7 @@ export function Eventos() {
             {isEditing ? (
               <EventForm ref={eventFormRef} key={editingTarget?.id ?? 'new'} event={editingTarget ?? null} layout="panel" title={formTitle} onAutoSave={handleAutoSave} onCancel={() => setEditingTarget(undefined)} onSave={handleSave} />
             ) : managingEvent ? (
-              reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="panel" reservations={reservationsQuery.data ?? []} onUpdateReservation={updateManagedReservation} />
+              reservationsQuery.isLoading ? <p role="status">Carregando reservas...</p> : reservationsQuery.error ? <p role="alert" className="text-marca">Não foi possível carregar as reservas.</p> : <EventManagement event={managingEvent} layout="panel" reservations={reservationsQuery.data ?? []} onSaveReservation={saveManagedReservation} onUpdateReservation={updateManagedReservation} />
             ) : null}
           </aside>
         )}
@@ -196,13 +206,21 @@ export function Eventos() {
           <h3 className="mt-6 text-3xl font-medium">{eventConfirmation.event.title}</h3>
           {eventConfirmation.action === 'end' && <p className="mt-3 text-lg">Novas reservas deixarão de ser aceitas. Os dados e a gestão das reservas serão mantidos.</p>}
           {eventConfirmation.action === 'publish' && <p className="mt-3 text-lg">Confirme que as informações foram verificadas. O evento ficará disponível ao público.</p>}
-          {eventConfirmation.action === 'archive' && <p className="mt-3 text-lg">O evento sairá do histórico público, mas seus dados permanecerão disponíveis na gestão.</p>}
+          {eventConfirmation.action === 'archive' && (
+            <>
+              <p className="mt-3 text-lg">O evento sairá do histórico público, mas seus dados permanecerão disponíveis na gestão. <strong>Um evento arquivado não pode voltar a ser reativado.</strong></p>
+              <label className="mt-5 flex items-start gap-3 text-base font-medium">
+                <input type="checkbox" checked={archiveAcknowledged} onChange={(event) => setArchiveAcknowledged(event.target.checked)} className="mt-1 size-5 shrink-0 accent-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca" />
+                Entendo que arquivar este evento não é reversível.
+              </label>
+            </>
+          )}
           {eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'draft' && <p className="mt-3 text-lg">O rascunho e todos os dados associados serão apagados.</p>}
           {eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'archived' && <p className="mt-3 text-lg">A exportação será enviada automaticamente ao e-mail configurado antes da exclusão. Se o envio falhar, nada será removido.</p>}
           {actionError && <p role="alert" className="mt-4 text-sm font-medium text-marca">{actionError}</p>}
           <div className="mt-10 flex gap-4">
             <Action onClick={() => setEventConfirmation(null)} size="small" variant="secondary-adaptive" className="w-32 shrink-0">Cancelar</Action>
-            <Action onClick={() => void confirmEventAction()} disabled={isConfirming} icon={eventConfirmation.action === 'archive' ? 'archive' : eventConfirmation.action === 'end' ? 'white-flag-solid' : eventConfirmation.action === 'publish' ? 'check-circle-solid' : 'trash-solid'} size="small" variant="primary-adaptive" className="min-w-0 flex-1">{isConfirming ? 'Processando...' : eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.action === 'archive' ? 'Arquivar Evento' : 'Remover Evento'}</Action>
+            <Action onClick={() => void confirmEventAction()} disabled={isConfirming || (eventConfirmation.action === 'archive' && !archiveAcknowledged)} icon={eventConfirmation.action === 'archive' ? 'archive' : eventConfirmation.action === 'end' ? 'white-flag-solid' : eventConfirmation.action === 'publish' ? 'check-circle-solid' : 'trash-solid'} size="small" variant="primary-adaptive" className="min-w-0 flex-1">{isConfirming ? 'Processando...' : eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.action === 'archive' ? 'Arquivar Evento' : 'Remover Evento'}</Action>
           </div>
         </Dialog>
       )}

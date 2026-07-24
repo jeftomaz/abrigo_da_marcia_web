@@ -24,14 +24,17 @@ function crc16(payload: string) {
   return crc.toString(16).toUpperCase().padStart(4, '0')
 }
 
-export function createDonationPixCode(key: string, receiver: string, city: string, amount: number) {
+// Monta o BR Code (EMV MPM) da especificação do Banco Central. `amount` omitido gera
+// um Pix de valor livre (tag 54 ausente): serve tanto para doação quanto para eventos,
+// sem o admin digitar o código pronto.
+export function createPixCode(key: string, receiver: string, city: string, amount?: number) {
   const merchantAccount = field('00', 'BR.GOV.BCB.PIX') + field('01', key.trim())
   const payload = [
     field('00', '01'),
     field('26', merchantAccount),
     field('52', '0000'),
     field('53', '986'),
-    field('54', amount.toFixed(2)),
+    ...(amount !== undefined ? [field('54', amount.toFixed(2))] : []),
     field('58', 'BR'),
     field('59', normalizePixText(receiver, 25)),
     field('60', normalizePixText(city, 15)),

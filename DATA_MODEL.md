@@ -16,9 +16,9 @@ Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eve
 erDiagram
   SITE_SETTINGS {
     boolean singleton PK
-    text donation_pix_key "nullable"
-    text donation_pix_receiver "nullable"
-    text donation_pix_city "nullable"
+    text pix_key "nullable; doação e eventos"
+    text pix_receiver "nullable"
+    text pix_city "nullable"
     jsonb recurring_donation_urls
     text volunteer_form_url "nullable"
     text adoption_form_url
@@ -40,6 +40,7 @@ erDiagram
     cae_status status
     text photos "text[] ordenado; [0]=capa"
     boolean featured
+    text adoption_form_url "nullable; override do global"
     timestamptz created_at
     timestamptz updated_at
   }
@@ -58,10 +59,6 @@ erDiagram
     integer default_max_product_units
     interval default_reservation_ttl
     text event_export_email
-    text default_pix_key "nullable"
-    text default_pix_receiver "nullable"
-    text default_pix_city "nullable"
-    text default_pix_copy_paste "nullable"
     text default_post_payment_instructions "nullable"
     timestamptz updated_at
   }
@@ -77,7 +74,9 @@ erDiagram
     bigint fundraising_goal_cents
     integer max_items_per_reservation "nullable; override"
     interval reservation_ttl "nullable; override"
-    text pix_copy_paste "nullable em rascunho"
+    text pix_key "nullable em rascunho"
+    text pix_receiver "nullable em rascunho"
+    text pix_city "nullable em rascunho"
     text post_payment_instructions
     text receipt_folder_url "nullable"
     timestamptz data_verified_at "nullable em rascunho"
@@ -204,15 +203,15 @@ Configuração singleton compartilhada pelos CTAs públicos e pela gestão de C�
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `singleton` | `boolean` | PK; sempre `true` |
-| `donation_pix_key` | `text` | nullable; chave usada para gerar o Pix de doação única |
-| `donation_pix_receiver` | `text` | nullable; 1–25 caracteres; nome no Pix |
-| `donation_pix_city` | `text` | nullable; 1–15 caracteres; cidade no Pix |
+| `pix_key` | `text` | nullable; 1–77 caracteres; chave Pix compartilhada por doação e por padrão dos eventos |
+| `pix_receiver` | `text` | nullable; 1–25 caracteres; nome no Pix |
+| `pix_city` | `text` | nullable; 1–15 caracteres; cidade no Pix |
 | `recurring_donation_urls` | `jsonb` | mapa HTTPS opcional para os valores `10`, `20`, `30`, `50`, `100` e `150` |
 | `volunteer_form_url` | `text` | nullable; URL HTTPS; CTA de voluntariado é ocultado quando null |
-| `adoption_form_url` | `text` | not null; URL HTTPS; fonte única de todos os CTAs de adoção |
+| `adoption_form_url` | `text` | not null; URL HTTPS; padrão dos CTAs de adoção sem override por cão |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-`site_settings_public` expõe os campos usados pelos CTAs públicos. O link de adoção foi migrado de `caes.adoption_form_url`; a coluna por cão foi removida. Os três campos Pix precisam estar preenchidos para habilitar a doação única; cada valor recorrente só é habilitado quando possui seu próprio link.
+`site_settings_public` expõe os campos usados pelos CTAs públicos. O link de adoção é o padrão global: cada cão pode sobrescrevê-lo por `caes.adoption_form_url`, que é anulável e nunca substitui a fonte global. Os três campos Pix precisam estar preenchidos para habilitar a doação única (a mesma chave alimenta os novos eventos); cada valor recorrente só é habilitado quando possui seu próprio link. O código Pix copia-e-cola nunca é persistido: é gerado no client pela especificação BR Code (EMV MPM), já com o valor de cada doação ou reserva.
 
 ## `social_links`
 
@@ -254,14 +253,15 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 | `size` | `cae_porte` | not null |
 | `status` | `cae_status` | not null; default `disponivel` |
 | `photos` | `text[]` | not null; default `'{}'`; 0–5 caminhos ordenados no Storage, `[0]` = capa quando existir |
-| `featured` | `boolean` | not null; default `false`; destacados aparecem primeiro na view pública |
+| `featured` | `boolean` | not null; default `false`; destacados aparecem primeiro na view pública; alternado direto no card da listagem admin |
+| `adoption_form_url` | `text` | nullable; CHECK HTTPS quando preenchido; override opcional — vazio faz o CTA usar `site_settings.adoption_form_url` |
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
 ### Exposição e acesso
 
 - RLS habilitada na tabela; as migrations não concedem acesso direto a `anon`.
-- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos` e `featured`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status`.
+- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, `featured` e `adoption_form_url`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status`.
 - CRUD e Storage exigem admin autenticado com `aal2`; `anon` não possui acesso direto.
 
 ## `historias`
@@ -296,7 +296,7 @@ Cada evento é exclusivamente `rifa` ou `produtos`. Pode existir no máximo um e
 
 ### `event_settings`
 
-Configuração singleton editável pelo admin. Os limites são por reserva, não por pessoa: uma mesma sessão pode criar outras reservas depois do intervalo antissobrecarga.
+Configuração singleton editável pelo admin. Os limites são por reserva, não por pessoa: uma mesma sessão pode criar outras reservas depois do intervalo antissobrecarga. Os dados do Pix (chave, recebedor e cidade) usados como padrão de novos eventos vivem em `site_settings`, não aqui.
 
 | Coluna | Tipo | Regra |
 |---|---|---|
@@ -305,8 +305,6 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `default_max_product_units` | `integer` | not null; `> 0`; máximo padrão de unidades, somando todos os produtos da reserva |
 | `default_reservation_ttl` | `interval` | not null; mínimo de 1 minuto e somente minutos inteiros; prazo padrão de expiração |
 | `event_export_email` | `text` | nullable até ser configurado; obrigatório para excluir evento arquivado |
-| `default_pix_key` / `default_pix_receiver` / `default_pix_city` | `text` | nullable; referências preenchidas em novos eventos |
-| `default_pix_copy_paste` | `text` | nullable; código preenchido em novos eventos |
 | `default_post_payment_instructions` | `text` | nullable; instrução preenchida em novos eventos |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
@@ -325,8 +323,7 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `fundraising_goal_cents` | `bigint` | nullable somente enquanto rascunho; `> 0`; meta em centavos |
 | `max_items_per_reservation` | `integer` | nullable; `> 0`; substitui o padrão correspondente ao tipo do evento |
 | `reservation_ttl` | `interval` | nullable; mínimo de 1 minuto e somente minutos inteiros; substitui `default_reservation_ttl` |
-| `pix_key` / `pix_receiver` / `pix_city` | `text` | nullable; referência administrativa do recebedor |
-| `pix_copy_paste` | `text` | nullable em rascunho; obrigatório para ativar e retornado após a reserva |
+| `pix_key` / `pix_receiver` / `pix_city` | `text` | nullable em rascunho; os três obrigatórios para ativar; preenchidos pelo padrão de `site_settings` com override por evento; o código copia-e-cola é gerado no client, nunca persistido |
 | `post_payment_instructions` | `text` | nullable somente enquanto rascunho; orienta o envio do comprovante e é obrigatório para ativar |
 | `receipt_folder_url` | `text` | nullable; atalho HTTPS externo dos comprovantes |
 | `draft_payload` | `jsonb` | nullable; estado integral do formulário parcial, incluindo caminhos de imagens; deve ser removido pela gravação completa antes de ativar |
@@ -470,6 +467,22 @@ Cabeçalho comum a reservas de rifa e de produtos.
 O trigger `reservas_validate_contact` protege inserções e alterações de qualquer origem. Telefones exigem DDD oficial e formato brasileiro de fixo/celular, rejeitam assinantes com dígitos repetidos e são normalizados para `+55...`; e-mails exigem endereço e domínio completos e normalizam o domínio para minúsculas. A validação é de plausibilidade e não comprova titularidade ou existência do contato.
 
 O limite efetivo é resolvido no momento da reserva: override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` ou `default_max_product_units`. Reservas pendentes que ultrapassam `expires_at` passam automaticamente para `cancelada` via `pg_cron`; reservas pagas não expiram. Cancelamento libera números da rifa. `entregue` só sucede `paga` após o encerramento: para produto, em qualquer reserva paga; para rifa, apenas na reserva ganhadora. Os valores e rótulos selecionados ficam registrados como snapshots. `receipt_saved` é somente o controle administrativo do destino externo.
+
+Transições de status permitidas pelo trigger `validate_reservation_status`:
+
+- `pendente → paga` (grava `paid_at`);
+- `pendente|paga → cancelada` (grava `canceled_at`; bloqueada em reserva sorteada);
+- `paga → entregue` (grava `delivered_at`; exige evento encerrado e, na rifa, reserva ganhadora).
+
+Reversões de estados marcados por engano (todas renovam o `expires_at` com um TTL fresco quando voltam a `pendente`, senão o cron cancelaria a reserva no ato):
+
+- `paga → pendente` (limpa `paid_at`; bloqueada se a reserva já foi sorteada);
+- `cancelada → pendente` (limpa `canceled_at`; reconquista os números liberados em bloco — se algum já foi retomado por outra reserva, o índice único aborta e a reversão falha);
+- `entregue → paga` (limpa `delivered_at`).
+
+Qualquer outra transição é rejeitada. Não há estado terminal: cancelada e entregue podem ser revertidas, mas voltar de `paga → pendente` fica indisponível assim que a reserva é sorteada.
+
+`update_event_reservation` (`security invoker`, somente `authenticated`) edita uma reserva `pendente|paga` em uma única transação. A função valida e normaliza os dados pessoais, substitui números ou unidades/opções, rejeita conflitos e alterações de números já sorteados, recalcula preços/descontos pelo catálogo atual e respeita as transições de status existentes. RLS continua exigindo admin com AAL2.
 
 ### `reserva_produtos` e `reserva_produto_opcoes`
 

@@ -9,6 +9,7 @@ type DogRowProps = {
   isEditing: boolean
   onEdit: () => void
   onRemove: () => void
+  onSetFeatured: (featured: boolean) => void
   onSetStatus: (status: DogStatus) => void
 }
 
@@ -21,7 +22,7 @@ const STATUS_TONE: Record<DogStatus, StatusTone> = {
 const ACTION_CLASSES =
   'min-h-11 w-full min-w-0 !gap-2 !px-3 !py-2 !text-sm [&_svg]:size-5'
 
-export function DogRow({ dog, isEditing, onEdit, onRemove, onSetStatus }: DogRowProps) {
+export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetStatus }: DogRowProps) {
   return (
     <AdminListRow
       isEditing={isEditing}
@@ -89,6 +90,18 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetStatus }: DogRow
             Remover
           </Action>
         </div>
+
+        <Action
+          onClick={() => onSetFeatured(!dog.featured)}
+          size="small"
+          variant={dog.featured ? 'secondary-adaptive' : 'neutral-adaptive'}
+          icon="star"
+          aria-pressed={dog.featured}
+          aria-label={dog.featured ? `Remover ${dog.name} do destaque do catálogo` : `Destacar ${dog.name} no catálogo`}
+          className={`${ACTION_CLASSES} col-span-2`}
+        >
+          Destacar no catálogo
+        </Action>
       </div>
     </AdminListRow>
   )

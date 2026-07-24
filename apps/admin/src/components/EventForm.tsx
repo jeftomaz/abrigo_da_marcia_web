@@ -8,12 +8,14 @@ import {
   Switch,
   TextField,
   compressImage,
+  createPixCode,
   getEventErrorMessage,
+  useAdminSiteSettings,
   useEventSettings,
 } from '@abrigo/shared'
 import type { EditablePhoto } from '@abrigo/shared'
-import type { EditableEventProduct, EditableRafflePrize, EventDraft, EventKind, EventSettings, FundraisingEvent, MeasurementTable } from '../events/events'
-import { formatCurrencyInput, parseCurrencyToCents, toEditableEventDraft } from '../events/events'
+import type { EditableEventProduct, EditableRafflePrize, EventDraft, EventKind, FundraisingEvent, MeasurementTable } from '../events/events'
+import { formatCentsForInput, formatCurrencyInput, parseCurrencyToCents, toEditableEventDraft } from '../events/events'
 import { PhotoGalleryField } from './PhotoGalleryField'
 import { ConfirmationDialog } from './ConfirmationDialog'
 import { TagInput } from './TagInput'
@@ -53,7 +55,7 @@ function emptyProduct(): EditableEventProduct {
   }
 }
 
-function emptyEvent(settings?: EventSettings): EventDraft {
+function emptyEvent(): EventDraft {
   return {
     kind: 'product',
     title: '',
@@ -68,11 +70,10 @@ function emptyEvent(settings?: EventSettings): EventDraft {
     raffleTotalNumbers: '',
     raffleNumberPrice: '',
     prizes: [],
-    paymentKey: settings?.defaultPixKey ?? '',
-    city: settings?.defaultPixCity ?? '',
-    paymentReceiver: settings?.defaultPixReceiver ?? '',
-    pixCode: settings?.defaultPixCopyPaste ?? '',
-    postPaymentInstructions: settings?.defaultPostPaymentInstructions ?? '',
+    paymentKey: '',
+    city: '',
+    paymentReceiver: '',
+    postPaymentInstructions: '',
     receiptFolderUrl: '',
   }
 }
@@ -92,7 +93,6 @@ function hasDraftContent(draft: EventDraft, photos: EditablePhoto[]) {
     draft.paymentKey,
     draft.city,
     draft.paymentReceiver,
-    draft.pixCode,
     draft.postPaymentInstructions,
     draft.receiptFolderUrl,
   ].some((value) => value.trim())) return true
@@ -107,6 +107,35 @@ function hasDraftContent(draft: EventDraft, photos: EditablePhoto[]) {
 
 function isPositiveInteger(value: string) {
   return /^\d+$/.test(value) && Number(value) > 0
+}
+
+// Meta = quantidade × valor por número. Editar um dos três recalcula outro quando há dados
+// suficientes, preferindo recalcular a meta ao mexer em quantidade/valor.
+function recalculateRaffleField(
+  edited: 'goal' | 'price' | 'total',
+  values: { goal: string; price: string; total: string },
+): Partial<EventDraft> | null {
+  const goalCents = parseCurrencyToCents(values.goal)
+  const priceCents = parseCurrencyToCents(values.price)
+  const total = Number(values.total)
+  const hasGoal = goalCents > 0
+  const hasPrice = priceCents > 0
+  const hasTotal = isPositiveInteger(values.total)
+
+  if ((edited === 'total' || edited === 'price') && hasTotal && hasPrice) {
+    return { fundraisingGoal: formatCentsForInput(total * priceCents) }
+  }
+  if (edited === 'total' && hasGoal && hasTotal) {
+    return { raffleNumberPrice: formatCentsForInput(Math.round(goalCents / total)) }
+  }
+  if (edited === 'price' && hasGoal && hasPrice) {
+    return { raffleTotalNumbers: String(Math.max(1, Math.round(goalCents / priceCents))) }
+  }
+  if (edited === 'goal') {
+    if (hasGoal && hasTotal) return { raffleNumberPrice: formatCentsForInput(Math.round(goalCents / total)) }
+    if (hasGoal && hasPrice) return { raffleTotalNumbers: String(Math.max(1, Math.round(goalCents / priceCents))) }
+  }
+  return null
 }
 
 function formatMinutesAsHours(value: string) {
@@ -157,7 +186,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const formId = useId()
   const today = new Date().toISOString().slice(0, 10)
   const { data: eventSettings } = useEventSettings()
-  const initial: EventDraft = event ? toEditableEventDraft(event) : emptyEvent(eventSettings)
+  const { data: siteSettings } = useAdminSiteSettings()
+  const initial: EventDraft = event ? toEditableEventDraft(event) : emptyEvent()
   const [draft, setDraft] = useState<EventDraft>(initial)
   const [photos, setPhotos] = useState(() => initial.gallery)
   const [expirationUnit, setExpirationUnit] = useState<ExpirationUnit>('minutes')
@@ -185,21 +215,37 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   }, [])
 
   useEffect(() => {
-    if (event || !eventSettings || appliedPaymentDefaults.current) return
+    if (event || !eventSettings || !siteSettings || appliedPaymentDefaults.current) return
     appliedPaymentDefaults.current = true
     setDraft((current) => ({
       ...current,
-      paymentKey: current.paymentKey || eventSettings.defaultPixKey,
-      city: current.city || eventSettings.defaultPixCity,
-      paymentReceiver: current.paymentReceiver || eventSettings.defaultPixReceiver,
-      pixCode: current.pixCode || eventSettings.defaultPixCopyPaste,
+      paymentKey: current.paymentKey || siteSettings.pixKey,
+      city: current.city || siteSettings.pixCity,
+      paymentReceiver: current.paymentReceiver || siteSettings.pixReceiver,
       postPaymentInstructions: current.postPaymentInstructions || eventSettings.defaultPostPaymentInstructions,
     }))
-  }, [event, eventSettings])
+  }, [event, eventSettings, siteSettings])
 
   const setField = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {
     setSaveError('')
     setDraft((current) => ({ ...current, [key]: value }))
+  }
+
+  const updateRaffleField = (field: 'goal' | 'price' | 'total', rawValue: string) => {
+    setSaveError('')
+    setDraft((current) => {
+      const next = { ...current }
+      if (field === 'goal') next.fundraisingGoal = formatCurrencyInput(rawValue)
+      else if (field === 'price') next.raffleNumberPrice = formatCurrencyInput(rawValue)
+      else next.raffleTotalNumbers = rawValue.replace(/\D/g, '')
+      if (current.kind !== 'raffle') return next
+      const computed = recalculateRaffleField(field, {
+        goal: next.fundraisingGoal,
+        price: next.raffleNumberPrice,
+        total: next.raffleTotalNumbers,
+      })
+      return computed ? { ...next, ...computed } : next
+    })
   }
 
   const updateProduct = (id: string, changes: Partial<EditableEventProduct>) => {
@@ -294,6 +340,9 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       if (parseCurrencyToCents(draft.raffleNumberPrice) <= 0) {
         return { fieldId: `${formId}-raffle-price`, message: 'Informe um valor por número maior que zero.' }
       }
+      if (isPositiveInteger(draft.maxItemsPerReservation) && Number(draft.maxItemsPerReservation) > Number(draft.raffleTotalNumbers)) {
+        return { fieldId: `${formId}-max-items`, message: 'O máximo por reserva não pode ser maior que a quantidade de números da rifa.' }
+      }
       if (draft.prizes.length === 0) return { fieldId: `${formId}-prizes`, message: 'Adicione ao menos um prêmio à rifa.' }
     } else {
       if (draft.products.length === 0) return { fieldId: `${formId}-products`, message: 'Adicione ao menos um produto ao catálogo.' }
@@ -365,7 +414,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
     }
 
     if (!draft.postPaymentInstructions.trim()) return { fieldId: `${formId}-instructions`, message: 'Preencha as instruções pós-pagamento.' }
-    if (event?.status === 'active' && !draft.pixCode.trim()) return { fieldId: `${formId}-pix-code`, message: 'Informe o Pix copia-e-cola do evento ativo.' }
+    if (event?.status === 'active' && (!draft.paymentKey.trim() || !draft.paymentReceiver.trim() || !draft.city.trim())) return { fieldId: `${formId}-payment-key`, message: 'Informe chave, recebedor e cidade do Pix do evento ativo.' }
     if (draft.receiptFolderUrl) {
       try {
         if (new URL(draft.receiptFolderUrl).protocol !== 'https:') throw new Error()
@@ -613,22 +662,24 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             id={`${formId}-goal`}
             inputMode="decimal"
             value={draft.fundraisingGoal}
-            onChange={(changeEvent) => setField('fundraisingGoal', formatCurrencyInput(changeEvent.target.value))}
+            onChange={(changeEvent) => updateRaffleField('goal', changeEvent.target.value)}
             placeholder="0,00"
             required
             className={fieldClasses}
           />
         </FormField>
-        <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
-          <TextField
-            id={`${formId}-max-items`}
-            inputMode="numeric"
-            value={draft.maxItemsPerReservation}
-            onChange={(changeEvent) => setField('maxItemsPerReservation', changeEvent.target.value)}
-            placeholder="Padrão"
-            className={fieldClasses}
-          />
-        </FormField>
+        {draft.kind === 'product' && (
+          <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
+            <TextField
+              id={`${formId}-max-items`}
+              inputMode="numeric"
+              value={draft.maxItemsPerReservation}
+              onChange={(changeEvent) => setField('maxItemsPerReservation', changeEvent.target.value)}
+              placeholder="Padrão"
+              className={fieldClasses}
+            />
+          </FormField>
+        )}
         <FormField htmlFor={`${formId}-ttl`} label="Expiração da reserva">
           <div>
             <TextField
@@ -872,6 +923,10 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
     </section>
   )
 
+  const maxItemsExceedsTotal = draft.kind === 'raffle'
+    && isPositiveInteger(draft.maxItemsPerReservation)
+    && isPositiveInteger(draft.raffleTotalNumbers)
+    && Number(draft.maxItemsPerReservation) > Number(draft.raffleTotalNumbers)
   const raffleSection = (
     <section className={sectionClasses}>
       <h3 className={sectionTitleClasses}>Detalhes - Rifa</h3>
@@ -881,7 +936,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             id={`${formId}-raffle-total`}
             inputMode="numeric"
             value={draft.raffleTotalNumbers}
-            onChange={(changeEvent) => setField('raffleTotalNumbers', changeEvent.target.value)}
+            onChange={(changeEvent) => updateRaffleField('total', changeEvent.target.value)}
             required={draft.kind === 'raffle'}
             className={fieldClasses}
           />
@@ -891,14 +946,30 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             id={`${formId}-raffle-price`}
             inputMode="decimal"
             value={draft.raffleNumberPrice}
-            onChange={(changeEvent) => setField('raffleNumberPrice', formatCurrencyInput(changeEvent.target.value))}
+            onChange={(changeEvent) => updateRaffleField('price', changeEvent.target.value)}
             placeholder="0,00"
             required={draft.kind === 'raffle'}
             className={fieldClasses}
           />
         </FormField>
-        <div />
+        <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
+          <TextField
+            id={`${formId}-max-items`}
+            inputMode="numeric"
+            value={draft.maxItemsPerReservation}
+            onChange={(changeEvent) => setField('maxItemsPerReservation', changeEvent.target.value.replace(/\D/g, ''))}
+            placeholder="Padrão"
+            aria-invalid={maxItemsExceedsTotal}
+            aria-describedby={maxItemsExceedsTotal ? `${formId}-max-items-error` : undefined}
+            className={fieldClasses}
+          />
+        </FormField>
       </div>
+      {maxItemsExceedsTotal && (
+        <p id={`${formId}-max-items-error`} role="alert" className="mt-2 text-sm font-medium text-marca">
+          O máximo por reserva não pode ser maior que a quantidade de números da rifa.
+        </p>
+      )}
       <div id={`${formId}-prizes`} tabIndex={-1} className="mt-4">
         <h4 className={`${isPanel ? 'text-base' : 'text-2xl'} font-medium`}>Prêmios</h4>
         <div className="mt-3 flex flex-wrap gap-4">
@@ -964,26 +1035,22 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
     </section>
   )
 
+  const pixPreview = draft.paymentKey.trim() && draft.paymentReceiver.trim() && draft.city.trim()
+    ? createPixCode(draft.paymentKey, draft.paymentReceiver, draft.city)
+    : ''
   const paymentSection = (
     <section className={sectionClasses}>
       <h3 className={sectionTitleClasses}>Pagamento</h3>
       <p className="mt-1 text-xs text-cinza-medio dark:text-cinza-claro">
-        O Pix copia-e-cola é obrigatório para publicar. Chave, cidade e recebedor são referências opcionais.
+        Chave, recebedor e cidade são obrigatórios para publicar. O Pix copia-e-cola é gerado a partir deles, já com o valor de cada reserva.
       </p>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <FormField htmlFor={`${formId}-payment-key`} label="Chave PIX">
+        <FormField htmlFor={`${formId}-payment-key`} label="Chave PIX" wide>
           <TextField
             id={`${formId}-payment-key`}
             value={draft.paymentKey}
             onChange={(changeEvent) => setField('paymentKey', changeEvent.target.value)}
-            className={fieldClasses}
-          />
-        </FormField>
-        <FormField htmlFor={`${formId}-city`} label="Cidade do recebedor">
-          <TextField
-            id={`${formId}-city`}
-            value={draft.city}
-            onChange={(changeEvent) => setField('city', changeEvent.target.value)}
+            required={event?.status === 'active'}
             className={fieldClasses}
           />
         </FormField>
@@ -992,19 +1059,26 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             id={`${formId}-receiver`}
             value={draft.paymentReceiver}
             onChange={(changeEvent) => setField('paymentReceiver', changeEvent.target.value)}
-            className={fieldClasses}
-          />
-        </FormField>
-        <FormField htmlFor={`${formId}-pix-code`} label="Pix copia-e-cola" wide>
-          <TextField
-            id={`${formId}-pix-code`}
-            value={draft.pixCode}
-            onChange={(changeEvent) => setField('pixCode', changeEvent.target.value)}
-            placeholder="Obrigatório para publicar"
+            maxLength={25}
             required={event?.status === 'active'}
             className={fieldClasses}
           />
         </FormField>
+        <FormField htmlFor={`${formId}-city`} label="Cidade do recebedor">
+          <TextField
+            id={`${formId}-city`}
+            value={draft.city}
+            onChange={(changeEvent) => setField('city', changeEvent.target.value)}
+            maxLength={15}
+            required={event?.status === 'active'}
+            className={fieldClasses}
+          />
+        </FormField>
+        {pixPreview && (
+          <p className="col-span-2 rounded-lg bg-cinza-claro px-3 py-2 text-xs break-all text-cinza-escuro dark:bg-cinza-medio dark:text-cinza-claro">
+            <span className="font-medium">Pix copia-e-cola (sem valor):</span> {pixPreview}
+          </p>
+        )}
         <FormField htmlFor={`${formId}-instructions`} label="Instruções pós-pagamento" wide>
           <TextField
             id={`${formId}-instructions`}

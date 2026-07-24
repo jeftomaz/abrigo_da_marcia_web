@@ -6,7 +6,7 @@ import {
   useAdminDogs,
   useDeleteDog,
   useSaveDog,
-  useUpdateDogStatus,
+  useUpdateDog,
 } from '@abrigo/shared'
 import type { Dog, DogDraft, DogStatus } from '@abrigo/shared'
 import { DogForm } from '../components/DogForm'
@@ -21,7 +21,7 @@ export function Caes() {
   const { data: dogs = [], isLoading, error } = useAdminDogs()
   const saveDog = useSaveDog()
   const deleteDog = useDeleteDog()
-  const updateDogStatus = useUpdateDogStatus()
+  const updateDog = useUpdateDog()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<DogStatus | ''>('')
   const [editingTarget, setEditingTarget] = useState<Dog | null | undefined>(undefined)
@@ -75,7 +75,7 @@ export function Caes() {
     if (!deletionTarget) return
     setOperationError('')
     try {
-      await updateDogStatus.mutateAsync({ id: deletionTarget.id, status })
+      await updateDog.mutateAsync({ id: deletionTarget.id, status })
       setDeletionTarget(null)
       showSuccess('Status do cão atualizado.')
     } catch {
@@ -87,7 +87,7 @@ export function Caes() {
     if (!statusConfirmation) return
     setOperationError('')
     try {
-      await updateDogStatus.mutateAsync({
+      await updateDog.mutateAsync({
         id: statusConfirmation.dog.id,
         status: statusConfirmation.status,
       })
@@ -95,6 +95,16 @@ export function Caes() {
       showSuccess('Status do cão atualizado.')
     } catch {
       setOperationError('Não foi possível atualizar o status do cão.')
+    }
+  }
+
+  const setFeatured = async (dog: Dog, featured: boolean) => {
+    setOperationError('')
+    try {
+      await updateDog.mutateAsync({ id: dog.id, featured })
+      showSuccess(featured ? 'Cão destacado no catálogo.' : 'Destaque removido do catálogo.')
+    } catch {
+      setOperationError('Não foi possível atualizar o destaque do cão.')
     }
   }
 
@@ -182,6 +192,7 @@ export function Caes() {
                 isEditing={editingTarget?.id === dog.id}
                 onEdit={() => setEditingTarget(dog)}
                 onRemove={() => { setOperationError(''); setDeletionTarget(dog) }}
+                onSetFeatured={(featured) => void setFeatured(dog, featured)}
                 onSetStatus={(status) => openStatusConfirmation(dog, status)}
               />
             ))}
@@ -243,7 +254,7 @@ export function Caes() {
           <div className="mt-8 flex gap-4">
             <Action
               onClick={() => setStatusConfirmation(null)}
-              disabled={updateDogStatus.isPending}
+              disabled={updateDog.isPending}
               size="small"
               variant="secondary-adaptive"
               className="w-28 shrink-0"
@@ -252,12 +263,12 @@ export function Caes() {
             </Action>
             <Action
               onClick={() => void confirmStatusChange()}
-              disabled={updateDogStatus.isPending}
+              disabled={updateDog.isPending}
               size="small"
               variant="primary-adaptive"
               className="min-w-0 flex-1"
             >
-              {updateDogStatus.isPending ? 'Salvando...' : 'Confirmar alteração'}
+              {updateDog.isPending ? 'Salvando...' : 'Confirmar alteração'}
             </Action>
           </div>
         </Dialog>
@@ -278,7 +289,7 @@ export function Caes() {
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <Action
               onClick={() => void archiveInstead('adotado')}
-              disabled={deletionTarget.status === 'adotado' || updateDogStatus.isPending || deleteDog.isPending}
+              disabled={deletionTarget.status === 'adotado' || updateDog.isPending || deleteDog.isPending}
               size="small"
               variant="neutral-adaptive"
               icon="home-simple-door"
@@ -288,7 +299,7 @@ export function Caes() {
             </Action>
             <Action
               onClick={() => void archiveInstead('falecido')}
-              disabled={deletionTarget.status === 'falecido' || updateDogStatus.isPending || deleteDog.isPending}
+              disabled={deletionTarget.status === 'falecido' || updateDog.isPending || deleteDog.isPending}
               size="small"
               variant="neutral-adaptive"
               icon="eye-closed"
@@ -300,7 +311,7 @@ export function Caes() {
           <div className="mt-8 flex gap-4">
             <Action
               onClick={() => setDeletionTarget(null)}
-              disabled={updateDogStatus.isPending || deleteDog.isPending}
+              disabled={updateDog.isPending || deleteDog.isPending}
               size="small"
               variant="secondary-adaptive"
               className="w-28 shrink-0"
@@ -309,7 +320,7 @@ export function Caes() {
             </Action>
             <Action
               onClick={() => void confirmDeletion()}
-              disabled={updateDogStatus.isPending || deleteDog.isPending}
+              disabled={updateDog.isPending || deleteDog.isPending}
               size="small"
               variant="primary-adaptive"
               icon="trash-solid"

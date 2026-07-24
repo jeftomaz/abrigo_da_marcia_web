@@ -24,12 +24,13 @@ export {
   useDeleteDog,
   usePublicDogs,
   useSaveDog,
-  useUpdateDogStatus,
+  useUpdateDog,
 } from './dogs/dogs'
 export type {
   Dog,
   DogDraft,
   DogGender,
+  DogPatch,
   DogSize,
   DogStatus,
   EditableDogPhoto,
@@ -91,7 +92,7 @@ export {
   useSaveSocialLinks,
 } from './settings/settings'
 export type { SiteSettings, SocialLinks } from './settings/settings'
-export { createDonationPixCode } from './settings/pix'
+export { createPixCode } from './settings/pix'
 export type {
   EditableEventProduct,
   EditableRafflePrize,
@@ -99,6 +100,7 @@ export type {
   EventKind,
   EventProduct,
   EventReservation,
+  EventReservationUpdate,
   EventSettings,
   EventStatus,
   FundraisingEvent,

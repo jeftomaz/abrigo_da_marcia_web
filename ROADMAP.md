@@ -5,8 +5,8 @@
 3. Adoção (público + admin) — `doing` (fluxos prontos; refinamentos e produção pendentes)
 4. Histórias (público + admin) — `doing` (fluxos prontos; refinamentos e produção pendentes)
 5. Eventos/arrecadação — `doing` (fluxos principais prontos; lacunas abaixo pendentes)
-6. Configurações admin — `done`
-7. Fechamento funcional, design e publicação — `todo` **← próxima**
+6. Configurações admin — `doing` (fluxos prontos; card de configurações gerais entregue)
+7. Fechamento funcional, design e publicação — `doing` (P0 de publicação pendente; revisão de 2026-07-24 concluída, exceto a edição completa de reservas que aguarda modelo visual) **← atual**
 
 ## Pendências abertas — auditoria de 2026-07-22
 
@@ -72,6 +72,38 @@
 - `done` Medir e reduzir bundles/assets grandes, aplicar carregamento sob demanda por rota e validar desempenho em conexão móvel.
 - `done` Definir proteção de borda contra abuso de reservas por IP: triggers em `sessoes_reserva` e `reservas` limitam 60 sessões e 20 reservas por IP/hora, sobre hash com sal.
 - `done` Documentar recuperação de acesso em perda do TOTP, backup/restauração e verificação periódica de cron, quotas e auditoria no ambiente hospedado (`OPERATIONS.md`).
+
+## Pendências abertas — revisão de 2026-07-24
+
+Ajustes levantados em uso real, todos anteriores ao lançamento.
+
+### Adoção e Gestão de Cães
+
+- `done` Link do formulário de adoção editável por cão: `caes.adoption_form_url` voltou como override opcional (nullable, CHECK HTTPS), com o global de `site_settings` como padrão dos CTAs.
+- `done` "Destacar no catálogo" saiu do formulário e virou ação da listagem, ao lado de Editar/Remover; `useUpdateDogStatus` foi generalizado em `useUpdateDog`.
+- `done` Galeria do formulário de Cães perdeu a densidade compacta e passou a usar as mesmas miniaturas de Histórias.
+
+### Configurações e dados compartilhados
+
+- `done` Card "Configurações gerais" reúne o Pix (chave, recebedor, cidade) e as redes sociais; o Pix tem fonte única em `site_settings`, `event_settings` perdeu as colunas de pagamento e os eventos guardam só os três dados com override por evento.
+- `done` Pix copia-e-cola gerado no client pela especificação BR Code (EMV MPM) — decidiu-se reusar o gerador próprio (`createPixCode`, valor opcional), sem dependência nova; a coluna `pix_copy_paste` deixou de existir e o código sai já com o valor de cada doação/reserva.
+
+### Eventos — formulário
+
+- `done` "Máx. por reserva" migrou de Objetivos para "Detalhes - Rifa"; nos eventos de produto o campo permanece em Objetivos.
+- `done` Meta, quantidade e valor por número se autocompletam (meta = quantidade × valor): preencher dois calcula o terceiro e editar qualquer um recalcula outro.
+- `done` "Máx. por reserva" acima da quantidade de números é bloqueado em tempo real e na validação de publicação.
+
+### Eventos — gestão e reservas
+
+- `done` Botão "Exportar CSV" deixou de usar `neutral-adaptive` e passou à variante primária, visível no tema claro.
+- `done` Permitir ao admin editar uma reserva por completo, incluindo cliente, contato, status, comprovante e os números/itens que a compõem.
+- `done` Listagem ordena o evento ativo no topo e os demais por data de encerramento, do mais recente para o mais antigo.
+- `done` Cada card de reserva ganhou atalho para o link dos comprovantes do evento.
+- `done` Marcar reserva como paga passa por `Dialog` que pergunta se o comprovante foi salvo, marca a checkbox junto e oferece o atalho para os comprovantes.
+- `done` Filtro "Entregues" só aparece quando o evento pode ter reservas entregues (encerrado/arquivado ou já com entrega); a regra do status "Entregue" foi preservada.
+- `done` Métrica de itens de evento de produto exibe só a quantidade, sem `/∞`; a rifa mantém `vendidos/total`.
+- `done` Arquivar evento exige segunda confirmação (checkbox) destacando que a ação não é reversível.
 
 ## Base implementada — Landing
 
