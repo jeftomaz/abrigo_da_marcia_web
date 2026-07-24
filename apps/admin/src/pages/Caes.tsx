@@ -174,7 +174,7 @@ export function Caes() {
             {isLoading && <p role="status" className="text-center">Carregando cães...</p>}
             {error && <p role="alert" className="text-center">Não foi possível carregar os cães.</p>}
             {operationError && <p role="alert" className="text-center">{operationError}</p>}
-            {successMessage && <p role="status" className="text-center text-sm font-medium text-status-verde-texto">{successMessage}</p>}
+            {successMessage && <p role="status" className="text-center text-sm font-medium text-status-verde-on-surface">{successMessage}</p>}
             {filteredDogs.map((dog) => (
               <DogRow
                 key={dog.id}

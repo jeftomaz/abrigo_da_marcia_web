@@ -151,7 +151,7 @@ export function Eventos() {
           {isLoading && <p role="status" className="py-6 text-center">Carregando eventos...</p>}
           {loadError && <p role="alert" className="py-6 text-center text-marca">Não foi possível carregar os eventos.</p>}
           {actionError && <p role="alert" className="text-sm font-medium text-marca">{actionError}</p>}
-          {successMessage && <p role="status" className="text-sm font-medium text-status-verde-texto">{successMessage}</p>}
+          {successMessage && <p role="status" className="text-sm font-medium text-status-verde-on-surface">{successMessage}</p>}
           <div className="flex min-w-0 flex-col gap-5 sm:gap-6 desk:gap-3">
             {displayedEvents.map((event) => (
               <EventRow

@@ -94,8 +94,8 @@ export function EventManagement({ event, layout, onUpdateReservation, reservatio
       {[
         ['Reservas ativas', String(activeReservations), ''],
         [event.kind === 'raffle' ? 'Números vendidos' : 'Itens reservados', `${soldItems}/${event.kind === 'raffle' ? event.raffleTotalNumbers : '∞'}`, ''],
-        ['Reservado', formatMoney(reservedTotal), 'text-status-amarelo'],
-        ['Pago', formatMoney(paidTotal), 'text-status-verde'],
+        ['Reservado', formatMoney(reservedTotal), 'text-status-amarelo-on-surface'],
+        ['Pago', formatMoney(paidTotal), 'text-status-verde-on-surface'],
       ].map(([label, value, tone]) => (
         <div key={label} className="min-h-28 rounded-2xl bg-surface-raised p-4 text-on-surface-raised desk:min-h-16 desk:bg-cinza-claro desk:p-3 dark:desk:bg-cinza-medio">
           <span className="block text-lg leading-tight font-medium desk:text-xs">{label}</span>

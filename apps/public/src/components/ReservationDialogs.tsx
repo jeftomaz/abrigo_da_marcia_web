@@ -182,7 +182,15 @@ export function PixConfirmationDialog({
       {postPaymentInstructions && <p className="mt-5 text-sm">{postPaymentInstructions}</p>}
       <div className="mt-7 flex flex-col items-center">
         <div className="bg-white p-2">
-          <QRCodeSVG value={pixCode} className="size-40 sm:size-48" marginSize={0} />
+          {/* Sem title/role o SVG não tem nome acessível e o leitor de tela não anuncia
+              o QR — quem não enxerga precisa saber que o botão de copiar é a alternativa. */}
+          <QRCodeSVG
+            value={pixCode}
+            title="QR Code do Pix. Use o botão abaixo para copiar o código."
+            role="img"
+            className="size-40 sm:size-48"
+            marginSize={0}
+          />
         </div>
         <Action onClick={copyPixCode} className="mt-3 w-full max-w-56 py-2" size="small">
           {pixCopied ? 'Código copiado' : 'Copiar código PIX'}

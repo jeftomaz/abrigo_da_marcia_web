@@ -30,13 +30,22 @@
      a paleta base. `verde-escura` é o hover da metade verde do `OptionToggle`. */
   --color-status-verde: #7ed957;
   --color-status-verde-escura: #63c13f;
-  --color-status-verde-texto: #1f5e14;
+  /* #1f5e14 ficava em 4,47:1 sobre a badge verde, 0,03 abaixo do AA. */
+  --color-status-verde-texto: #1c5512;
   --color-status-amarelo: #e6da4e;
   --color-status-amarelo-texto: #5c5510;
+  /* Cor de estado usada como texto direto na superfície da página, sem o fundo colorido
+     que a torna legível na badge: aí ela precisa acompanhar o tema. O vivo só funciona
+     sobre superfície escura (verde 1,76:1 no branco) e o escuro só sobre a clara
+     (verde 1,92:1 no #262626). */
+  --color-status-verde-on-surface: var(--color-status-verde-texto);
+  --color-status-amarelo-on-surface: var(--color-status-amarelo-texto);
   --shadow-status-active: inset 0 0 0.75rem color-mix(in srgb, currentColor 22%, transparent);
 }
 
 .dark {
+  --color-status-verde-on-surface: var(--color-status-verde);
+  --color-status-amarelo-on-surface: var(--color-status-amarelo);
   --color-on-brand: var(--color-marca-escura);
   --color-surface-raised: #000;
   --color-on-surface-raised: var(--color-cinza-claro);

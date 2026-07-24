@@ -186,7 +186,14 @@ export function ExpandedCardDialog({
 
       {children ?? (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6 pb-0 lg:p-10 lg:pb-0">
+          {/* Região rolável precisa ser focalizável: sem tabindex, quem navega só por
+              teclado não consegue rolar a descrição quando ela transborda no mobile. */}
+          <div
+            tabIndex={0}
+            role="group"
+            aria-labelledby={titleId}
+            className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6 pb-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-marca lg:p-10 lg:pb-0"
+          >
             {tags && <div className="flex flex-wrap gap-2">{tags}</div>}
 
             <h3 id={titleId} className="text-3xl font-medium text-marca lg:text-4xl">
