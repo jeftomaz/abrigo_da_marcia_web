@@ -1136,6 +1136,16 @@ export type Database = {
       }
     }
     Functions: {
+      activate_event: {
+        Args: {
+          p_deleted_by?: string | null
+          p_event_id: string
+          p_export_email?: string | null
+          p_export_sent_at?: string | null
+          p_exported_event_id?: string | null
+        }
+        Returns: string | null
+      }
       clean_expired_event_personal_data: { Args: never; Returns: number }
       create_reservation_session: { Args: never; Returns: string }
       current_request_ip_hash: { Args: never; Returns: string }

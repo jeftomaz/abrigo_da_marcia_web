@@ -8,7 +8,6 @@ type EventRowProps = {
   event: FundraisingEvent
   isEditing: boolean
   isManaging: boolean
-  onArchive: () => void
   onDraw: () => void
   onEnd: () => void
   onEdit: () => void
@@ -28,7 +27,6 @@ export function EventRow({
   event,
   isEditing,
   isManaging,
-  onArchive,
   onDraw,
   onEnd,
   onEdit,
@@ -127,26 +125,15 @@ export function EventRow({
           </Action>
         )}
         {event.status === 'ended' && (
-          <>
-            <Action
-              size="small"
-              variant="neutral-adaptive"
-              icon="refresh-circle"
-              className={`${actionClasses} col-start-2 row-start-2`}
-              onClick={() => onSetStatus('active')}
-            >
-              Reativar
-            </Action>
-            <Action
-              size="small"
-              variant="neutral-adaptive"
-              icon="archive"
-              className={`${actionClasses} col-start-2 row-start-3`}
-              onClick={onArchive}
-            >
-              Arquivar
-            </Action>
-          </>
+          <Action
+            size="small"
+            variant="neutral-adaptive"
+            icon="refresh-circle"
+            className={`${actionClasses} col-start-2 row-start-2`}
+            onClick={() => onSetStatus('active')}
+          >
+            Reativar
+          </Action>
         )}
         {event.status === 'archived' && (
           <Action

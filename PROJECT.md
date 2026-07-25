@@ -49,7 +49,7 @@ Status detalhado: `ROADMAP.md`. Operação do ambiente hospedado (perda de TOTP,
 - **Doação:** modalidade única gera Pix copia-e-cola por valor predefinido ou livre; modalidade recorrente abre o link PagSeguro específico do valor configurado no admin.
 - **Adoção:** catálogo de cards expansíveis; ordenação por porte/idade; botão → Google Forms. Admin: CRUD de cães; status `disponivel|adotado|falecido` (≠ disponível some do público).
 - **Histórias:** exibição de adoções concluídas. Admin: CRUD e publicação/rascunho.
-- **Eventos:** 1 evento ativo + histórico. Usuário reserva produto/número de rifa → recebe código Pix → envia comprovante fora do site (WhatsApp/Instagram) → admin marca como pago. Reserva expira automaticamente (prazo definido pelo admin) e item volta ao catálogo. Admin: CRUD de eventos, produtos, rifas, prazos.
+- **Eventos:** no máximo 1 ativo + 3 encerrados; rascunhos não contam. Ao publicar o quinto, o evento com `activated_at` mais antigo é exportado por e-mail e excluído antes da ativação; falha no envio preserva tudo. Usuário reserva produto/número de rifa → recebe código Pix → envia comprovante fora do site (WhatsApp/Instagram) → admin marca como pago. Reserva expira automaticamente (prazo definido pelo admin) e item volta ao catálogo.
 - **Configurações:** valores padrão compartilhados pelas gestões; links públicos e segurança/MFA entram conforme seus modelos de dados forem implementados.
 
 ## Sessão admin

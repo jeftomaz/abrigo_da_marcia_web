@@ -51,7 +51,7 @@
 - `done` Corrigir rótulos provisórios do formulário: “Nova Variação” e “Prêmio da rifa”.
 - `done` Disponibilizar “Exportar CSV” também na gestão mobile de reservas.
 - `done` Exibir carregamento e erro das reservas no admin, da disponibilidade de números no público e das reservas usadas pela tela de sorteio.
-- `doing` Automatizar o envio da exportação com Resend antes da exclusão: Edge Function implementada e publicada; secrets, remetente de teste, smoke hospedado e domínio final pendentes.
+- `doing` Limitar o histórico a 1 evento ativo + 3 encerrados: banco e admin implementados; na quinta ativação, a Edge Function envia JSON completo + CSV, exclui o mais antigo e só então publica. Migration, deploy das funções, smoke hospedado e domínio final pendentes.
 - `done` Exibir dados persistidos: meta/arrecadado na gestão, identificação Pix na confirmação pública e imagens dos prêmios no detalhe público.
 - `done` Revisar os estados de atualização das reservas (salvando, erro e bloqueio por linha) para impedir comandos concorrentes sem retorno visual.
 
@@ -103,7 +103,7 @@ Ajustes levantados em uso real, todos anteriores ao lançamento.
 - `done` Marcar reserva como paga passa por `Dialog` que pergunta se o comprovante foi salvo, marca a checkbox junto e oferece o atalho para os comprovantes.
 - `done` Filtro "Entregues" só aparece quando o evento pode ter reservas entregues (encerrado/arquivado ou já com entrega); a regra do status "Entregue" foi preservada.
 - `done` Métrica de itens de evento de produto exibe só a quantidade, sem `/∞`; a rifa mantém `vendidos/total`.
-- `done` Arquivar evento exige segunda confirmação (checkbox) destacando que a ação não é reversível.
+- `done` Remover o arquivamento manual: eventos encerrados permanecem no histórico até a exclusão automática provocada pela quinta ativação; arquivados legados continuam removíveis.
 
 ## Base implementada — Landing
 
@@ -134,7 +134,7 @@ Ajustes levantados em uso real, todos anteriores ao lançamento.
 6. Configurações e regras de ciclo — `done`
 7. Catálogo de produtos — `done` (múltiplos produtos, opções por unidade, desconto e guia exclusivo por tabela/imagem)
 8. Rifas — `done` (prêmios ordenáveis, sorteios persistidos; um número pode ganhar no máximo um prêmio)
-9. Ajustes da gestão — `doing` (totais e confirmações assíncronas corrigidos; exclusão auditada exige exportação/envio manual confirmado; envio automático aguarda provedor de e-mail)
+9. Ajustes da gestão — `doing` (totais e confirmações assíncronas corrigidos; teto automático de quatro eventos implementado localmente e aguardando publicação/smoke)
 10. Testes de Eventos — `done` (38 testes pgTAP para contatos, rascunhos parciais, publicação, conflitos, expiração/liberação, descontos, medidas, ciclo e sorteio; builds/lints dos apps e lint do schema aprovados)
 
 O CRUD de produtos deve permitir um único formato de guia de medidas por produto: tabela preenchida manualmente ou imagem enviada pelo admin.
