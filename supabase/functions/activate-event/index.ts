@@ -2,6 +2,7 @@ import {
   authorizeAdmin,
   corsHeaders,
   createServiceClient,
+  errorMessage,
   loadEventExport,
   removeEventPhotos,
   sendEventExport,
@@ -23,6 +24,7 @@ Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   try {
     const { supabase, userId } = await authorizeAdmin(request)
+    const service = createServiceClient()
     const { eventId } = await request.json() as { eventId?: string }
     if (!eventId) throw new Error('Evento não informado.')
 
@@ -48,14 +50,14 @@ Deno.serve(async (request) => {
     let photoPaths: string[] = []
     if (previousEvents.length >= 4) {
       const oldest = previousEvents[0]
-      const eventExport = await loadEventExport(supabase, oldest.id)
+      const eventExport = await loadEventExport(service, oldest.id)
       exportSentAt = await sendEventExport(eventExport)
       exportedEventId = oldest.id
       exportEmail = eventExport.exportEmail
       photoPaths = eventExport.photoPaths
     }
 
-    const { data: deletedEventId, error: activationError } = await createServiceClient().rpc('activate_event', {
+    const { data: deletedEventId, error: activationError } = await service.rpc('activate_event', {
       p_deleted_by: userId,
       p_event_id: eventId,
       p_export_email: exportEmail,
@@ -69,6 +71,6 @@ Deno.serve(async (request) => {
       : null
     return Response.json({ cleanupWarning, deletedEventId, exportSentAt }, { headers: corsHeaders })
   } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : 'A operação falhou.' }, { status: 400, headers: corsHeaders })
+    return Response.json({ error: errorMessage(error) }, { status: 400, headers: corsHeaders })
   }
 })

@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(83);
+select plan(85);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -395,6 +395,20 @@ select is(
   has_function_privilege('service_role', 'public.activate_event(uuid,uuid,timestamptz,text,uuid)', 'execute'),
   true,
   'reserva a ativação confirmada à Edge Function'
+);
+select is(
+  (
+    select prosecdef
+    from pg_proc
+    where oid = 'public.activate_event(uuid,uuid,timestamptz,text,uuid)'::regprocedure
+  ),
+  true,
+  'executa a ativação com os privilégios internos necessários'
+);
+select is(
+  has_table_privilege('service_role', 'public.sessoes_reserva', 'select'),
+  true,
+  'permite que somente o backend inclua a sessão na exportação completa'
 );
 
 insert into public.eventos (

@@ -7,6 +7,14 @@ export const corsHeaders = {
 
 type AdminClient = ReturnType<typeof createClient>
 
+export function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    return error.message
+  }
+  return 'A operação falhou.'
+}
+
 function getSupabasePublicKey() {
   const publishableKeys = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')
   if (publishableKeys) {
