@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Workflow do GitHub Pages atualizado para `actions/configure-pages@v6`, compatível com Node.js 24 e sem o aviso de depreciação do Node.js 20.
 - Preparação para abertura pública: `README.md` criado, arquivos e histórico auditados contra secrets/backups/chaves privadas, e o teste do trio Pix isolado dos valores existentes no ambiente remoto. `.env` permanece ignorado; fotos versionadas já estavam sem EXIF/GPS. Histórico remoto reescrito para `noreply`, branches integrados removidos e somente `main` mantida. Validação final: 146 pgTAP remotos, 39 E2E, builds e lints aprovados.
 - Cliente e deploy migrados da `anon key` legada para a `publishable key`: frontend usa `VITE_SUPABASE_PUBLISHABLE_KEY`, GitHub Actions lê `vars.SUPABASE_PUBLISHABLE_KEY` e a Edge Function publicada prioriza `SUPABASE_PUBLISHABLE_KEYS`, com fallback legado restrito à compatibilidade local. A chave secreta moderna permanece fora do frontend.
 - `banco_site_abrigo` definido como produção e atualizado com as 24 migrations: as 6 pendentes (`20260723120000` e `20260724120000`–`20260724170000`) foram aplicadas sem seed. Histórico local/remoto alinhado, `db lint` sem erros e verificação transacional confirmou a restrição do trio Pix, o bucket `dog-photos` e os dois jobs de cron ativos.
