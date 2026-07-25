@@ -6,6 +6,7 @@ import { executarSql } from './banco'
 // `supabase status`, nunca do repositório: nenhuma credencial fica versionada.
 export const ADMIN_EMAIL = 'e2e-admin@abrigo.local'
 export const ADMIN_SENHA = 'Senha-E2E-nao-reaproveitavel-9f2c'
+export const INVITED_ADMIN_EMAIL = 'e2e-invited-admin@abrigo.local'
 
 type Ambiente = { apiUrl: string; serviceRoleKey: string }
 
@@ -74,7 +75,14 @@ export function codigoTotpComJanelaFolgada(segredo: string) {
 }
 
 export function removerAdminDeTeste() {
-  executarSql(`delete from auth.users where email = '${ADMIN_EMAIL}'`)
+  executarSql(`delete from auth.users where email in ('${ADMIN_EMAIL}', '${INVITED_ADMIN_EMAIL}')`)
+}
+
+export async function convidarAdminDeTeste() {
+  await chamar('/invite', {
+    method: 'POST',
+    body: JSON.stringify({ email: INVITED_ADMIN_EMAIL }),
+  })
 }
 
 export async function provisionarAdmin() {

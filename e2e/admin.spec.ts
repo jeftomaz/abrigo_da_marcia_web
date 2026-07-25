@@ -1,7 +1,13 @@
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 import { ADMIN_URL } from '../playwright.config'
-import { codigoTotpComJanelaFolgada, provisionarAdmin, removerAdminDeTeste } from './admin'
+import {
+  codigoTotpComJanelaFolgada,
+  convidarAdminDeTeste,
+  INVITED_ADMIN_EMAIL,
+  provisionarAdmin,
+  removerAdminDeTeste,
+} from './admin'
 import { expect, test } from './fixtures'
 
 const PADROES = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
@@ -49,6 +55,32 @@ async function entrar(page: Page) {
 }
 
 test.describe('admin', () => {
+  test('conclui o cadastro de um administrador convidado', async ({ page, request }) => {
+    await convidarAdminDeTeste()
+    const mensagens = await request.get('http://127.0.0.1:54324/api/v1/messages')
+    const { messages } = await mensagens.json()
+    const mensagem = messages.find((item: { To: Array<{ Address: string }> }) =>
+      item.To.some((recipient) => recipient.Address === INVITED_ADMIN_EMAIL))
+    const email = await request.get(`http://127.0.0.1:54324/view/${mensagem.ID}.html`)
+    const html = await email.text()
+    const confirmationUrl = html.match(/href="([^"]+)"/)?.[1]?.replaceAll('&amp;', '&')
+    if (!confirmationUrl) throw new Error('Link do convite não encontrado.')
+
+    await page.goto(confirmationUrl)
+    await expect(page.getByRole('heading', { name: 'Concluir cadastro' })).toBeVisible()
+    await page.getByLabel('Senha', { exact: true }).fill(credenciais.senha)
+    await page.getByLabel('Confirmar senha').fill(credenciais.senha)
+    await page.getByRole('button', { name: 'Criar senha e continuar' }).click()
+
+    await expect(page.getByRole('heading', { name: 'Proteja sua conta' })).toBeVisible()
+    await page.getByRole('button', { name: 'Configurar autenticador' }).click()
+    const secret = await page.locator('code').textContent()
+    if (!secret) throw new Error('Segredo TOTP não encontrado.')
+    await page.getByLabel('Código do autenticador').fill(await codigoTotpComJanelaFolgada(secret))
+    await page.getByRole('button', { name: 'Verificar' }).click()
+    await expect(page.getByRole('heading', { name: 'Cães Cadastrados' })).toBeVisible()
+  })
+
   test('exige senha e TOTP antes de liberar a gestão', async ({ page }) => {
     await page.goto(ADMIN_URL)
     await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()

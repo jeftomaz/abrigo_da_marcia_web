@@ -12,8 +12,8 @@
 
 ### P0 — Publicação e dados reais
 
-- `doing` Produção `banco_site_abrigo` definida, com 24 migrations, bucket, Auth/TOTP, fallback de sessão do plano Free e `pg_cron` validados; URLs e variáveis finais pendentes.
-- `doing` Onboarding hospedado por convite implementado (senha → TOTP → `aal2`); recebimento e abertura do e-mail confirmados, conclusão do cadastro no navegador e smoke de RLS, Storage, reservas, expiração e sorteio em andamento.
+- `doing` Produção `banco_site_abrigo` definida, com 24 migrations, bucket, Auth/TOTP, fallback de sessão do plano Free e `pg_cron` validados; corrigir `SUPABASE_URL` do GitHub para a URL-base e concluir as variáveis finais.
+- `doing` Onboarding por convite implementado e validado localmente (senha → TOTP → `aal2`); repetir no hospedado após corrigir a URL do build e concluir o smoke de RLS, Storage, reservas, expiração e sorteio.
 - `done` Publicar os apps público e admin no GitHub Pages (workflow em GitHub Actions, público em `/abrigo_da_marcia_web/`, admin em `/admin/` e fallback `404.html` validados com HTTPS).
 - `todo` Comprar/verificar o domínio no Resend e configurar `RESEND_FROM_EMAIL` de produção; até lá, testes de envio ficam restritos ao remetente `onboarding@resend.dev` e ao e-mail da conta Resend.
 - `todo` Carregar configurações, cães, histórias, eventos e fotos reais; o `seed.sql` continua exclusivamente fictício e não deve abastecer produção.
