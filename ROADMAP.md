@@ -14,7 +14,7 @@
 
 - `doing` Produção `banco_site_abrigo` definida, com 24 migrations, bucket, Auth/TOTP, fallback de sessão do plano Free e `pg_cron` validados; URLs e variáveis finais pendentes.
 - `doing` Onboarding hospedado por convite implementado (senha → TOTP → `aal2`); recebimento e abertura do e-mail confirmados, conclusão do cadastro no navegador e smoke de RLS, Storage, reservas, expiração e sorteio em andamento.
-- `doing` Publicar os apps público e admin no GitHub Pages (bases, admin em `/admin/`, workflow e fallback `404.html` prontos; configuração do Pages, variáveis e publicação pendentes).
+- `done` Publicar os apps público e admin no GitHub Pages (workflow em GitHub Actions, público em `/abrigo_da_marcia_web/`, admin em `/admin/` e fallback `404.html` validados com HTTPS).
 - `todo` Comprar/verificar o domínio no Resend e configurar `RESEND_FROM_EMAIL` de produção; até lá, testes de envio ficam restritos ao remetente `onboarding@resend.dev` e ao e-mail da conta Resend.
 - `todo` Carregar configurações, cães, histórias, eventos e fotos reais; o `seed.sql` continua exclusivamente fictício e não deve abastecer produção.
 - `done` Sanitizar EXIF/GPS e otimizar as fotos versionadas: as 7 fotos `landing_*.jpg` tiveram EXIF/GPS/XMP/maker notes removidos, perfil convertido para sRGB e recompressão q80/2048px via `scripts/optimize-photo.py` (10,2 MB → 3,07 MB). As imagens de `seed-storage/` já eram placeholders gerados (~2,4 KB, sem metadados).
