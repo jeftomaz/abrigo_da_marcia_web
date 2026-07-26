@@ -347,7 +347,7 @@ Auditoria mínima preservada após a exclusão, sem os dados operacionais do eve
 | `id` | `uuid` | PK; default `gen_random_uuid()` |
 | `event_id` | `uuid` | not null; identificador do evento removido, sem FK |
 | `event_name` | `text` | not null; snapshot para identificação administrativa |
-| `deleted_by` | `uuid` | nullable apenas para compatibilidade histórica; novas exclusões registram `auth.users.id` |
+| `deleted_by` | `uuid` | FK nullable → `auth.users.id`; novas exclusões registram o admin e sua remoção aplica `ON DELETE SET NULL` |
 | `export_email` | `text` | not null; snapshot do destinatário configurado |
 | `export_sent_at` | `timestamptz` | not null; instante em que o envio da cópia foi confirmado |
 | `deleted_at` | `timestamptz` | not null; default `now()` |

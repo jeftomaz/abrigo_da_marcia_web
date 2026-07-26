@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(85);
+select plan(86);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -409,6 +409,16 @@ select is(
   has_table_privilege('service_role', 'public.sessoes_reserva', 'select'),
   true,
   'permite que somente o backend inclua a sessão na exportação completa'
+);
+select is(
+  (
+    select confdeltype
+    from pg_constraint
+    where conname = 'event_deletion_audit_deleted_by_fkey'
+      and conrelid = 'public.event_deletion_audit'::regclass
+  ),
+  'n'::"char",
+  'preserva a auditoria e anula o ator quando um admin é removido'
 );
 
 insert into public.eventos (

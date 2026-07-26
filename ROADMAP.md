@@ -8,7 +8,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 2. Landing + Header — `done`
 3. Adoção (público + admin) — `done`
 4. Histórias (público + admin) — `done`
-5. Eventos/arrecadação (público + admin + reservas) — `done` (teto automático de eventos aguarda deploy/smoke hospedado)
+5. Eventos/arrecadação (público + admin + reservas) — `done`
 6. Configurações admin — `done`
 7. Publicação, produção e hardening — `doing` **← atual**
 
@@ -16,7 +16,6 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 ### P0 — Publicação e produção
 
-- `doing` Teto automático hospedado: migrations `20260725120000`/`20260725130000` e funções publicadas; aplicar `20260725140000`, republicar as funções e repetir o smoke (exportação → exclusão → ativação sob lock).
 - `doing` Concluir o smoke hospedado de RLS, Storage, reservas, expiração, sorteio e onboarding por convite; fechar as variáveis finais de produção.
 - `todo` Domínio no Resend + `RESEND_FROM_EMAIL` de produção; até lá, envio restrito a `onboarding@resend.dev`.
 - `todo` Carregar dados reais (configurações, cães, histórias, eventos, fotos); `seed.sql` é só fictício e não abastece produção.
