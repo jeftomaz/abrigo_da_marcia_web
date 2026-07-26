@@ -71,7 +71,7 @@ insert into public.produto_variacao_opcoes (id, variation_id, name, display_orde
   ('b1300000-0000-0000-0000-000000000002', 'b1200000-0000-0000-0000-000000000001', 'M', 2),
   ('b1300000-0000-0000-0000-000000000003', 'b1200000-0000-0000-0000-000000000001', 'G', 3);
 
-update public.eventos set status = 'ativo' where id = 'b1000000-0000-0000-0000-000000000001';
+select public.activate_event('b1000000-0000-0000-0000-000000000001');
 
 insert into public.sessoes_reserva (id) values
   ('b1400000-0000-0000-0000-000000000001'),
@@ -123,7 +123,7 @@ insert into public.rifa_premios (id, event_id, name, photo, display_order) value
   ('a1100000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'Cesta de produtos pet', 'eventos/rifa-teste/premio-1.jpg', 1),
   ('a1100000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000001', 'Vale-compras pet shop', 'eventos/rifa-teste/premio-2.jpg', 2);
 
-update public.eventos set status = 'ativo' where id = 'a1000000-0000-0000-0000-000000000001';
+select public.activate_event('a1000000-0000-0000-0000-000000000001');
 
 insert into public.sessoes_reserva (id) values
   ('a1200000-0000-0000-0000-000000000001'),

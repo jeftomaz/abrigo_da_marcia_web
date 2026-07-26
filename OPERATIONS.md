@@ -84,7 +84,7 @@ O teto de 500.000 bytes por imagem é aplicado no client (`compressImage`) e no 
 
 ### Auditoria
 
-Exclusões de eventos arquivados preservam registro mínimo, sem os dados operacionais:
+Exclusões automáticas do evento mais antigo e remoções de arquivados legados preservam registro mínimo, sem os dados operacionais:
 
 ```sql
 select event_name, export_email, export_sent_at, deleted_at
@@ -92,3 +92,15 @@ from public.event_deletion_audit order by deleted_at desc;
 ```
 
 Toda linha precisa ter `export_sent_at` preenchido: a exclusão só ocorre depois que a Edge Function confirma o envio da cópia. Linha sem envio confirmado indica exclusão fora do fluxo previsto.
+
+O histórico deve conter no máximo um ativo e três encerrados; rascunhos ficam fora da contagem:
+
+```sql
+select
+  count(*) filter (where status = 'ativo') as ativos,
+  count(*) filter (where status = 'encerrado') as encerrados,
+  count(*) filter (where status <> 'rascunho') as total_ativados
+from public.eventos;
+```
+
+Esperado: `ativos <= 1`, `encerrados <= 3` e `total_ativados <= 4`. Antes do primeiro ciclo de exclusão, confirmar no admin o Gmail em **Configurações → Eventos → E-mail para exportação automática** e executar um smoke com destinatário autorizado pelo remetente Resend.

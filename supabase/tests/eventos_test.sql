@@ -3,11 +3,14 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(69);
+select plan(86);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
 update public.eventos set status = 'encerrado' where status = 'ativo';
+select set_config('app.confirmed_event_delete', 'on', true);
+delete from public.eventos;
+select set_config('app.confirmed_event_delete', 'off', true);
 
 select throws_ok(
   $$update public.event_settings set default_reservation_ttl = interval '30 seconds' where singleton$$,
@@ -41,8 +44,7 @@ select is(
   'mantém formulário parcial como rascunho'
 );
 select throws_ok($$
-  update public.eventos set status = 'ativo'
-  where id = '40000000-0000-0000-0000-000000000001'
+  select public.activate_event('40000000-0000-0000-0000-000000000001')
 $$, 'P0001', 'Conclua e salve todos os campos do rascunho antes de publicar.', 'impede publicar payload parcial');
 delete from public.eventos where id = '40000000-0000-0000-0000-000000000001';
 
@@ -55,8 +57,7 @@ select throws_ok($$
     'produtos', '{eventos/sem-pix.jpg}', current_date - 1, current_date + 1,
     100000, 'Envie o comprovante.', now()
   );
-  update public.eventos set status = 'ativo'
-  where id = '40000000-0000-0000-0000-000000000002';
+  select public.activate_event('40000000-0000-0000-0000-000000000002');
 $$, 'P0001', 'Informe chave, recebedor e cidade do Pix antes de publicar.', 'explica publicação bloqueada por Pix ausente');
 delete from public.eventos where id = '40000000-0000-0000-0000-000000000002';
 
@@ -74,7 +75,7 @@ select lives_ok($$
   insert into public.rifa_premios (id, event_id, name, photo, display_order) values
     ('11000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Prêmio 1', 'eventos/p1.jpg', 1),
     ('11000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', 'Prêmio 2', 'eventos/p2.jpg', 2);
-  update public.eventos set status = 'ativo' where id = '10000000-0000-0000-0000-000000000001';
+  select public.activate_event('10000000-0000-0000-0000-000000000001');
 $$, 'ativa uma rifa completamente configurada');
 
 select throws_ok(
@@ -277,7 +278,7 @@ select lives_ok($$
     values ('22000000-0000-0000-0000-000000000001', '21000000-0000-0000-0000-000000000001', 'Tamanho', 1);
   insert into public.produto_variacao_opcoes (id, variation_id, name, display_order)
     values ('23000000-0000-0000-0000-000000000001', '22000000-0000-0000-0000-000000000001', 'M', 1);
-  update public.eventos set status = 'ativo' where id = '20000000-0000-0000-0000-000000000001';
+  select public.activate_event('20000000-0000-0000-0000-000000000001');
 $$, 'ativa evento com catálogo de produtos');
 
 select throws_ok($$
@@ -343,6 +344,13 @@ select throws_ok($$
   )
 $$, 'P0001', 'Escolha uma opção de cada variação de Camiseta.', 'rejeita produto sem todas as variações');
 
+select lives_ok($$
+  update public.reservas set status = 'paga'
+  where session_id = '24000000-0000-0000-0000-000000000001';
+  update public.eventos set status = 'encerrado'
+  where id = '20000000-0000-0000-0000-000000000001';
+$$, 'confirma e encerra uma reserva de produto');
+
 select throws_ok($$
   insert into public.eventos (
     id, name, description, type, photos, start_date, end_date,
@@ -355,7 +363,7 @@ select throws_ok($$
   insert into public.rifas values ('30000000-0000-0000-0000-000000000001', 10, 1000);
   insert into public.rifa_premios (event_id, name, photo, display_order)
     values ('30000000-0000-0000-0000-000000000001', 'Prêmio', 'eventos/p.jpg', 1);
-  update public.eventos set status = 'ativo' where id = '30000000-0000-0000-0000-000000000001';
+  select public.activate_event('30000000-0000-0000-0000-000000000001');
 $$, 'P0001', 'Um evento só pode ficar ativo dentro do período informado.', 'impede ativar evento passado');
 
 select ok(
@@ -368,15 +376,163 @@ select ok(
 );
 
 select lives_ok($$
-  update public.reservas set status = 'paga'
-  where session_id = '24000000-0000-0000-0000-000000000001';
-  update public.eventos set status = 'encerrado'
-  where id = '20000000-0000-0000-0000-000000000001';
-$$, 'confirma e encerra uma reserva de produto');
-select lives_ok($$
   update public.reservas set status = 'entregue'
   where session_id = '24000000-0000-0000-0000-000000000001'
 $$, 'permite entregar produtos pagos após o encerramento');
+
+select has_function(
+  'public',
+  'activate_event',
+  array['uuid', 'uuid', 'timestamp with time zone', 'text', 'uuid'],
+  'expõe a ativação auditada de eventos'
+);
+select is(
+  has_function_privilege('authenticated', 'public.activate_event(uuid,uuid,timestamptz,text,uuid)', 'execute'),
+  false,
+  'impede que o navegador simule a confirmação do envio'
+);
+select is(
+  has_function_privilege('service_role', 'public.activate_event(uuid,uuid,timestamptz,text,uuid)', 'execute'),
+  true,
+  'reserva a ativação confirmada à Edge Function'
+);
+select is(
+  (
+    select prosecdef
+    from pg_proc
+    where oid = 'public.activate_event(uuid,uuid,timestamptz,text,uuid)'::regprocedure
+  ),
+  true,
+  'executa a ativação com os privilégios internos necessários'
+);
+select is(
+  has_table_privilege('service_role', 'public.sessoes_reserva', 'select'),
+  true,
+  'permite que somente o backend inclua a sessão na exportação completa'
+);
+select is(
+  (
+    select confdeltype
+    from pg_constraint
+    where conname = 'event_deletion_audit_deleted_by_fkey'
+      and conrelid = 'public.event_deletion_audit'::regclass
+  ),
+  'n'::"char",
+  'preserva a auditoria e anula o ator quando um admin é removido'
+);
+
+insert into public.eventos (
+  id, name, description, type, photos, start_date, end_date,
+  fundraising_goal_cents, pix_key, pix_receiver, pix_city,
+  post_payment_instructions, data_verified_at
+) values
+  (
+    '50000000-0000-0000-0000-000000000001', 'Terceiro evento', 'Histórico para validar o teto.',
+    'produtos', '{eventos/terceiro.jpg}', current_date - 1, current_date + 1,
+    100000, 'pix@example.com', 'Abrigo Teste', 'Sao Paulo', 'Envie o comprovante.', now()
+  ),
+  (
+    '60000000-0000-0000-0000-000000000001', 'Quarto evento', 'Histórico para validar o teto.',
+    'produtos', '{eventos/quarto.jpg}', current_date - 1, current_date + 1,
+    100000, 'pix@example.com', 'Abrigo Teste', 'Sao Paulo', 'Envie o comprovante.', now()
+  ),
+  (
+    '70000000-0000-0000-0000-000000000001', 'Quinto evento', 'Ativação que remove o mais antigo.',
+    'produtos', '{eventos/quinto.jpg}', current_date - 1, current_date + 1,
+    100000, 'pix@example.com', 'Abrigo Teste', 'Sao Paulo', 'Envie o comprovante.', now()
+  );
+
+insert into public.produtos (
+  event_id, name, description, photos, unit_price_cents, display_order
+) values
+  ('50000000-0000-0000-0000-000000000001', 'Produto 3', 'Produto de teste', '{eventos/p3.jpg}', 1000, 1),
+  ('60000000-0000-0000-0000-000000000001', 'Produto 4', 'Produto de teste', '{eventos/p4.jpg}', 1000, 1),
+  ('70000000-0000-0000-0000-000000000001', 'Produto 5', 'Produto de teste', '{eventos/p5.jpg}', 1000, 1);
+
+select public.activate_event('50000000-0000-0000-0000-000000000001');
+update public.eventos set status = 'encerrado'
+where id = '50000000-0000-0000-0000-000000000001';
+select throws_ok(
+  $$update public.eventos set status = 'arquivado'
+    where id = '50000000-0000-0000-0000-000000000001'$$,
+  'P0001',
+  'Eventos encerrados permanecem no histórico até a exclusão automática.',
+  'preserva três eventos encerrados em vez de permitir arquivamento manual'
+);
+select public.activate_event('60000000-0000-0000-0000-000000000001');
+update public.eventos set status = 'encerrado'
+where id = '60000000-0000-0000-0000-000000000001';
+select set_config('app.confirmed_event_activation', 'off', true);
+
+select throws_ok(
+  $$update public.eventos set status = 'ativo'
+    where id = '70000000-0000-0000-0000-000000000001'$$,
+  'P0001',
+  'Publique o evento pelo fluxo de ativação com exportação automática.',
+  'impede ativação direta que contornaria a exportação'
+);
+select throws_ok(
+  $$select public.activate_event('70000000-0000-0000-0000-000000000001')$$,
+  'P0001',
+  'A cópia do evento mais antigo precisa ser enviada antes da publicação.',
+  'recusa o quinto evento sem confirmação da exportação'
+);
+
+update public.event_settings
+set event_export_email = 'abrigo@example.com'
+where singleton;
+select throws_ok(
+  $$select public.activate_event(
+    '70000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
+    now(),
+    'outro@example.com'
+  )$$,
+  'P0001',
+  'O destinatário da cópia mudou durante a publicação; envie novamente.',
+  'confirma que a cópia foi enviada ao e-mail atualmente configurado'
+);
+select lives_ok(
+  $$select public.activate_event(
+    '70000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000001',
+    now(),
+    'abrigo@example.com'
+  )$$,
+  'exclui o mais antigo somente após a cópia e ativa o quinto'
+);
+select is(
+  (select count(*) from public.eventos where status <> 'rascunho'),
+  4::bigint,
+  'mantém quatro eventos já ativados no banco'
+);
+select is(
+  (select count(*) from public.eventos where status = 'ativo'),
+  1::bigint,
+  'mantém exatamente um evento ativo'
+);
+select is(
+  (select count(*) from public.eventos where status = 'encerrado'),
+  3::bigint,
+  'mantém os três eventos encerrados mais recentes'
+);
+select is(
+  (select count(*) from public.eventos where id = '10000000-0000-0000-0000-000000000001'),
+  0::bigint,
+  'remove o evento com a ativação mais antiga'
+);
+select is(
+  (select count(*) from public.event_deletion_audit
+    where event_id = '10000000-0000-0000-0000-000000000001'
+      and export_email = 'abrigo@example.com'),
+  1::bigint,
+  'audita o destinatário e a exclusão automática'
+);
+select is(
+  (select count(*) from public.eventos_public),
+  4::bigint,
+  'limita a exposição pública aos quatro eventos preservados'
+);
 
 -- Limitação por IP. As asserções sem cabeçalho vêm primeiro: uma vez definido,
 -- request.headers não volta a ficar ausente dentro da transação.

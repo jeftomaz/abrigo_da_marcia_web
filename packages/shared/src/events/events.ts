@@ -789,14 +789,28 @@ async function saveEvent(draft: EventDraft) {
 }
 
 async function updateEventStatus({ id, status }: { id: string; status: EventStatus }) {
+  if (status === 'active') {
+    await invokeEventFunction('activate-event', id)
+    return
+  }
   const { error } = await supabase.from('eventos').update({ status: EVENT_STATUS_TO_DB[status] }).eq('id', id)
   if (error) throw error
 }
 
+async function invokeEventFunction(name: 'activate-event' | 'delete-archived-event', eventId: string) {
+  const { error } = await supabase.functions.invoke(name, { body: { eventId } })
+  if (!error) return
+  let message = error.message
+  if ('context' in error && error.context instanceof Response) {
+    const body = await error.context.clone().json().catch(() => null) as { error?: string } | null
+    if (body?.error) message = body.error
+  }
+  throw new Error(message)
+}
+
 async function deleteEvent({ event }: { event: FundraisingEvent }) {
   if (event.status === 'archived') {
-    const { error } = await supabase.functions.invoke('delete-archived-event', { body: { eventId: event.id } })
-    if (error) throw error
+    await invokeEventFunction('delete-archived-event', event.id)
   } else {
     const { error } = await supabase.from('eventos').delete().eq('id', event.id)
     if (error) throw error
