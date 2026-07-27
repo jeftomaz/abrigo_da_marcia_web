@@ -1,6 +1,6 @@
 import {
   authorizeAdmin,
-  corsHeaders,
+  corsHeadersFor,
   createServiceClient,
   errorMessage,
   loadEventExport,
@@ -9,7 +9,8 @@ import {
 } from '../_shared/event-export.ts'
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const cors = corsHeadersFor(request)
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
     const { supabase } = await authorizeAdmin(request)
     const service = createServiceClient()
@@ -21,8 +22,8 @@ Deno.serve(async (request) => {
     const { error: deleteError } = await supabase.rpc('delete_archived_event', { p_event_id: eventId, p_export_sent_at: sentAt })
     if (deleteError) throw deleteError
     const cleanupWarning = await removeEventPhotos(supabase, eventExport.photoPaths)
-    return Response.json({ cleanupWarning, sentAt }, { headers: corsHeaders })
+    return Response.json({ cleanupWarning, sentAt }, { headers: cors })
   } catch (error) {
-    return Response.json({ error: errorMessage(error) }, { status: 400, headers: corsHeaders })
+    return Response.json({ error: errorMessage(error) }, { status: 400, headers: cors })
   }
 })

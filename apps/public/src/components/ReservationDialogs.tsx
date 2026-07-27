@@ -170,7 +170,7 @@ export function PixConfirmationDialog({
     <Dialog
       ariaLabelledBy={titleId}
       onClose={onClose}
-      className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface-raised p-7 text-on-surface-raised sm:p-10"
+      className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface-raised p-7 text-left text-on-surface-raised sm:p-10"
     >
       <h2 id={titleId} className="text-3xl font-medium text-marca sm:text-4xl">
         {title}
@@ -185,7 +185,7 @@ export function PixConfirmationDialog({
             value={pixCode}
             title="QR Code do Pix. Use o botão abaixo para copiar o código."
             role="img"
-            className="size-40 sm:size-48"
+            className="size-48 sm:size-56"
             marginSize={0}
           />
         </div>
@@ -200,7 +200,7 @@ export function PixConfirmationDialog({
         </p>
       )}
       <div className="mt-8 flex justify-center">
-        <Action onClick={onClose} className="w-full max-w-72 py-2" size="small">
+        <Action onClick={onClose} className="w-full max-w-56 py-2" size="small">
           Fechar
         </Action>
       </div>
