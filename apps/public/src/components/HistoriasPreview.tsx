@@ -72,7 +72,7 @@ export function HistoriasPreview() {
       )}
 
       <div className="mt-8 flex justify-center">
-        <Action to="/historias" icon="open-book" variant="secondary">
+        <Action to="/historias" icon="open-book" variant="secondary-adaptive">
           Ver todas as histórias
         </Action>
       </div>

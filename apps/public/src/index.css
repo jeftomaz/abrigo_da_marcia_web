@@ -4,6 +4,30 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Jost (SIL OFL) auto-hospedada — ver packages/shared/src/fonts/OFL.txt. Subset
+   latin cobre os acentos do português; sem requisição a fontes de terceiros. */
+@font-face {
+  font-family: "Jost";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../../packages/shared/src/fonts/jost-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Jost";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../../../packages/shared/src/fonts/jost-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Jost";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../../../packages/shared/src/fonts/jost-600.woff2") format("woff2");
+}
+
 @theme {
   --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
 

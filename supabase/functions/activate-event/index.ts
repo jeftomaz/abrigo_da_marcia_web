@@ -1,6 +1,6 @@
 import {
   authorizeAdmin,
-  corsHeaders,
+  corsHeadersFor,
   createServiceClient,
   errorMessage,
   loadEventExport,
@@ -21,7 +21,8 @@ function oldestFirst(left: PublishedEvent, right: PublishedEvent) {
 }
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
+  const cors = corsHeadersFor(request)
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
     const { supabase, userId } = await authorizeAdmin(request)
     const service = createServiceClient()
@@ -69,8 +70,8 @@ Deno.serve(async (request) => {
     const cleanupWarning = deletedEventId
       ? await removeEventPhotos(supabase, photoPaths)
       : null
-    return Response.json({ cleanupWarning, deletedEventId, exportSentAt }, { headers: corsHeaders })
+    return Response.json({ cleanupWarning, deletedEventId, exportSentAt }, { headers: cors })
   } catch (error) {
-    return Response.json({ error: errorMessage(error) }, { status: 400, headers: corsHeaders })
+    return Response.json({ error: errorMessage(error) }, { status: 400, headers: cors })
   }
 })

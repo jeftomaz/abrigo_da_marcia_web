@@ -59,6 +59,44 @@ test.describe('site público', () => {
     }
   })
 
+  test('mantém o card Pix consistente na doação', async ({ page }) => {
+    await page.route('**/rest/v1/site_settings_public?*', (route) => route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        adoption_form_url: 'https://example.com/adocao',
+        pix_city: 'RIBEIRAO PRETO',
+        pix_key: 'pix@abrigo.test',
+        pix_receiver: 'ABRIGO DA MARCIA',
+        recurring_donation_urls: {},
+        volunteer_form_url: 'https://example.com/voluntariado',
+      }),
+    }))
+    await page.goto('/')
+    const doacao = page.locator('#doacao')
+
+    await doacao.getByRole('switch', { name: 'Alternar entre doação única e recorrente' }).click()
+    await doacao.getByRole('button', { name: 'R$ 10', exact: true }).click()
+    await doacao.getByRole('button', { name: 'Realizar doação' }).click()
+
+    const confirmacao = page.getByRole('dialog').filter({ hasText: 'Pix para doação' })
+    const titulo = confirmacao.getByRole('heading', { name: 'Pix para doação' })
+    const qrCode = confirmacao.getByRole('img', { name: /QR Code do Pix/i })
+    const copiar = confirmacao.getByRole('button', { name: 'Copiar código PIX' })
+    const fechar = confirmacao.getByRole('button', { name: 'Fechar' })
+
+    await expect(confirmacao).toBeVisible()
+    await expect(titulo).toHaveCSS('text-align', 'left')
+    await expect(qrCode).toBeVisible()
+    await expect(copiar).toBeVisible()
+    await expect(fechar).toBeVisible()
+
+    const qrSize = await qrCode.evaluate((element) => element.getBoundingClientRect())
+    expect(qrSize.width).toBeGreaterThanOrEqual(192)
+    expect(qrSize.height).toBe(qrSize.width)
+    expect(await fechar.evaluate((element) => element.getBoundingClientRect().width))
+      .toBe(await copiar.evaluate((element) => element.getBoundingClientRect().width))
+  })
+
   test('reserva números da rifa ativa e recebe o Pix', async ({ page }) => {
     const nomeDaReserva = `${MARCA_E2E} Reserva ${Date.now()}`
     await page.goto('/eventos')

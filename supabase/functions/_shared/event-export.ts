@@ -1,8 +1,22 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-export const corsHeaders = {
-  'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
-  'Access-Control-Allow-Origin': '*',
+// Sem ADMIN_ALLOWED_ORIGINS (dev local, E2E) o CORS cai para '*', preservando o
+// comportamento atual; defina o secret no hospedado para refletir só as origens do
+// admin. CORS é defesa em profundidade: a barreira real é o cheque de JWT + aal2 em
+// authorizeAdmin, que não depende deste cabeçalho.
+const allowedOrigins = (Deno.env.get('ADMIN_ALLOWED_ORIGINS') ?? '')
+  .split(',').map((origin) => origin.trim()).filter(Boolean)
+
+export function corsHeadersFor(request: Request) {
+  const requestOrigin = request.headers.get('Origin') ?? ''
+  const allowOrigin = allowedOrigins.length === 0
+    ? '*'
+    : allowedOrigins.includes(requestOrigin) ? requestOrigin : allowedOrigins[0]
+  return {
+    'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
+    'Access-Control-Allow-Origin': allowOrigin,
+    Vary: 'Origin',
+  }
 }
 
 type AdminClient = ReturnType<typeof createClient>

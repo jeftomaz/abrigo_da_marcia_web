@@ -511,6 +511,7 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 - Alterações de preço ou configuração não afetam reservas existentes porque totais, preços unitários e seleções são snapshots.
 - Admin autenticado com `aal2` gerencia catálogo, confirma pagamento, cancela reserva e marca a entrega ao ganhador.
 - `pg_cron` encerra eventos fora do período, cancela reservas pendentes vencidas, libera seus números e limpa sessões antigas. Após 90 dias do encerramento, remove `customer_name` e `customer_contact`, preservando snapshots e totais.
+- No caminho de reserva, `reserve_raffle_numbers`/`reserve_product_items` chamam `expire_reservations_for_event(uuid)`, que libera apenas as reservas vencidas do próprio evento antes de checar disponibilidade; a varredura global e a limpeza de sessões/tentativas de IP ficam no cron `expire_event_reservations()`.
 - Cada número pago pode ganhar no máximo um prêmio por rifa; o índice e a RPC de sorteio aplicam a regra.
 
 ## Auth e matriz de acesso administrativo
