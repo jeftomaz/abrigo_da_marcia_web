@@ -78,18 +78,18 @@ export function Historias() {
         <StatCards label="Total de histórias" total={stories.length} />
 
         <section className="flex min-w-0 flex-col gap-4">
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 desk:gap-3">
-            <h1 className="text-2xl font-medium text-marca desk:col-span-3 desk:text-3xl">
+          <div className="grid min-w-0 grid-cols-2 items-center gap-2 desk:grid-cols-[minmax(0,1fr)_auto_auto] desk:gap-3">
+            <h1 className="col-span-2 text-2xl font-medium text-marca desk:col-span-3 desk:text-3xl">
               Histórias Contadas
             </h1>
-            <div className="relative shrink-0 desk:col-start-2 desk:row-start-2">
+            <div className="relative min-w-0 desk:col-start-2 desk:row-start-2">
               <select
                 value={publicationFilter}
                 onChange={(event) =>
                   setPublicationFilter(event.target.value as 'published' | 'draft' | '')
                 }
                 aria-label="Filtrar histórias por publicação"
-                className="h-10 appearance-none rounded-full bg-white pr-8 pl-3 text-sm text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
+                className="h-10 w-full appearance-none rounded-full bg-white pr-8 pl-3 text-sm text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
               >
                 <option value="">Todos os status</option>
                 <option value="published">Publicadas</option>
@@ -105,11 +105,11 @@ export function Historias() {
               icon="keyframe-plus-in-solid"
               size="small"
               variant="primary-adaptive"
-              className="px-4 desk:col-start-3 desk:row-start-2"
+              className="min-w-0 px-3 desk:col-start-3 desk:row-start-2 desk:px-4"
             >
               Nova História
             </Action>
-            <div className="relative col-span-3 min-w-0 desk:col-span-1 desk:col-start-1 desk:row-start-2">
+            <div className="relative col-span-2 min-w-0 desk:col-span-1 desk:col-start-1 desk:row-start-2">
               <Icon
                 name="search"
                 className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 opacity-60"

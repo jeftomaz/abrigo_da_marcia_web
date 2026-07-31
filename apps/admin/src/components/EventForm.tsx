@@ -636,7 +636,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const objectivesSection = (
     <section className={sectionClasses}>
       <h3 className={sectionTitleClasses}>Objetivos</h3>
-      <div className="mt-3 grid grid-cols-2 gap-3 desk:grid-cols-5">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 desk:grid-cols-5">
         <FormField htmlFor={`${formId}-start-date`} label="Data de início">
           <TextField
             id={`${formId}-start-date`}
