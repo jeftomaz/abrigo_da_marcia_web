@@ -36,6 +36,15 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `todo` **[Info]** Confirmar no dashboard hospedado que o signup está desabilitado — `config.toml` não configura produção.
 - `todo` **[Info]** Manter os testes pgTAP de superfície das views `*_public` (são `security definer` e ignoram RLS; a proteção é só o `WHERE`); avaliar migrar para `security_invoker`.
 
+### P1 — Rastreabilidade administrativa
+
+- `done` Criar `admin_profiles` com nome/apelido obrigatório, identidade vinculada a `auth.users` e RLS restrita a admins com MFA; o perfil não será público.
+- `done` Pedir o nome/apelido junto com a senha no onboarding por convite, sincronizá-lo pelo banco antes de concluir o cadastro e solicitar essa etapa uma vez aos admins existentes sem perfil.
+- `done` Registrar nos agregados administrativos (`caes`, `historias`, `eventos`, `reservas`, configurações e redes sociais) apenas a última alteração: data/hora, `updated_by` e snapshot do nome/apelido, preenchidos por trigger e nunca pelo client.
+- `done` Tratar autores não administrativos como “Visitante” ou “Sistema” e propagar corretamente a autoria nos fluxos especiais de ativação/exclusão de evento, sorteio, RPCs de reserva e cron.
+- `done` Expor o metadado somente nas consultas admin e mostrar uma linha discreta por card; em configurações/redes sociais, usar a alteração mais recente do grupo.
+- `done` Cobrir onboarding/perfil, RLS, triggers, registros legados sem autor e fluxos automáticos com pgTAP e E2E; atualizar tipos gerados e `DATA_MODEL.md` na implementação.
+
 Decisões aceitas (não reabrir): timeout de sessão de 7 dias só no client (trade-off do plano Free — ver `PROJECT.md`); débito de contraste AA do coral `#f15a55` (identidade aprovada pelo Abrigo, travado pela suíte E2E nos tokens da marca).
 
 ## Primitivos compartilhados

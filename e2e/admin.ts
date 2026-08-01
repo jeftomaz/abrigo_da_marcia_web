@@ -7,6 +7,7 @@ import { executarSql } from './banco'
 export const ADMIN_EMAIL = 'e2e-admin@abrigo.local'
 export const ADMIN_SENHA = 'Senha-E2E-nao-reaproveitavel-9f2c'
 export const INVITED_ADMIN_EMAIL = 'e2e-invited-admin@abrigo.local'
+export const ADMIN_NOME = 'Admin E2E'
 
 type Ambiente = { apiUrl: string; publishableKey: string; serviceRoleKey: string }
 
@@ -87,6 +88,10 @@ export function removerAdminDeTeste() {
   executarSql(`delete from auth.users where email in ('${ADMIN_EMAIL}', '${INVITED_ADMIN_EMAIL}')`)
 }
 
+export function removerPerfilAdminDeTeste() {
+  executarSql(`delete from public.admin_profiles where user_id = (select id from auth.users where email = '${ADMIN_EMAIL}')`)
+}
+
 export async function convidarAdminDeTeste() {
   await chamar('/invite', {
     method: 'POST',
@@ -97,7 +102,7 @@ export async function convidarAdminDeTeste() {
 export async function provisionarAdmin() {
   removerAdminDeTeste()
 
-  await chamar('/admin/users', {
+  const user = await chamar('/admin/users', {
     method: 'POST',
     body: JSON.stringify({
       email: ADMIN_EMAIL,
@@ -106,6 +111,9 @@ export async function provisionarAdmin() {
       app_metadata: { role: 'admin', admin_onboarding_completed: true },
     }),
   })
+  const userId = user.id as string
+  if (!/^[0-9a-f-]{36}$/.test(userId)) throw new Error('Identificador do admin E2E inválido.')
+  executarSql(`insert into public.admin_profiles (user_id, display_name) values ('${userId}', '${ADMIN_NOME}')`)
 
   const sessao = await chamar('/token?grant_type=password', {
     method: 'POST',

@@ -25,6 +25,7 @@ const ACTION_CLASSES =
 export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetStatus }: DogRowProps) {
   return (
     <AdminListRow
+      audit={dog.audit}
       isEditing={isEditing}
       className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] items-start gap-3 rounded-2xl p-3 min-[28rem]:grid-cols-[4rem_minmax(0,1fr)_13.5rem] min-[28rem]:items-center"
     >

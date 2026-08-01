@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { mapAuditMetadata } from '../admin/audit'
+import type { AuditMetadata } from '../admin/audit'
 import type { Tables, TablesInsert } from '../database.types'
 import {
   getStoredPhotoUrl,
@@ -10,6 +12,7 @@ import type { EditablePhoto } from '../images/storagePhotos'
 import { supabase } from '../supabase/client'
 
 export type Story = {
+  audit: AuditMetadata | null
   id: string
   name: string
   description: string
@@ -17,7 +20,7 @@ export type Story = {
   published: boolean
 }
 
-export type StoryDraft = Omit<Story, 'id' | 'photos'> & {
+export type StoryDraft = Omit<Story, 'audit' | 'id' | 'photos'> & {
   id?: string
   photos: EditablePhoto[]
 }
@@ -29,6 +32,7 @@ const publicStoriesKey = ['stories', 'public'] as const
 
 function mapStory(row: Tables<'historias'>): Story {
   return {
+    audit: mapAuditMetadata(row),
     id: row.id,
     name: row.name,
     description: row.description,
@@ -43,6 +47,7 @@ function mapPublicStory(row: Tables<'historias_public'>): Story {
   }
 
   return {
+    audit: null,
     id: row.id,
     name: row.name,
     description: row.description,

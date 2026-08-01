@@ -15,7 +15,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - **Dev local do banco:** `supabase start` (requer Docker) sobe o stack; `supabase db reset` aplica `supabase/migrations/` + `supabase/seed.sql`. Studio em `localhost:54323`.
 - **Bootstrap local removível:** `./scripts/dev-local.sh` inicia Supabase, público (`5173`) e admin (`5174`). O arquivo não participa de build/deploy.
 - **Testes:** `supabase test db` (pgTAP) e `pnpm e2e` (Playwright + axe, em `e2e/`). Os dois exigem `supabase start`; o E2E sobe os apps sozinho e força o Supabase local, ignorando o `.env` da raiz. Primeira execução: `npx playwright install chromium webkit`.
-- **Admin:** entrada exclusiva por convite, definição de senha, TOTP obrigatório e RLS condicionada a `app_metadata.role = admin` + `aal2`. Cadastro público permanece desabilitado; convites são enviados pelo Dashboard ou Admin API.
+- **Admin:** entrada exclusiva por convite, nome/apelido privado, definição de senha, TOTP obrigatório e RLS condicionada a `app_metadata.role = admin` + `aal2`. Cadastro público permanece desabilitado; convites são enviados pelo Dashboard ou Admin API.
 
 ## Regras específicas
 
@@ -56,4 +56,4 @@ Status detalhado: `ROADMAP.md`. Operação do ambiente hospedado (perda de TOTP,
 
 Refresh token longo (padrão Supabase). A sessão é encerrada no client após 7 dias sem atividade, controlados por `abrigo-admin-last-activity-at`; o próximo acesso exige senha e novo desafio TOTP. `auth.sessions.inactivity_timeout` permanece desabilitado no Supabase Free porque exige plano Pro.
 
-Para provisionar um admin local ou hospedado: convidar a conta pelo Studio/Dashboard ou Admin API. O banco atribui `app_metadata.role = admin` somente a usuários convidados; o link exige definição de senha e cadastro do TOTP antes de liberar a gestão. Nenhuma credencial administrativa vive no repositório.
+Para provisionar um admin local ou hospedado: convidar a conta pelo Studio/Dashboard ou Admin API. O banco atribui `app_metadata.role = admin` somente a usuários convidados; o link exige nome/apelido, definição de senha e cadastro do TOTP antes de liberar a gestão. Admins legados sem `admin_profiles` completam o perfil uma vez após o MFA. Nenhuma credencial administrativa vive no repositório.

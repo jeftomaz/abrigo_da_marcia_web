@@ -39,6 +39,7 @@ export function EventRow({
 
   return (
     <AdminListRow
+      audit={event.audit}
       isEditing={isEditing || isManaging}
       className="grid min-w-0 grid-cols-[5rem_minmax(0,1fr)] items-start gap-4 rounded-3xl p-4 min-[28rem]:grid-cols-[5rem_minmax(0,1fr)_12rem] min-[28rem]:items-center min-[28rem]:gap-3 sm:grid-cols-[6rem_minmax(0,1fr)_17rem] sm:gap-4 sm:p-6 desk:grid-cols-[5rem_minmax(0,1fr)_12.5rem] desk:gap-3 desk:rounded-2xl desk:p-4"
     >

@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { mapAuditMetadata } from '../admin/audit'
+import type { AuditMetadata } from '../admin/audit'
 import { supabase } from '../supabase/client'
 
 export type SiteSettings = {
+  audit?: AuditMetadata | null
   adoptionFormUrl: string
   pixCity: string
   pixKey: string
@@ -11,6 +14,7 @@ export type SiteSettings = {
 }
 
 export type SocialLinks = {
+  audit?: AuditMetadata | null
   facebook: string
   instagram: string
 }
@@ -26,10 +30,13 @@ function mapSiteSettings(row: {
   pix_key: string | null
   pix_receiver: string | null
   recurring_donation_urls: unknown
+  updated_at?: string | null
+  updated_by_name?: string | null
   volunteer_form_url: string | null
 }): SiteSettings {
   if (!row.adoption_form_url) throw new Error('O link global de adoção não foi configurado.')
   return {
+    audit: mapAuditMetadata(row),
     adoptionFormUrl: row.adoption_form_url,
     pixCity: row.pix_city ?? '',
     pixKey: row.pix_key ?? '',
@@ -42,12 +49,13 @@ function mapSiteSettings(row: {
 }
 
 async function loadSiteSettings(isPublic: boolean) {
-  const query = isPublic
-    ? supabase.from('site_settings_public')
-    : supabase.from('site_settings')
-  const { data, error } = await query
-    .select('adoption_form_url, pix_city, pix_key, pix_receiver, recurring_donation_urls, volunteer_form_url')
-    .single()
+  const { data, error } = isPublic
+    ? await supabase.from('site_settings_public')
+        .select('adoption_form_url, pix_city, pix_key, pix_receiver, recurring_donation_urls, volunteer_form_url')
+        .single()
+    : await supabase.from('site_settings')
+        .select('adoption_form_url, pix_city, pix_key, pix_receiver, recurring_donation_urls, volunteer_form_url, updated_at, updated_by_name')
+        .single()
   if (error) throw error
   return mapSiteSettings(data)
 }
@@ -65,14 +73,14 @@ async function saveSiteSettings(settings: SiteSettings) {
 }
 
 async function loadSocialLinks(isPublic: boolean): Promise<SocialLinks> {
-  const query = isPublic
-    ? supabase.from('social_links_public')
-    : supabase.from('social_links')
-  const { data, error } = await query
-    .select('network, url')
-    .order('display_order')
+  const { data, error } = isPublic
+    ? await supabase.from('social_links_public').select('network, url').order('display_order')
+    : await supabase.from('social_links').select('network, url, updated_at, updated_by_name').order('display_order')
   if (error) throw error
-  const links: SocialLinks = { facebook: '', instagram: '' }
+  const auditRow = (data as Array<{ updated_at?: string | null; updated_by_name?: string | null }>)
+    .filter((row) => row.updated_at)
+    .sort((left, right) => String(right.updated_at).localeCompare(String(left.updated_at)))[0]
+  const links: SocialLinks = { audit: auditRow ? mapAuditMetadata(auditRow) : null, facebook: '', instagram: '' }
   data.forEach(({ network, url }) => {
     if (network === 'facebook' || network === 'instagram') links[network] = url ?? ''
   })
@@ -81,8 +89,8 @@ async function loadSocialLinks(isPublic: boolean): Promise<SocialLinks> {
 
 async function saveSocialLinks(links: SocialLinks) {
   const results = await Promise.all(
-    (Object.entries(links) as [keyof SocialLinks, string][]).map(([network, url]) =>
-      supabase.from('social_links').update({ url: url.trim() || null }).eq('network', network),
+    (['facebook', 'instagram'] as const).map((network) =>
+      supabase.from('social_links').update({ url: links[network].trim() || null }).eq('network', network),
     ),
   )
   const error = results.find((result) => result.error)?.error

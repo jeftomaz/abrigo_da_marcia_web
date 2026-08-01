@@ -2,12 +2,14 @@ import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 import { ADMIN_URL } from '../playwright.config'
 import {
+  ADMIN_NOME,
   ambientePublicoLocal,
   codigoTotpComJanelaFolgada,
   convidarAdminDeTeste,
   INVITED_ADMIN_EMAIL,
   provisionarAdmin,
   removerAdminDeTeste,
+  removerPerfilAdminDeTeste,
 } from './admin'
 import { expect, test } from './fixtures'
 
@@ -132,8 +134,10 @@ test.describe('admin', () => {
     await convidarAdminDeTeste()
     const mensagens = await request.get('http://127.0.0.1:54324/api/v1/messages')
     const { messages } = await mensagens.json()
-    const mensagem = messages.find((item: { To: Array<{ Address: string }> }) =>
-      item.To.some((recipient) => recipient.Address === INVITED_ADMIN_EMAIL))
+    const mensagem = messages
+      .filter((item: { To: Array<{ Address: string }> }) =>
+        item.To.some((recipient) => recipient.Address === INVITED_ADMIN_EMAIL))
+      .sort((left: { Created: string }, right: { Created: string }) => right.Created.localeCompare(left.Created))[0]
     const email = await request.get(`http://127.0.0.1:54324/view/${mensagem.ID}.html`)
     const html = await email.text()
     const confirmationUrl = html.match(/href="([^"]+)"/)?.[1]?.replaceAll('&amp;', '&')
@@ -141,6 +145,7 @@ test.describe('admin', () => {
 
     await page.goto(confirmationUrl)
     await expect(page.getByRole('heading', { name: 'Concluir cadastro' })).toBeVisible()
+    await page.getByLabel('Nome ou apelido').fill('Convidada E2E')
     await page.getByLabel('Senha', { exact: true }).fill(credenciais.senha)
     await page.getByLabel('Confirmar senha').fill(credenciais.senha)
     await page.getByRole('button', { name: 'Criar senha e continuar' }).click()
@@ -160,9 +165,18 @@ test.describe('admin', () => {
     // A gestão não pode aparecer para quem ainda não passou pelos dois fatores.
     await expect(page.getByRole('link', { name: 'Cães' })).toHaveCount(0)
 
+    removerPerfilAdminDeTeste()
     await entrar(page)
 
+    await expect(page.getByRole('heading', { name: 'Identifique seu perfil' })).toBeVisible()
+    await page.getByLabel('Nome ou apelido').fill(ADMIN_NOME)
+    await page.getByRole('button', { name: 'Salvar e continuar' }).click()
+
     await expect(page.getByRole('heading', { name: 'Cães Cadastrados' })).toBeVisible()
+    const dogCard = page.locator('article').filter({ hasText: 'Negão' })
+    await expect(dogCard.getByText(/Última alteração .* por Sistema/)).toBeVisible()
+    await dogCard.getByRole('button', { name: /catálogo/ }).click()
+    await expect(dogCard.getByText(new RegExp(`Última alteração .* por ${ADMIN_NOME}`))).toBeVisible()
     await expect(page.getByRole('button', { name: 'Sair' })).toBeVisible()
   })
 

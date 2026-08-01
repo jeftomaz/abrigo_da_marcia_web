@@ -11,7 +11,7 @@ import {
   useSaveSiteSettings,
   useSaveSocialLinks,
 } from '@abrigo/shared'
-import type { EventSettings, SiteSettings, SocialLinks } from '@abrigo/shared'
+import type { AuditMetadata, EventSettings, SiteSettings, SocialLinks } from '@abrigo/shared'
 import { useAdminAuth } from '../auth/AdminAuthContext'
 import { AdminListRow } from '../components/AdminListRow'
 import { ConfirmationDialog } from '../components/ConfirmationDialog'
@@ -25,15 +25,16 @@ type Editor = 'dogs' | 'events' | 'general' | 'landing'
 
 type SettingsCardProps = {
   actions: ReactNode
+  audit?: AuditMetadata | null
   details: string[]
   isEditing?: boolean
   status?: ReactNode
   title: string
 }
 
-function SettingsCard({ actions, details, isEditing = false, status, title }: SettingsCardProps) {
+function SettingsCard({ actions, audit, details, isEditing = false, status, title }: SettingsCardProps) {
   return (
-    <AdminListRow isEditing={isEditing} className="flex min-h-40 flex-col rounded-3xl p-5 desk:min-h-32 desk:rounded-2xl desk:p-4">
+    <AdminListRow audit={audit} isEditing={isEditing} className="flex min-h-40 flex-col rounded-3xl p-5 desk:min-h-32 desk:rounded-2xl desk:p-4">
       <div className="flex items-start justify-between gap-4">
         <h3 className="text-xl font-medium desk:text-lg">{title}</h3>
         {status}
@@ -58,8 +59,13 @@ function configurationStatus(value: string) {
   return value ? 'configurado' : 'não configurado'
 }
 
+function latestAudit(...audits: Array<AuditMetadata | null | undefined>) {
+  return audits.filter((audit): audit is AuditMetadata => Boolean(audit))
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0] ?? null
+}
+
 export function Configuracoes() {
-  const { email, removeAuthenticator } = useAdminAuth()
+  const { displayName, email, removeAuthenticator } = useAdminAuth()
   const { data: siteSettings, error: siteError, isLoading: isLoadingSite } = useAdminSiteSettings()
   const { data: socialLinks, error: socialError, isLoading: isLoadingSocial } = useAdminSocialLinks()
   const { data: eventSettings, error: eventError, isLoading: isLoadingEvents } = useEventSettings()
@@ -135,6 +141,7 @@ export function Configuracoes() {
             <section aria-labelledby="general-settings-title">
               <h2 id="general-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Configurações gerais</h2>
               <SettingsCard
+                audit={latestAudit(siteSettings?.audit, socialLinks?.audit)}
                 title="Pix e redes sociais"
                 details={generalDetails}
                 isEditing={editor === 'general'}
@@ -147,6 +154,7 @@ export function Configuracoes() {
             <section aria-labelledby="landing-settings-title">
               <h2 id="landing-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Landing Page</h2>
               <SettingsCard
+                audit={siteSettings?.audit}
                 title="Doação recorrente e voluntariado"
                 details={landingDetails}
                 isEditing={editor === 'landing'}
@@ -159,6 +167,7 @@ export function Configuracoes() {
             <section aria-labelledby="dogs-settings-title">
               <h2 id="dogs-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Gestão de Cães</h2>
               <SettingsCard
+                audit={siteSettings?.audit}
                 title="Dados e valores padrão"
                 details={siteSettings ? [`Formulário global de adoção: ${configurationStatus(siteSettings.adoptionFormUrl)}`] : ['Formulário global de adoção']}
                 isEditing={editor === 'dogs'}
@@ -171,6 +180,7 @@ export function Configuracoes() {
             <section aria-labelledby="events-settings-title">
               <h2 id="events-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Gestão de Eventos</h2>
               <SettingsCard
+                audit={eventSettings?.audit}
                 title="Dados e valores padrão"
                 details={eventDetails}
                 isEditing={editor === 'events'}
@@ -184,7 +194,7 @@ export function Configuracoes() {
               <h2 id="security-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Segurança</h2>
               <SettingsCard
                 title="Autenticação em 2 fatores (2FA)"
-                details={[`Autenticador TOTP ativo para ${email}`, 'Sessão encerrada após 7 dias sem atividade']}
+                details={[`Perfil: ${displayName}`, `Autenticador TOTP ativo para ${email}`, 'Sessão encerrada após 7 dias sem atividade']}
                 status={<StatusBadge tone="verde" size="sm">Ativa</StatusBadge>}
                 actions={<Action onClick={() => setConfirmMfaRemoval(true)} icon="trash-solid" size="small" variant="neutral-adaptive" className="h-11 px-5">Remover</Action>}
               />

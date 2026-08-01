@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eventos estão materializados em `supabase/migrations/` e validados localmente e na produção hospedada `banco_site_abrigo`. O projeto legado `site-do-abrigo` permanece fora de uso.
+Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260725150000`, com as migrations posteriores pendentes de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
 
 ## Imagens no Storage
 
@@ -14,6 +14,12 @@ Fonte de verdade do banco. O schema, Configurações, Auth/RLS, Histórias e Eve
 
 ```mermaid
 erDiagram
+  ADMIN_PROFILES {
+    uuid user_id PK,FK "auth.users"
+    text display_name
+    timestamptz created_at
+    timestamptz updated_at
+  }
   SITE_SETTINGS {
     boolean singleton PK
     text pix_key "nullable; doação e eventos"
@@ -91,6 +97,7 @@ erDiagram
     uuid event_id
     text event_name
     uuid deleted_by "FK auth.users"
+    text deleted_by_name "snapshot"
     text export_email
     timestamptz export_sent_at
     timestamptz deleted_at
@@ -195,6 +202,12 @@ erDiagram
   RESERVAS ||--o{ RESERVA_NUMEROS : "contém"
   RIFAS ||--o{ RESERVA_NUMEROS : "aloca"
 ```
+
+## Rastreabilidade administrativa
+
+`admin_profiles` mantém a identidade privada exibida na auditoria: `user_id uuid` é PK/FK para `auth.users` com cascade, `display_name text` exige 2–60 caracteres sem espaços nas pontas e os timestamps são automáticos. Admin com `aal2` lê os perfis; cada admin insere ou altera somente o próprio. Não há exposição pública.
+
+Os agregados `caes`, `historias`, `eventos`, `reservas`, `site_settings`, `event_settings` e `social_links` compartilham `updated_at`, `updated_by uuid` (FK nullable para `auth.users`, `ON DELETE SET NULL`) e `updated_by_name text` (snapshot obrigatório). Trigger de banco sobrescreve qualquer autoria enviada pelo client: admin recebe seu perfil, escrita pública recebe “Visitante” e cron/RPC interna recebe “Sistema”. Registros anteriores à migration começam como “Sistema”; renomear ou excluir o perfil não altera snapshots. Sorteio atualiza o evento, ativação/exclusão recebe o admin validado pela Edge Function e expiração automática permanece atribuída ao sistema. As views públicas omitem os três metadados de autoria.
 
 ## `site_settings`
 
@@ -348,6 +361,7 @@ Auditoria mínima preservada após a exclusão, sem os dados operacionais do eve
 | `event_id` | `uuid` | not null; identificador do evento removido, sem FK |
 | `event_name` | `text` | not null; snapshot para identificação administrativa |
 | `deleted_by` | `uuid` | FK nullable → `auth.users.id`; novas exclusões registram o admin e sua remoção aplica `ON DELETE SET NULL` |
+| `deleted_by_name` | `text` | not null; snapshot do nome/apelido no momento da exclusão |
 | `export_email` | `text` | not null; snapshot do destinatário configurado |
 | `export_sent_at` | `timestamptz` | not null; instante em que o envio da cópia foi confirmado |
 | `deleted_at` | `timestamptz` | not null; default `now()` |
@@ -517,10 +531,12 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 ## Auth e matriz de acesso administrativo
 
 - Contas administrativas são convidadas fora do client pelo Dashboard ou Admin API; cadastro público está desabilitado. `assign_invited_admin_role` atribui `app_metadata.role = admin` somente quando `auth.users.invited_at` está preenchido, tanto na inserção quanto na atualização posterior usada pelo Supabase hospedado.
-- O convite abre uma sessão `aal1` na tela de cadastro. A alteração real de `encrypted_password` marca `app_metadata.admin_onboarding_completed`; então o frontend exige cadastro e verificação do TOTP para elevar a sessão a `aal2` antes de liberar a gestão.
+- O convite abre uma sessão `aal1` na tela de cadastro. O frontend sincroniza primeiro o nome/apelido em `user_metadata` e depois define a senha; o trigger cria `admin_profiles` e só então marca `app_metadata.admin_onboarding_completed`. Em seguida, o frontend exige cadastro e verificação do TOTP para elevar a sessão a `aal2` antes de liberar a gestão.
+- Admin legado sem perfil informa o nome/apelido uma única vez após chegar a `aal2`; a inserção é feita sob as policies do próprio usuário.
 - Em logins posteriores, uma sessão `aal1` com TOTP verificado exige novo desafio. Fatores incompletos são descartados antes de gerar outro QR Code.
 - No plano gratuito, o admin encerra no client a sessão após sete dias sem atividade; `auth.sessions.inactivity_timeout` exige plano Pro e permanece desabilitado no serviço hospedado.
 - `site_settings`, `social_links`, `caes`, `historias`, `event_settings`, `eventos`, `rifas`, `rifa_premios`, `produtos`, variações/opções e reservas usam uma policy permissiva para `is_admin()` e outra policy restritiva exigindo `aal2`, em leitura e escrita.
+- `admin_profiles` permite leitura a admins, mas inserção/alteração somente do próprio perfil; todas as operações também exigem `aal2`.
 - `event_deletion_audit` permite somente `select` e `insert` a admin `aal2`; atualizações e exclusões não são concedidas.
 - `storage.objects` do bucket `dog-photos` permite `select`, `insert` e `delete` somente a admin `aal2`; leitura pública das imagens continua pelo bucket público.
 - `draw_raffle_prize` e `delete_archived_event` são `security invoker`, concedidas apenas a `authenticated`, portanto respeitam RLS e grants. `activate_event` é `security definer` com `search_path` fixo e execução exclusiva de `service_role`: a Edge Function valida admin + `aal2`, registra o usuário e usa essa RPC interna para confirmar envio, excluir e ativar sob advisory lock.
