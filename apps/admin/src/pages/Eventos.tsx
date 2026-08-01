@@ -158,7 +158,7 @@ export function Eventos() {
         </section>
 
         <section className="flex min-w-0 flex-col gap-4">
-          <div className="flex items-center justify-between gap-4"><h1 className="text-4xl font-medium">Eventos</h1><Action onClick={() => openEditor(null)} icon="keyframe-plus-in-solid" size="small" variant="primary-adaptive" className="shrink-0 px-5">Novo Evento</Action></div>
+          <div className="flex items-center justify-between gap-4"><h1 className="text-4xl font-medium text-marca">Eventos</h1><Action onClick={() => openEditor(null)} icon="keyframe-plus-in-solid" size="small" variant="primary-adaptive" className="shrink-0 px-5">Novo Evento</Action></div>
           {isLoading && <p role="status" className="py-6 text-center">Carregando eventos...</p>}
           {loadError && <p role="alert" className="py-6 text-center text-marca">Não foi possível carregar os eventos.</p>}
           {actionError && <p role="alert" className="text-sm font-medium text-marca">{actionError}</p>}

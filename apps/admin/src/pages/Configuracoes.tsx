@@ -128,7 +128,7 @@ export function Configuracoes() {
     <main className="flex-1 overflow-x-hidden bg-cinza-claro px-4 py-8 text-cinza-escuro sm:px-6 desk:py-4 dark:bg-cinza-escuro dark:text-cinza-claro">
       <div className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-8 desk:items-start desk:gap-10 ${editor ? 'desk:max-w-[80rem] desk:grid-cols-[29rem_minmax(36rem,45rem)] desk:justify-between' : 'desk:max-w-[29rem]'}`}>
         <section aria-labelledby="settings-title" className="min-w-0">
-          <h1 id="settings-title" className="text-4xl font-medium sm:text-5xl desk:text-4xl">Configurações</h1>
+          <h1 id="settings-title" className="text-4xl font-medium text-marca sm:text-5xl desk:text-4xl">Configurações</h1>
           {successMessage && <p role="status" className="mt-3 text-sm font-medium text-status-verde-on-surface">{successMessage}</p>}
           <div className="mt-6 flex flex-col gap-6 desk:mt-3 desk:gap-4">
             <section aria-labelledby="general-settings-title">
