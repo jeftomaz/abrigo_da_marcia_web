@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 import { ADMIN_URL } from '../playwright.config'
 import {
+  ambientePublicoLocal,
   codigoTotpComJanelaFolgada,
   convidarAdminDeTeste,
   INVITED_ADMIN_EMAIL,
@@ -14,7 +15,7 @@ const PADROES = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 const FAMILIA_DA_MARCA = new Set(['#f15a55', '#fbd1d0', '#8d0e0c'])
 const SUPERFICIES = new Set(['#ffffff', '#000000', '#e6e6e6', '#262626', '#404040'])
 
-let credenciais: { email: string; senha: string; segredo: string }
+let credenciais: { accessToken: string; email: string; senha: string; segredo: string }
 
 test.beforeAll(async () => {
   credenciais = await provisionarAdmin()
@@ -55,6 +56,78 @@ async function entrar(page: Page) {
 }
 
 test.describe('admin', () => {
+  test('Edge Functions aceitam os cabeçalhos do SDK e devolvem erros estruturados', async ({ request }) => {
+    const { apiUrl, publishableKey } = ambientePublicoLocal()
+    const functionUrl = `${apiUrl}/functions/v1/activate-event`
+    for (const functionName of ['activate-event', 'delete-archived-event']) {
+      const preflight = await request.fetch(`${apiUrl}/functions/v1/${functionName}`, {
+        method: 'OPTIONS',
+        headers: {
+          Origin: ADMIN_URL,
+          'Access-Control-Request-Headers': 'authorization, apikey, content-type, x-client-info',
+          'Access-Control-Request-Method': 'POST',
+        },
+      })
+      // O gateway local pode responder o preflight antes da função (200); o runtime
+      // hospedado encaminha e recebe o 204 do executor compartilhado.
+      expect([200, 204]).toContain(preflight.status())
+      expect([ADMIN_URL, '*']).toContain(preflight.headers()['access-control-allow-origin'])
+      expect(preflight.headers()['access-control-allow-headers']).toContain('x-client-info')
+      expect(preflight.headers()['access-control-allow-methods']).toContain('POST')
+    }
+
+    const denied = await request.post(functionUrl, {
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        Origin: 'https://origem-invalida.example',
+      },
+      data: { eventId: '00000000-0000-0000-0000-000000000000' },
+    })
+    expect(denied.status()).toBe(403)
+    expect(await denied.json()).toMatchObject({ code: 'CORS_ORIGIN_DENIED' })
+
+    const unauthenticated = await request.post(functionUrl, {
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        Origin: ADMIN_URL,
+        'x-client-info': 'abrigo-e2e',
+      },
+      data: { eventId: '00000000-0000-0000-0000-000000000000' },
+    })
+    expect(unauthenticated.status()).toBe(401)
+    const error = await unauthenticated.json()
+    expect(error).toMatchObject({ code: 'MFA_REQUIRED' })
+    expect(error.message).toContain('autenticador')
+    expect(error.requestId).toMatch(/^[a-zA-Z0-9-]{8,128}$/)
+    expect(unauthenticated.headers()['x-request-id']).toBe(error.requestId)
+
+    const invalid = await request.post(functionUrl, {
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${credenciais.accessToken}`,
+        Origin: ADMIN_URL,
+        'x-client-info': 'abrigo-e2e',
+      },
+      data: {},
+    })
+    expect(invalid.status()).toBe(422)
+    expect(await invalid.json()).toMatchObject({ code: 'VALIDATION_ERROR' })
+
+    const missing = await request.post(functionUrl, {
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${credenciais.accessToken}`,
+        Origin: ADMIN_URL,
+        'x-client-info': 'abrigo-e2e',
+      },
+      data: { eventId: '00000000-0000-0000-0000-000000000000' },
+    })
+    expect(missing.status()).toBe(404)
+    expect(await missing.json()).toMatchObject({ code: 'NOT_FOUND' })
+  })
+
   test('conclui o cadastro de um administrador convidado', async ({ page, request }) => {
     await convidarAdminDeTeste()
     const mensagens = await request.get('http://127.0.0.1:54324/api/v1/messages')

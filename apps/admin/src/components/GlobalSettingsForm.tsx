@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Action, TextField, createPixCode } from '@abrigo/shared'
+import { Action, TextField, createPixCode, getAdminErrorMessage } from '@abrigo/shared'
 import type { SiteSettings, SocialLinks } from '@abrigo/shared'
 import { ConfirmationDialog } from './ConfirmationDialog'
 
@@ -64,8 +64,8 @@ export function GlobalSettingsForm({
     setSaveError('')
     try {
       await onSave(nextSettings, nextSocialLinks)
-    } catch {
-      setSaveError('Não foi possível salvar as configurações.')
+    } catch (error) {
+      setSaveError(getAdminErrorMessage(error, 'Não foi possível salvar as configurações.'))
     } finally {
       setIsSaving(false)
     }

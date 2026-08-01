@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import {
   Action,
+  getAdminErrorMessage,
   Icon,
   TextField,
   toEditableDogPhotos,
@@ -118,8 +119,8 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         adoptionFormUrl: normalizedAdoptionFormUrl,
         photos,
       })
-    } catch {
-      setSaveError('Não foi possível salvar o cão.')
+    } catch (error) {
+      setSaveError(getAdminErrorMessage(error, 'Não foi possível salvar o cão.'))
     } finally {
       setIsSaving(false)
     }

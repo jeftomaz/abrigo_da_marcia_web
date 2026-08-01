@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Action, Dialog, Icon, ImagePlaceholder, formatReservationContact } from '@abrigo/shared'
+import { Action, Dialog, Icon, ImagePlaceholder, formatReservationContact, getAdminErrorMessage } from '@abrigo/shared'
 import type { EventReservation, EventReservationUpdate, FundraisingEvent, ReservationStatus } from '../events/events'
 import { getEventPhotoUrl } from '../events/events'
 import { ReservationEditDialog } from './ReservationEditDialog'
@@ -67,7 +67,7 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
     try {
       await onUpdateReservation(id, changes)
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Não foi possível atualizar a reserva.')
+      setActionError(getAdminErrorMessage(error, 'Não foi possível atualizar a reserva.'))
     } finally {
       setPendingReservationIds((current) => { const next = new Set(current); next.delete(id); return next })
     }

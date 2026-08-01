@@ -44,11 +44,13 @@ export async function uploadNewPhotos(ownerPath: string, photos: EditablePhoto[]
     }
     return uploadedPhotos
   } catch (error) {
-    await removeStoredPhotos([...uploadedPhotos.values()])
+    await removeStoredPhotos([...uploadedPhotos.values()]).catch(() => undefined)
     throw error
   }
 }
 
 export async function removeStoredPhotos(paths: string[]) {
-  if (paths.length) await supabase.storage.from(PHOTOS_BUCKET).remove(paths)
+  if (!paths.length) return
+  const { error } = await supabase.storage.from(PHOTOS_BUCKET).remove(paths)
+  if (error) throw error
 }

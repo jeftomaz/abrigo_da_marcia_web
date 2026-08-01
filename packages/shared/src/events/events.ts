@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Json, Tables, TablesInsert } from '../database.types'
+import { getAdminErrorMessage, parseAdminFunctionError } from '../admin/adminErrors'
 import {
   getStoredPhotoUrl,
   removeStoredPhotos,
@@ -207,11 +208,7 @@ export function formatCurrencyInput(value: string) {
 }
 
 export function getEventErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message) return error.message
-  if (typeof error === 'object' && error && 'message' in error && typeof error.message === 'string') {
-    return error.message
-  }
-  return fallback
+  return getAdminErrorMessage(error, fallback)
 }
 
 function isPositiveInteger(value: string) {
@@ -605,7 +602,7 @@ async function saveEventDraft(draft: EventDraft) {
     await removeStoredPhotos([...previousPaths].filter((path) => !retainedPaths.has(path)))
     return (await loadEventRelations(false)).find((event) => event.id === id)
   } catch (error) {
-    await removeStoredPhotos(uploadedPaths)
+    await removeStoredPhotos(uploadedPaths).catch(() => undefined)
     throw error
   }
 }
@@ -783,7 +780,7 @@ async function saveEvent(draft: EventDraft) {
     await removeStoredPhotos([...previousPaths].filter((path) => !retainedPaths.has(path)))
     return (await loadEventRelations(false)).find((event) => event.id === id)
   } catch (error) {
-    await removeStoredPhotos(uploadedPaths)
+    await removeStoredPhotos(uploadedPaths).catch(() => undefined)
     throw error
   }
 }
@@ -800,12 +797,7 @@ async function updateEventStatus({ id, status }: { id: string; status: EventStat
 async function invokeEventFunction(name: 'activate-event' | 'delete-archived-event', eventId: string) {
   const { error } = await supabase.functions.invoke(name, { body: { eventId } })
   if (!error) return
-  let message = error.message
-  if ('context' in error && error.context instanceof Response) {
-    const body = await error.context.clone().json().catch(() => null) as { error?: string } | null
-    if (body?.error) message = body.error
-  }
-  throw new Error(message)
+  throw await parseAdminFunctionError(error)
 }
 
 async function deleteEvent({ event }: { event: FundraisingEvent }) {

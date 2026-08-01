@@ -3,6 +3,7 @@ import { useState } from 'react'
 import {
   Action,
   Dialog,
+  getAdminErrorMessage,
   useAdminSiteSettings,
   useAdminSocialLinks,
   useEventSettings,
@@ -89,8 +90,8 @@ export function Configuracoes() {
     try {
       await removeAuthenticator()
       setConfirmMfaRemoval(false)
-    } catch {
-      setSecurityError('Não foi possível remover o autenticador.')
+    } catch (error) {
+      setSecurityError(getAdminErrorMessage(error, 'Não foi possível remover o autenticador.'))
     }
   }
 

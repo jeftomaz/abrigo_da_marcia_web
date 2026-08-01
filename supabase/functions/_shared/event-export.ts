@@ -1,33 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
-
-// Sem ADMIN_ALLOWED_ORIGINS (dev local, E2E) o CORS cai para '*', preservando o
-// comportamento atual; defina o secret no hospedado para refletir só as origens do
-// admin. CORS é defesa em profundidade: a barreira real é o cheque de JWT + aal2 em
-// authorizeAdmin, que não depende deste cabeçalho.
-const allowedOrigins = (Deno.env.get('ADMIN_ALLOWED_ORIGINS') ?? '')
-  .split(',').map((origin) => origin.trim()).filter(Boolean)
-
-export function corsHeadersFor(request: Request) {
-  const requestOrigin = request.headers.get('Origin') ?? ''
-  const allowOrigin = allowedOrigins.length === 0
-    ? '*'
-    : allowedOrigins.includes(requestOrigin) ? requestOrigin : allowedOrigins[0]
-  return {
-    'Access-Control-Allow-Headers': 'authorization, apikey, content-type',
-    'Access-Control-Allow-Origin': allowOrigin,
-    Vary: 'Origin',
-  }
-}
+import { AdminFunctionError } from './admin-http.ts'
 
 type AdminClient = ReturnType<typeof createClient>
-
-export function errorMessage(error: unknown) {
-  if (error instanceof Error) return error.message
-  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
-    return error.message
-  }
-  return 'A operação falhou.'
-}
 
 function getSupabasePublicKey() {
   const publishableKeys = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS')
@@ -36,13 +10,13 @@ function getSupabasePublicKey() {
     if (defaultKey) return defaultKey
   }
   const localLegacyKey = Deno.env.get('SUPABASE_ANON_KEY')
-  if (!localLegacyKey) throw new Error('Chave pública do Supabase ausente.')
+  if (!localLegacyKey) throw new AdminFunctionError('CONFIGURATION_ERROR', 'Configuração interna indisponível.', 500)
   return localLegacyKey
 }
 
 export async function authorizeAdmin(request: Request) {
   const authorization = request.headers.get('Authorization')
-  if (!authorization) throw new Error('Sessão administrativa ausente.')
+  if (!authorization) throw new AdminFunctionError('SESSION_REQUIRED', 'Sua sessão administrativa expirou. Entre novamente.', 401)
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, getSupabasePublicKey(), {
     global: { headers: { Authorization: authorization } },
   })
@@ -53,7 +27,7 @@ export async function authorizeAdmin(request: Request) {
     || claims.claims.app_metadata?.role !== 'admin'
     || typeof claims.claims.sub !== 'string'
   ) {
-    throw new Error('Sessão administrativa com MFA obrigatória.')
+    throw new AdminFunctionError('MFA_REQUIRED', 'Confirme novamente o código do autenticador para continuar.', 401)
   }
   return { supabase, userId: claims.claims.sub }
 }
@@ -65,13 +39,14 @@ export function createServiceClient() {
     if (defaultKey) return createClient(Deno.env.get('SUPABASE_URL')!, defaultKey)
   }
   const legacyServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-  if (!legacyServiceKey) throw new Error('Chave interna do Supabase ausente.')
+  if (!legacyServiceKey) throw new AdminFunctionError('CONFIGURATION_ERROR', 'Configuração interna indisponível.', 500)
   return createClient(Deno.env.get('SUPABASE_URL')!, legacyServiceKey)
 }
 
-function required<T>(data: T | null, error: { message: string } | null, message: string) {
-  if (error) throw error
-  if (data === null) throw new Error(message)
+function required<T>(data: T | null, error: { code?: string; message: string } | null, message: string) {
+  if (error?.code === 'PGRST116') throw new AdminFunctionError('NOT_FOUND', message, 404, { cause: error })
+  if (error) throw new AdminFunctionError('DATABASE_ERROR', 'Não foi possível carregar os dados do evento.', 500, { cause: error })
+  if (data === null) throw new AdminFunctionError('VALIDATION_ERROR', message, 422)
   return data
 }
 
@@ -124,7 +99,9 @@ export async function loadEventExport(supabase: AdminClient, eventId: string) {
   const event = required(eventResult.data, eventResult.error, 'Evento não encontrado.')
   const settings = required(settingsResult.data, settingsResult.error, 'Configurações de Eventos ausentes.')
   if (raffleResult.error || prizesResult.error || productsResult.error || reservationsResult.error) {
-    throw raffleResult.error ?? prizesResult.error ?? productsResult.error ?? reservationsResult.error
+    throw new AdminFunctionError('DATABASE_ERROR', 'Não foi possível carregar os dados do evento.', 500, {
+      cause: raffleResult.error ?? prizesResult.error ?? productsResult.error ?? reservationsResult.error,
+    })
   }
 
   const products = productsResult.data ?? []
@@ -148,7 +125,7 @@ export async function loadEventExport(supabase: AdminClient, eventId: string) {
   ])
   const relationError = variationsResult.error ?? reservationProductsResult.error
     ?? numbersResult.error ?? sessionsResult.error
-  if (relationError) throw relationError
+  if (relationError) throw new AdminFunctionError('DATABASE_ERROR', 'Não foi possível carregar os dados relacionados ao evento.', 500, { cause: relationError })
 
   const variations = variationsResult.data ?? []
   const reservationProducts = reservationProductsResult.data ?? []
@@ -163,7 +140,9 @@ export async function loadEventExport(supabase: AdminClient, eventId: string) {
       : Promise.resolve({ data: [], error: null }),
   ])
   if (optionsResult.error || reservationOptionsResult.error) {
-    throw optionsResult.error ?? reservationOptionsResult.error
+    throw new AdminFunctionError('DATABASE_ERROR', 'Não foi possível carregar as opções reservadas.', 500, {
+      cause: optionsResult.error ?? reservationOptionsResult.error,
+    })
   }
 
   const exportData = {
@@ -220,10 +199,10 @@ export async function loadEventExport(supabase: AdminClient, eventId: string) {
 }
 
 export async function sendEventExport(eventExport: Awaited<ReturnType<typeof loadEventExport>>) {
-  if (!eventExport.exportEmail) throw new Error('Configure o e-mail de exportação antes de continuar.')
+  if (!eventExport.exportEmail) throw new AdminFunctionError('VALIDATION_ERROR', 'Configure o e-mail de exportação antes de continuar.', 422)
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   const from = Deno.env.get('RESEND_FROM_EMAIL')
-  if (!resendApiKey || !from) throw new Error('Configuração do Resend incompleta.')
+  if (!resendApiKey || !from) throw new AdminFunctionError('CONFIGURATION_ERROR', 'O envio de auditoria ainda não está configurado.', 500)
   const filename = fileSlug(eventExport.event.name ?? 'evento')
   const eventName = escapeHtml(eventExport.event.name ?? 'evento')
   const response = await fetch('https://api.resend.com/emails', {
@@ -239,8 +218,10 @@ export async function sendEventExport(eventExport: Awaited<ReturnType<typeof loa
         { content: toBase64(eventExport.reservationsCsv), filename: `${filename}-reservas.csv` },
       ],
     }),
+  }).catch((error) => {
+    throw new AdminFunctionError('RESEND_ERROR', 'O serviço de e-mail não respondeu. Nada foi excluído.', 502, { cause: error })
   })
-  if (!response.ok) throw new Error(`O Resend recusou o envio (${response.status}).`)
+  if (!response.ok) throw new AdminFunctionError('RESEND_ERROR', 'O serviço de e-mail recusou a exportação. Nada foi excluído.', 502)
   return new Date().toISOString()
 }
 

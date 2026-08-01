@@ -4,6 +4,7 @@ import {
   Dialog,
   TextField,
   formatBrazilPhoneInput,
+  getAdminErrorMessage,
   getReservationContactError,
   normalizeReservationContact,
 } from '@abrigo/shared'
@@ -113,7 +114,7 @@ export function ReservationEditDialog({
       })
       onClose()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Não foi possível salvar a reserva.')
+      setError(getAdminErrorMessage(saveError, 'Não foi possível salvar a reserva.'))
     } finally {
       setIsSaving(false)
     }

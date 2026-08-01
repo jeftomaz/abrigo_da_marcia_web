@@ -8,7 +8,7 @@ export const ADMIN_EMAIL = 'e2e-admin@abrigo.local'
 export const ADMIN_SENHA = 'Senha-E2E-nao-reaproveitavel-9f2c'
 export const INVITED_ADMIN_EMAIL = 'e2e-invited-admin@abrigo.local'
 
-type Ambiente = { apiUrl: string; serviceRoleKey: string }
+type Ambiente = { apiUrl: string; publishableKey: string; serviceRoleKey: string }
 
 let ambiente: Ambiente | null = null
 
@@ -16,8 +16,17 @@ function lerAmbienteLocal(): Ambiente {
   if (ambiente) return ambiente
   const bruto = execFileSync('supabase', ['status', '-o', 'json'], { encoding: 'utf8' })
   const status = JSON.parse(bruto.slice(bruto.indexOf('{')))
-  ambiente = { apiUrl: status.API_URL, serviceRoleKey: status.SERVICE_ROLE_KEY }
+  ambiente = {
+    apiUrl: status.API_URL,
+    publishableKey: status.PUBLISHABLE_KEY ?? status.ANON_KEY,
+    serviceRoleKey: status.SERVICE_ROLE_KEY,
+  }
   return ambiente
+}
+
+export function ambientePublicoLocal() {
+  const { apiUrl, publishableKey } = lerAmbienteLocal()
+  return { apiUrl, publishableKey }
 }
 
 async function chamar(caminho: string, opcoes: RequestInit & { token?: string } = {}) {
@@ -112,11 +121,11 @@ export async function provisionarAdmin() {
   const segredo = fator.totp.secret as string
 
   const desafio = await chamar(`/factors/${fator.id}/challenge`, { method: 'POST', token })
-  await chamar(`/factors/${fator.id}/verify`, {
+  const verificacao = await chamar(`/factors/${fator.id}/verify`, {
     method: 'POST',
     token,
     body: JSON.stringify({ challenge_id: desafio.id, code: await codigoTotpComJanelaFolgada(segredo) }),
   })
 
-  return { email: ADMIN_EMAIL, senha: ADMIN_SENHA, segredo }
+  return { accessToken: verificacao.access_token as string, email: ADMIN_EMAIL, senha: ADMIN_SENHA, segredo }
 }
