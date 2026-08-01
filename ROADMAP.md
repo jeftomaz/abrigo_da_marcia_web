@@ -23,8 +23,8 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 ### P0 — Correções operacionais e mobile
 
-- `todo` Corrigir o CORS de `activate-event`/`delete-archived-event`: aceitar todos os cabeçalhos enviados pelo SDK, validar `OPTIONS` contra a origem hospedada e republicar as funções; hoje o bloqueio do preflight gera `Failed to send a request to the Edge Function`.
-- `todo` Padronizar erros de operações administrativas: contrato `{ code, message, requestId }`, status HTTP coerente, log estruturado sem dados sensíveis e tradução no client para rede/CORS, sessão/MFA, validação, conflito, banco, Storage e Resend; manter o diálogo aberto e o rascunho íntegro quando houver falha.
+- `doing` CORS de `activate-event`/`delete-archived-event` corrigido no código: aceita os cabeçalhos do SDK e rejeita origens não permitidas; republicação com `ADMIN_ALLOWED_ORIGINS` hospedado permanece no item de produção acima.
+- `done` Erros administrativos padronizados: contrato `{ code, message, requestId }`, status HTTP coerente, log estruturado sem dados sensíveis e tradução compartilhada no client para rede/CORS, sessão/MFA, validação, conflito, banco, Storage e Resend; diálogos e rascunhos permanecem íntegros na falha.
 - `done` Corrigir as toolbars mobile de Cães e Histórias para reservar uma linha ao título e impedir colisão com filtro/ação; aplicar `text-marca` aos títulos principais de Cães, Histórias, Eventos e Configurações.
 - `done` Exibir Data de início/fim e os demais Objetivos de Eventos em uma coluna nas larguras estreitas, preservando duas colunas a partir de `sm` e o desktop.
 - `todo` Auditar os demais grids de duas colunas em 320–430 px sem alterar o desktop.

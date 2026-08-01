@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Action, TextField, toEditableStoryPhotos } from '@abrigo/shared'
+import { Action, TextField, getAdminErrorMessage, toEditableStoryPhotos } from '@abrigo/shared'
 import type { Story, StoryDraft } from '@abrigo/shared'
 import { PhotoGalleryField } from './PhotoGalleryField'
 
@@ -52,8 +52,8 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
         photos,
         published: story?.published ?? false,
       })
-    } catch {
-      setSaveError('Não foi possível salvar a história.')
+    } catch (error) {
+      setSaveError(getAdminErrorMessage(error, 'Não foi possível salvar a história.'))
     } finally {
       setIsSaving(false)
     }

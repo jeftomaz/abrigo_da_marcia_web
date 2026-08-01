@@ -3,6 +3,7 @@ import {
   Action,
   Dialog,
   Icon,
+  getAdminErrorMessage,
   useAdminStories,
   useDeleteStory,
   useSaveStory,
@@ -59,8 +60,8 @@ export function Historias() {
         showSuccess(confirmation.story.published ? 'História movida para rascunhos.' : 'História publicada.')
       }
       setConfirmation(null)
-    } catch {
-      setOperationError('Não foi possível concluir a ação.')
+    } catch (error) {
+      setOperationError(getAdminErrorMessage(error, 'Não foi possível concluir a ação.'))
     }
   }
 

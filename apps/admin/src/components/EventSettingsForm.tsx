@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Action, Switch, TextField } from '@abrigo/shared'
+import { Action, Switch, TextField, getAdminErrorMessage } from '@abrigo/shared'
 import type { EventSettings } from '@abrigo/shared'
 
 type EventSettingsFormProps = {
@@ -93,8 +93,8 @@ export function EventSettingsForm({
         defaultReservationTtlMinutes: expirationMinutes,
         eventExportEmail: eventExportEmail.trim(),
       })
-    } catch {
-      setSaveError('Não foi possível salvar as configurações de Eventos.')
+    } catch (error) {
+      setSaveError(getAdminErrorMessage(error, 'Não foi possível salvar as configurações de Eventos.'))
     } finally {
       setIsSaving(false)
     }

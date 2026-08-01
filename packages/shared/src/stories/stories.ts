@@ -103,7 +103,7 @@ async function saveStory(draft: StoryDraft) {
   const { data, error } = await request
 
   if (error) {
-    await removeStoredPhotos(uploadedPaths)
+    await removeStoredPhotos(uploadedPaths).catch(() => undefined)
     throw error
   }
 

@@ -3,6 +3,7 @@ import {
   Action,
   Dialog,
   Icon,
+  getAdminErrorMessage,
   useAdminDogs,
   useDeleteDog,
   useSaveDog,
@@ -66,8 +67,8 @@ export function Caes() {
       await deleteDog.mutateAsync(deletionTarget)
       setDeletionTarget(null)
       showSuccess('Cão removido.')
-    } catch {
-      setOperationError('Não foi possível remover o cão.')
+    } catch (error) {
+      setOperationError(getAdminErrorMessage(error, 'Não foi possível remover o cão.'))
     }
   }
 
@@ -78,8 +79,8 @@ export function Caes() {
       await updateDog.mutateAsync({ id: deletionTarget.id, status })
       setDeletionTarget(null)
       showSuccess('Status do cão atualizado.')
-    } catch {
-      setOperationError('Não foi possível atualizar o status do cão.')
+    } catch (error) {
+      setOperationError(getAdminErrorMessage(error, 'Não foi possível atualizar o status do cão.'))
     }
   }
 
@@ -93,8 +94,8 @@ export function Caes() {
       })
       setStatusConfirmation(null)
       showSuccess('Status do cão atualizado.')
-    } catch {
-      setOperationError('Não foi possível atualizar o status do cão.')
+    } catch (error) {
+      setOperationError(getAdminErrorMessage(error, 'Não foi possível atualizar o status do cão.'))
     }
   }
 
@@ -103,8 +104,8 @@ export function Caes() {
     try {
       await updateDog.mutateAsync({ id: dog.id, featured })
       showSuccess(featured ? 'Cão destacado no catálogo.' : 'Destaque removido do catálogo.')
-    } catch {
-      setOperationError('Não foi possível atualizar o destaque do cão.')
+    } catch (error) {
+      setOperationError(getAdminErrorMessage(error, 'Não foi possível atualizar o destaque do cão.'))
     }
   }
 

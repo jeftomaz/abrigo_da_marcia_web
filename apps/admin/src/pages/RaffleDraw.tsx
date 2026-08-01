@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Action, useAdminEvents, useDrawRafflePrize, useEventReservations } from '@abrigo/shared'
+import { Action, getAdminErrorMessage, useAdminEvents, useDrawRafflePrize, useEventReservations } from '@abrigo/shared'
 import { useParams } from 'react-router-dom'
 import type { RafflePrize } from '../events/events'
 
@@ -100,7 +100,7 @@ export function RaffleDraw() {
       animateNumber()
     } catch (error) {
       setIsDrawing(false)
-      setDrawError(error instanceof Error ? error.message : 'Não foi possível concluir o sorteio.')
+      setDrawError(getAdminErrorMessage(error, 'Não foi possível concluir o sorteio.'))
     }
   }
 
