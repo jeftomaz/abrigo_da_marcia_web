@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Json, Tables, TablesInsert } from '../database.types'
 import { getAdminErrorMessage, parseAdminFunctionError } from '../admin/adminErrors'
+import { mapAuditMetadata } from '../admin/audit'
+import type { AuditMetadata } from '../admin/audit'
 import {
   getStoredPhotoUrl,
   removeStoredPhotos,
@@ -58,6 +60,7 @@ export type RafflePrize = {
 export type EditableRafflePrize = Omit<RafflePrize, 'image'> & { image: EditablePhoto }
 
 export type FundraisingEvent = {
+  audit: AuditMetadata | null
   city: string
   description: string
   endDate: string
@@ -80,7 +83,7 @@ export type FundraisingEvent = {
   title: string
 }
 
-export type EventDraft = Omit<FundraisingEvent, 'gallery' | 'id' | 'prizes' | 'products' | 'status'> & {
+export type EventDraft = Omit<FundraisingEvent, 'audit' | 'gallery' | 'id' | 'prizes' | 'products' | 'status'> & {
   gallery: EditablePhoto[]
   id?: string
   prizes: EditableRafflePrize[]
@@ -97,6 +100,7 @@ export type ReservationProductItem = {
 }
 
 export type EventReservation = {
+  audit: AuditMetadata | null
   contact: string
   eventId: string
   expiresAt: string
@@ -130,6 +134,7 @@ export type ReservationResult = {
 }
 
 export type EventSettings = {
+  audit?: AuditMetadata | null
   defaultMaxProductUnits: number
   defaultMaxRaffleNumbers: number
   defaultPostPaymentInstructions: string
@@ -334,6 +339,7 @@ function composeEvents(
     ) {
       return {
         ...(row.draft_payload as unknown as FundraisingEvent),
+        audit: mapAuditMetadata(row),
         id,
         status: 'draft',
       }
@@ -372,6 +378,7 @@ function composeEvents(
     const raffle = raffleRows.find((item) => item.event_id === id)
 
     return {
+      audit: mapAuditMetadata(row),
       id,
       kind: EVENT_KIND_FROM_DB[required(row.type, 'Evento sem tipo.')],
       status: EVENT_STATUS_FROM_DB[required(row.status, 'Evento sem status.')],
@@ -530,6 +537,7 @@ async function prepareStoredDraft(
   }
 
   return {
+    audit: null,
     id,
     status: 'draft',
     kind: draft.kind,
@@ -832,6 +840,7 @@ async function listReservations(eventId: string) {
   const optionRows = optionsResult.data ?? []
   const reservationIds = new Set(reservationRows.map((row) => row.id))
   return reservationRows.map((row): EventReservation => ({
+    audit: mapAuditMetadata(row),
     id: row.id,
     eventId: row.event_id,
     name: row.customer_name ?? 'Dados removidos',
@@ -958,6 +967,7 @@ async function loadEventSettings(): Promise<EventSettings> {
   const { data, error } = await supabase.from('event_settings').select('*').eq('singleton', true).single()
   if (error) throw error
   return {
+    audit: mapAuditMetadata(data),
     defaultMaxProductUnits: data.default_max_product_units,
     defaultMaxRaffleNumbers: data.default_max_raffle_numbers,
     defaultPostPaymentInstructions: data.default_post_payment_instructions ?? '',

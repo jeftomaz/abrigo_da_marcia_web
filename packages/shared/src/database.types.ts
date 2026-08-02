@@ -34,6 +34,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       caes: {
         Row: {
           adoption_form_url: string | null
@@ -48,6 +69,8 @@ export type Database = {
           size: Database["public"]["Enums"]["cae_porte"]
           status: Database["public"]["Enums"]["cae_status"]
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string
         }
         Insert: {
           adoption_form_url?: string | null
@@ -62,6 +85,8 @@ export type Database = {
           size: Database["public"]["Enums"]["cae_porte"]
           status?: Database["public"]["Enums"]["cae_status"]
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Update: {
           adoption_form_url?: string | null
@@ -76,6 +101,8 @@ export type Database = {
           size?: Database["public"]["Enums"]["cae_porte"]
           status?: Database["public"]["Enums"]["cae_status"]
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Relationships: []
       }
@@ -83,6 +110,7 @@ export type Database = {
         Row: {
           deleted_at: string
           deleted_by: string | null
+          deleted_by_name: string
           event_id: string
           event_name: string
           export_email: string
@@ -92,6 +120,7 @@ export type Database = {
         Insert: {
           deleted_at?: string
           deleted_by?: string | null
+          deleted_by_name?: string
           event_id: string
           event_name: string
           export_email: string
@@ -101,6 +130,7 @@ export type Database = {
         Update: {
           deleted_at?: string
           deleted_by?: string | null
+          deleted_by_name?: string
           event_id?: string
           event_name?: string
           export_email?: string
@@ -118,6 +148,8 @@ export type Database = {
           event_export_email: string | null
           singleton: boolean
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string
         }
         Insert: {
           default_max_product_units?: number
@@ -127,6 +159,8 @@ export type Database = {
           event_export_email?: string | null
           singleton?: boolean
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Update: {
           default_max_product_units?: number
@@ -136,6 +170,8 @@ export type Database = {
           event_export_email?: string | null
           singleton?: boolean
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Relationships: []
       }
@@ -164,6 +200,8 @@ export type Database = {
           status: Database["public"]["Enums"]["evento_status"]
           type: Database["public"]["Enums"]["evento_tipo"]
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string
         }
         Insert: {
           activated_at?: string | null
@@ -189,6 +227,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["evento_status"]
           type: Database["public"]["Enums"]["evento_tipo"]
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Update: {
           activated_at?: string | null
@@ -214,6 +254,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["evento_status"]
           type?: Database["public"]["Enums"]["evento_tipo"]
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Relationships: []
       }
@@ -226,6 +268,8 @@ export type Database = {
           photos: string[]
           published: boolean
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string
         }
         Insert: {
           created_at?: string
@@ -235,6 +279,8 @@ export type Database = {
           photos?: string[]
           published?: boolean
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Update: {
           created_at?: string
@@ -244,6 +290,8 @@ export type Database = {
           photos?: string[]
           published?: boolean
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Relationships: []
       }
@@ -591,6 +639,8 @@ export type Database = {
           status: Database["public"]["Enums"]["reserva_status"]
           total_cents: number
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string
         }
         Insert: {
           canceled_at?: string | null
@@ -608,6 +658,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["reserva_status"]
           total_cents: number
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Update: {
           canceled_at?: string | null
@@ -625,6 +677,8 @@ export type Database = {
           status?: Database["public"]["Enums"]["reserva_status"]
           total_cents?: number
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
         }
         Relationships: [
           {
@@ -768,6 +822,8 @@ export type Database = {
           recurring_donation_urls: Json
           singleton: boolean
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string
           volunteer_form_url: string | null
         }
         Insert: {
@@ -778,6 +834,8 @@ export type Database = {
           recurring_donation_urls?: Json
           singleton?: boolean
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
           volunteer_form_url?: string | null
         }
         Update: {
@@ -788,6 +846,8 @@ export type Database = {
           recurring_donation_urls?: Json
           singleton?: boolean
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
           volunteer_form_url?: string | null
         }
         Relationships: []
@@ -797,18 +857,24 @@ export type Database = {
           display_order: number
           network: string
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string
           url: string | null
         }
         Insert: {
           display_order: number
           network: string
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
           url?: string | null
         }
         Update: {
           display_order?: number
           network?: string
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
           url?: string | null
         }
         Relationships: []
@@ -869,42 +935,6 @@ export type Database = {
           start_date: string | null
           status: Database["public"]["Enums"]["evento_status"] | null
           type: Database["public"]["Enums"]["evento_tipo"] | null
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          end_date?: string | null
-          fundraising_goal_cents?: number | null
-          id?: string | null
-          max_items_per_reservation?: number | null
-          name?: string | null
-          photos?: string[] | null
-          pix_city?: string | null
-          pix_key?: string | null
-          pix_receiver?: string | null
-          post_payment_instructions?: string | null
-          reservation_ttl_seconds?: never
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["evento_status"] | null
-          type?: Database["public"]["Enums"]["evento_tipo"] | null
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          end_date?: string | null
-          fundraising_goal_cents?: number | null
-          id?: string | null
-          max_items_per_reservation?: number | null
-          name?: string | null
-          photos?: string[] | null
-          pix_city?: string | null
-          pix_key?: string | null
-          pix_receiver?: string | null
-          post_payment_instructions?: string | null
-          reservation_ttl_seconds?: never
-          start_date?: string | null
-          status?: Database["public"]["Enums"]["evento_status"] | null
-          type?: Database["public"]["Enums"]["evento_tipo"] | null
         }
         Relationships: []
       }
@@ -1138,13 +1168,13 @@ export type Database = {
     Functions: {
       activate_event: {
         Args: {
-          p_deleted_by?: string | null
+          p_deleted_by?: string
           p_event_id: string
-          p_export_email?: string | null
-          p_export_sent_at?: string | null
-          p_exported_event_id?: string | null
+          p_export_email?: string
+          p_export_sent_at?: string
+          p_exported_event_id?: string
         }
-        Returns: string | null
+        Returns: string
       }
       clean_expired_event_personal_data: { Args: never; Returns: number }
       create_reservation_session: { Args: never; Returns: string }
@@ -1171,6 +1201,10 @@ export type Database = {
         Returns: undefined
       }
       expire_event_reservations: { Args: never; Returns: number }
+      expire_reservations_for_event: {
+        Args: { p_event_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       is_valid_measurement_table: { Args: { value: Json }; Returns: boolean }
       is_valid_reservation_contact: {
@@ -1216,6 +1250,10 @@ export type Database = {
           reservation_id: string
           total_cents: number
         }[]
+      }
+      set_audit_actor: {
+        Args: { p_actor_id: string; p_fallback_name?: string }
+        Returns: undefined
       }
       update_event_reservation: {
         Args: {

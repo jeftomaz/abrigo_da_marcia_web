@@ -17,6 +17,7 @@ const ACTION_CLASSES =
 export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story }: StoryRowProps) {
   return (
     <AdminListRow
+      audit={story.audit}
       isEditing={isEditing}
       className="grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-3 rounded-2xl p-3 min-[28rem]:grid-cols-[4rem_minmax(0,1fr)_13.5rem]"
     >

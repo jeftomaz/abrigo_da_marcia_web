@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { mapAuditMetadata } from '../admin/audit'
+import type { AuditMetadata } from '../admin/audit'
 import type { Tables, TablesInsert } from '../database.types'
 import {
   getStoredPhotoUrl,
@@ -14,6 +16,7 @@ export type DogSize = 'pequeno' | 'medio' | 'grande'
 export type DogStatus = 'disponivel' | 'adotado' | 'falecido'
 
 export type Dog = {
+  audit: AuditMetadata | null
   id: string
   name: string
   gender: DogGender
@@ -31,7 +34,7 @@ export type DogPatch = { featured?: boolean; status?: DogStatus }
 
 export type EditableDogPhoto = EditablePhoto
 
-export type DogDraft = Omit<Dog, 'id' | 'photos'> & {
+export type DogDraft = Omit<Dog, 'audit' | 'id' | 'photos'> & {
   id?: string
   photos: EditableDogPhoto[]
 }
@@ -47,6 +50,7 @@ const publicDogsKey = ['dogs', 'public'] as const
 
 function mapDog(row: Tables<'caes'>): Dog {
   return {
+    audit: mapAuditMetadata(row),
     id: row.id,
     name: row.name,
     gender: row.gender,
@@ -73,6 +77,7 @@ function mapPublicDog(row: Tables<'caes_public'>): Dog {
   }
 
   return {
+    audit: null,
     id: row.id,
     name: row.name,
     gender: row.gender,

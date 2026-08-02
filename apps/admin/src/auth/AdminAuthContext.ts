@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react'
 
 export type AdminAuthValue = {
+  displayName: string
   email: string
   factorId: string
   removeAuthenticator: () => Promise<void>

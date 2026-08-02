@@ -11,8 +11,9 @@ type AuthState =
   | { status: 'challenge'; email: string; factorId: string }
   | { status: 'enroll'; email: string }
   | { status: 'forbidden' }
+  | { status: 'profile'; email: string; factorId: string; userId: string }
   | { status: 'registration'; email: string }
-  | { status: 'ready'; email: string; factorId: string }
+  | { status: 'ready'; displayName: string; email: string; factorId: string }
   | { status: 'signed-out' }
 
 type Enrollment = { factorId: string; qrCode: string; secret: string }
@@ -32,6 +33,10 @@ function AuthLayout({ children }: { children: ReactNode }) {
 }
 
 const fieldClasses = 'mt-1 h-11 px-4'
+const isValidDisplayName = (displayName: string) => {
+  const length = displayName.trim().length
+  return length >= 2 && length <= 60
+}
 const isStrongPassword = (password: string) => password.length >= 12
   && /[a-z]/.test(password)
   && /[A-Z]/.test(password)
@@ -101,8 +106,9 @@ function Registration({
   onSubmit,
 }: {
   email: string
-  onSubmit: (password: string) => Promise<void>
+  onSubmit: (displayName: string, password: string) => Promise<void>
 }) {
+  const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
   const [error, setError] = useState('')
@@ -110,6 +116,10 @@ function Registration({
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (!isValidDisplayName(displayName)) {
+      setError('Informe um nome ou apelido entre 2 e 60 caracteres.')
+      return
+    }
     if (!isStrongPassword(password)) {
       setError('Use pelo menos 12 caracteres, com maiúscula, minúscula, número e símbolo.')
       return
@@ -121,7 +131,7 @@ function Registration({
     setIsSubmitting(true)
     setError('')
     try {
-      await onSubmit(password)
+      await onSubmit(displayName.trim(), password)
     } catch {
       setError('Não foi possível concluir o cadastro. Solicite um novo convite se o link expirou.')
     } finally {
@@ -134,6 +144,10 @@ function Registration({
       <form onSubmit={submit}>
         <h1 className="text-3xl font-medium text-marca">Concluir cadastro</h1>
         <p className="mt-3">Defina sua senha para acessar a administração do Abrigo da Márcia.</p>
+        <label className="mt-6 block font-medium">
+          Nome ou apelido
+          <TextField autoComplete="name" maxLength={60} required value={displayName} onChange={(event) => setDisplayName(event.target.value)} className={fieldClasses} />
+        </label>
         <label className="mt-6 block font-medium">
           E-mail
           <TextField type="email" autoComplete="username" readOnly value={email} className={fieldClasses} />
@@ -169,6 +183,56 @@ function Registration({
         {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
         <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
           {isSubmitting ? 'Salvando...' : 'Criar senha e continuar'}
+        </Action>
+      </form>
+    </AuthLayout>
+  )
+}
+
+function ProfileRegistration({
+  email,
+  onSubmit,
+}: {
+  email: string
+  onSubmit: (displayName: string) => Promise<void>
+}) {
+  const [displayName, setDisplayName] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!isValidDisplayName(displayName)) {
+      setError('Informe um nome ou apelido entre 2 e 60 caracteres.')
+      return
+    }
+    setIsSubmitting(true)
+    setError('')
+    try {
+      await onSubmit(displayName.trim())
+    } catch {
+      setError('Não foi possível salvar sua identificação.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <AuthLayout>
+      <form onSubmit={submit}>
+        <h1 className="text-3xl font-medium text-marca">Identifique seu perfil</h1>
+        <p className="mt-3">Esse nome ou apelido acompanhará as alterações feitas por você.</p>
+        <label className="mt-6 block font-medium">
+          E-mail
+          <TextField type="email" autoComplete="username" readOnly value={email} className={fieldClasses} />
+        </label>
+        <label className="mt-4 block font-medium">
+          Nome ou apelido
+          <TextField autoComplete="name" maxLength={60} required value={displayName} onChange={(event) => setDisplayName(event.target.value)} className={fieldClasses} />
+        </label>
+        {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
+        <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
+          {isSubmitting ? 'Salvando...' : 'Salvar e continuar'}
         </Action>
       </form>
     </AuthLayout>
@@ -290,6 +354,7 @@ function EnrollmentScreen({
 
 export function AdminAuth({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'checking' })
+  const completingRegistration = useRef(false)
   const refreshedInvitationRole = useRef(false)
 
   const signOut = useCallback(async () => {
@@ -339,14 +404,25 @@ export function AdminAuth({ children }: { children: ReactNode }) {
     }
     const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
     if (assuranceError) throw assuranceError
-    setState(assurance.currentLevel === 'aal2'
-      ? { status: 'ready', email, factorId: factor.id }
-      : { status: 'challenge', email, factorId: factor.id })
+    if (assurance.currentLevel !== 'aal2') {
+      setState({ status: 'challenge', email, factorId: factor.id })
+      return
+    }
+    const { data: profile, error: profileError } = await supabase
+      .from('admin_profiles')
+      .select('display_name')
+      .eq('user_id', activeSession.user.id)
+      .maybeSingle()
+    if (profileError) throw profileError
+    setState(profile
+      ? { status: 'ready', displayName: profile.display_name, email, factorId: factor.id }
+      : { status: 'profile', email, factorId: factor.id, userId: activeSession.user.id })
   }, [signOut])
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => inspectSession(data.session)).catch(() => setState({ status: 'signed-out' }))
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (completingRegistration.current) return
       window.setTimeout(() => void inspectSession(session).catch(() => setState({ status: 'signed-out' })), 0)
     })
     return () => listener.subscription.unsubscribe()
@@ -386,12 +462,34 @@ export function AdminAuth({ children }: { children: ReactNode }) {
     await inspectSession(data.session)
   }
 
-  const completeRegistration = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password })
+  const completeRegistration = async (displayName: string, password: string) => {
+    completingRegistration.current = true
+    try {
+      const { error: profileError } = await supabase.auth.updateUser({ data: { display_name: displayName } })
+      if (profileError) throw profileError
+      const { error: passwordError } = await supabase.auth.updateUser({ password })
+      if (passwordError) throw passwordError
+      const { data, error: refreshError } = await supabase.auth.refreshSession()
+      if (refreshError) throw refreshError
+      await inspectSession(data.session)
+    } finally {
+      completingRegistration.current = false
+    }
+  }
+
+  const completeProfile = async (displayName: string) => {
+    if (state.status !== 'profile') return
+    const { error } = await supabase.from('admin_profiles').insert({
+      display_name: displayName,
+      user_id: state.userId,
+    })
     if (error) throw error
-    const { data, error: refreshError } = await supabase.auth.refreshSession()
-    if (refreshError) throw refreshError
-    await inspectSession(data.session)
+    setState({
+      status: 'ready',
+      displayName,
+      email: state.email,
+      factorId: state.factorId,
+    })
   }
 
   const beginEnrollment = async (): Promise<Enrollment> => {
@@ -426,6 +524,7 @@ export function AdminAuth({ children }: { children: ReactNode }) {
   }
 
   const contextValue = state.status === 'ready' ? {
+    displayName: state.displayName,
     email: state.email,
     factorId: state.factorId,
     removeAuthenticator,
@@ -443,6 +542,9 @@ export function AdminAuth({ children }: { children: ReactNode }) {
   )
   if (state.status === 'registration') return (
     <Registration email={state.email} onSubmit={completeRegistration} />
+  )
+  if (state.status === 'profile') return (
+    <ProfileRegistration email={state.email} onSubmit={completeProfile} />
   )
   if (state.status === 'enroll') return <EnrollmentScreen beginEnrollment={beginEnrollment} verify={verify} />
   if (state.status === 'challenge') return (

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Action, Dialog, Icon, ImagePlaceholder, formatReservationContact, getAdminErrorMessage } from '@abrigo/shared'
 import type { EventReservation, EventReservationUpdate, FundraisingEvent, ReservationStatus } from '../events/events'
 import { getEventPhotoUrl } from '../events/events'
+import { AdminListRow } from './AdminListRow'
 import { ReservationEditDialog } from './ReservationEditDialog'
 import { StatusBadge } from './StatusBadge'
 
@@ -155,7 +156,7 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
           const status = RESERVATION_STATUS[reservation.status]
           const isPending = pendingReservationIds.has(reservation.id)
           return (
-            <article key={reservation.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-3xl bg-surface-raised p-5 text-on-surface-raised desk:grid-cols-[minmax(8rem,1fr)_minmax(11rem,1.5fr)_8rem] desk:items-center desk:rounded-2xl desk:border-4 desk:border-cinza-claro desk:p-3 dark:desk:border-cinza-medio">
+            <AdminListRow key={reservation.id} audit={reservation.audit} isEditing={false} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-4 rounded-3xl p-5 desk:grid-cols-[minmax(8rem,1fr)_minmax(11rem,1.5fr)_8rem] desk:items-center desk:rounded-2xl desk:border-4 desk:border-cinza-claro desk:p-3 dark:desk:border-cinza-medio">
               <div className="min-w-0"><h4 className="line-clamp-2 text-xl leading-tight font-medium desk:text-sm">{reservation.name}</h4><p className="mt-2 truncate text-sm text-cinza-medio dark:text-cinza-claro desk:text-xs">{formatReservationContact(reservation.contact)}</p><p className="mt-1 text-xs">Expira: {new Date(reservation.expiresAt).toLocaleString('pt-BR')}</p></div>
               <div className="col-start-1 flex min-w-0 flex-wrap gap-1 desk:col-start-2 desk:row-start-1">
                 {event.kind === 'raffle' ? reservation.numbers.map((number) => <span key={number} className="min-w-12 rounded-md bg-cinza-medio px-2 py-1 text-center text-xs text-cinza-claro">Nº {String(number).padStart(2, '0')}</span>) : <span className="text-sm">{productItemLabel(reservation)}</span>}
@@ -175,7 +176,7 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
                 {event.receiptFolderUrl && <Action href={event.receiptFolderUrl} target="_blank" rel="noreferrer" icon="open-book" size="small" variant="neutral-adaptive" className="px-3 py-1 text-xs">Comprovantes</Action>}
                 <strong className="text-sm">{formatMoney(reservation.totalCents)}</strong>
               </div>
-            </article>
+            </AdminListRow>
           )
         })}
         {filteredReservations.length === 0 && <p className="py-5 text-center">Nenhuma reserva encontrada.</p>}
