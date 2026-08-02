@@ -57,6 +57,44 @@ async function entrar(page: Page) {
   await page.getByRole('button', { name: 'Verificar' }).click()
 }
 
+async function expectNoHorizontalOverflow(page: Page, context: string) {
+  const overflows = await page.evaluate(() => {
+    const dialogs = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]'))
+      .filter((dialog) => dialog.getClientRects().length > 0)
+    const isContainedOverflow = (element: HTMLElement, boundary: HTMLElement) => {
+      let parent = element.parentElement
+      while (parent && parent !== boundary) {
+        const overflowX = getComputedStyle(parent).overflowX
+        if (['auto', 'scroll', 'hidden', 'clip'].includes(overflowX) && parent.scrollWidth > parent.clientWidth + 1) return true
+        parent = parent.parentElement
+      }
+      return false
+    }
+    return [
+      { label: 'página', clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth, offenders: [] },
+      ...dialogs.map((dialog) => {
+        const offenders = Array.from(dialog.querySelectorAll<HTMLElement>('*'))
+          .filter((element) => element.getClientRects().length > 0 && element.getBoundingClientRect().right > dialog.getBoundingClientRect().right + 1)
+          .filter((element) => !isContainedOverflow(element, dialog))
+          .slice(0, 5)
+          .map((element) => ({
+            className: element.className,
+            tag: element.tagName,
+            text: element.textContent?.trim().slice(0, 40),
+          }))
+        return {
+          label: dialog.getAttribute('aria-label') ?? 'diálogo',
+          clientWidth: dialog.clientWidth,
+          scrollWidth: dialog.scrollWidth,
+          offenders,
+        }
+      }),
+    ].filter(({ clientWidth, scrollWidth, offenders }) => scrollWidth > clientWidth + 1 && (offenders.length > 0 || clientWidth === document.documentElement.clientWidth))
+  })
+
+  expect(overflows, context).toEqual([])
+}
+
 test.describe('admin', () => {
   test('Edge Functions aceitam os cabeçalhos do SDK e devolvem erros estruturados', async ({ request }) => {
     const { apiUrl, publishableKey } = ambientePublicoLocal()
@@ -223,5 +261,68 @@ test.describe('admin', () => {
     await page.getByRole('button', { name: 'Ativar tema escuro' }).click()
     await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
     expect(await auditar(page)).toEqual([])
+  })
+
+  test('grids do admin não transbordam entre 320 e 430 px', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 844 })
+    await entrar(page)
+    await expect(page.getByRole('heading', { name: 'Cães Cadastrados' })).toBeVisible()
+
+    for (const width of [320, 375, 430]) {
+      await page.setViewportSize({ width, height: 844 })
+      for (const [path, heading] of [
+        ['/', 'Cães Cadastrados'],
+        ['/historias', 'Histórias Contadas'],
+        ['/eventos', 'Eventos'],
+        ['/configuracoes', 'Configurações'],
+      ] as const) {
+        await page.goto(`${ADMIN_URL}/#${path}`)
+        await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
+        await expectNoHorizontalOverflow(page, `${heading} em ${width}px`)
+      }
+    }
+
+    await page.setViewportSize({ width: 320, height: 844 })
+
+    await page.goto(`${ADMIN_URL}/#/`)
+    await page.getByRole('button', { name: 'Novo Cão' }).click()
+    await expect(page.getByRole('dialog', { name: 'Novo Cão' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Formulário de Cães em 320px')
+    await page.getByRole('dialog', { name: 'Novo Cão' }).getByRole('button', { name: 'Cancelar' }).click()
+
+    await page.goto(`${ADMIN_URL}/#/historias`)
+    await page.getByRole('button', { name: 'Nova História' }).click()
+    await expect(page.getByRole('dialog', { name: 'Nova História' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Formulário de Histórias em 320px')
+    await page.getByRole('dialog', { name: 'Nova História' }).getByRole('button', { name: 'Cancelar' }).click()
+
+    await page.goto(`${ADMIN_URL}/#/eventos`)
+    await page.getByRole('button', { name: 'Novo Evento' }).click()
+    const eventDialog = page.getByRole('dialog', { name: 'Novo Evento' })
+    await expect(eventDialog).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Formulário de Eventos em 320px')
+    await eventDialog.getByRole('button', { name: 'Cancelar' }).click()
+
+    const bazaarCard = page.locator('article').filter({ hasText: 'Bazar de Inverno' })
+    await bazaarCard.getByRole('button', { name: 'Editar' }).click()
+    const savedEventDialog = page.getByRole('dialog', { name: 'Editar Evento' })
+    await expect(savedEventDialog).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Variações de produto em 320px')
+    await savedEventDialog.getByRole('button', { name: 'Cancelar' }).click()
+
+    await bazaarCard.getByRole('button', { name: 'Reservas' }).click()
+    const reservations = page.getByRole('heading', { name: 'Reservas', exact: true }).locator('xpath=ancestor::section[1]')
+    await expect(reservations).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Gestão de reservas em 320px')
+    await reservations.getByRole('button', { name: 'Editar' }).first().click()
+    await expect(page.getByRole('dialog', { name: 'Editar reserva' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Edição de reserva em 320px')
+    await page.getByRole('dialog', { name: 'Editar reserva' }).getByRole('button', { name: 'Fechar' }).click()
+
+    await page.goto(`${ADMIN_URL}/#/configuracoes`)
+    const eventSettings = page.getByLabel('Gestão de Eventos', { exact: true })
+    await eventSettings.getByRole('button', { name: 'Editar' }).click()
+    await expect(page.getByRole('dialog', { name: 'Editar configurações' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Configurações de Eventos em 320px')
   })
 })

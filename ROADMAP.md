@@ -27,7 +27,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `done` Erros administrativos padronizados: contrato `{ code, message, requestId }`, status HTTP coerente, log estruturado sem dados sensíveis e tradução compartilhada no client para rede/CORS, sessão/MFA, validação, conflito, banco, Storage e Resend; diálogos e rascunhos permanecem íntegros na falha.
 - `done` Corrigir as toolbars mobile de Cães e Histórias para reservar uma linha ao título e impedir colisão com filtro/ação; aplicar `text-marca` aos títulos principais de Cães, Histórias, Eventos e Configurações.
 - `done` Exibir Data de início/fim e os demais Objetivos de Eventos em uma coluna nas larguras estreitas, preservando duas colunas a partir de `sm` e o desktop.
-- `todo` Auditar os demais grids de duas colunas em 320–430 px sem alterar o desktop.
+- `done` Auditar os demais grids de duas colunas em 320–430 px sem alterar o desktop.
 - `todo` Incluir o admin nos projetos E2E mobile Chromium/WebKit, cobrindo ausência de overflow/sobreposição e publicação de evento com sucesso, falha HTTP, falha de rede/CORS, sessão expirada e falha de exportação.
 
 ### P1 — Hardening (auditoria de 2026-07-25)
