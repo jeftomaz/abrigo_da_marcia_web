@@ -721,7 +721,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
 
   const productSection = (
     <section id={`${formId}-products`} tabIndex={-1} className={sectionClasses}>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className={sectionTitleClasses}>Catálogo de Produtos</h3>
         <Action onClick={() => setField('products', [...draft.products, emptyProduct()])} icon="plus-circle-solid" size="small" variant="primary-adaptive" className="px-3">Novo Produto</Action>
       </div>
@@ -734,7 +734,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           const guideKind = measurementGuideKinds[product.id] ?? product.measurementGuide?.kind ?? 'none'
           const selectedMeasurementVariationId = measurementVariationId(product, tableGuide)
           return (
-            <article key={product.id} className="rounded-2xl bg-marca-clara p-4 text-marca">
+            <article key={product.id} className="min-w-0 rounded-2xl bg-marca-clara p-4 text-marca">
               <div className="flex items-center justify-between gap-3">
                 <h4 className="text-lg font-medium">Produto {productIndex + 1}</h4>
                 {draft.products.length > 1 && <Action onClick={() => setField('products', draft.products.filter((item) => item.id !== product.id))} icon="trash-solid" size="small" variant="primary-adaptive" className="px-3">Remover</Action>}
@@ -818,7 +818,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                   <option value="image">Imagem</option>
                 </TextField>
                 {product.measurementGuide?.kind === 'table' && (
-                  <div className="mt-3 grid gap-3">
+                  <div className="mt-3 grid min-w-0 gap-3">
                     <label htmlFor={`${formId}-measurement-variation-${product.id}`} className="text-sm font-medium">
                       Variação usada na tabela
                     </label>
@@ -849,7 +849,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                       <p className="text-sm">Adicione antes uma variação e transforme seus valores em tags.</p>
                     )}
                     {tableGuide.sizes.length > 0 && (
-                      <div className="overflow-x-auto">
+                      <div className="min-w-0 max-w-full overflow-x-auto">
                         <table className="w-full min-w-max border-separate border-spacing-2">
                           <thead>
                             <tr>

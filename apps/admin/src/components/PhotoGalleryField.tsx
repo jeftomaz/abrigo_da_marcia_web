@@ -165,7 +165,7 @@ export function PhotoGalleryField({
           isPanel
             ? 'grid-cols-3'
             : isCompact
-              ? 'grid-cols-[repeat(4,3.25rem)]'
+              ? 'grid-cols-[repeat(auto-fill,minmax(3.25rem,1fr))] min-[22rem]:grid-cols-[repeat(4,3.25rem)]'
               : 'grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]'
         }`}
       >
