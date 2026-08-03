@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import type { Page } from '@playwright/test'
+import type { Locator, Page, Route } from '@playwright/test'
 import { ADMIN_URL } from '../playwright.config'
 import {
   ADMIN_NOME,
@@ -11,11 +11,18 @@ import {
   removerAdminDeTeste,
   removerPerfilAdminDeTeste,
 } from './admin'
+import { executarSql } from './banco'
 import { expect, test } from './fixtures'
 
 const PADROES = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 const FAMILIA_DA_MARCA = new Set(['#f15a55', '#fbd1d0', '#8d0e0c'])
 const SUPERFICIES = new Set(['#ffffff', '#000000', '#e6e6e6', '#262626', '#404040'])
+const EVENTO_PUBLICACAO_ID = 'e2000000-0000-0000-0000-000000000001'
+const EVENTO_PUBLICACAO_NOME = 'Evento E2E para publicação'
+const EVENTOS_HISTORICO_IDS = [
+  'e2000000-0000-0000-0000-000000000002',
+  'e2000000-0000-0000-0000-000000000003',
+]
 
 let credenciais: { accessToken: string; email: string; senha: string; segredo: string }
 
@@ -93,6 +100,125 @@ async function expectNoHorizontalOverflow(page: Page, context: string) {
   })
 
   expect(overflows, context).toEqual([])
+}
+
+async function expectNoOverlap(first: Locator, second: Locator, context: string) {
+  const [firstBox, secondBox] = await Promise.all([first.boundingBox(), second.boundingBox()])
+  expect(firstBox, `${context}: primeiro elemento invisível`).not.toBeNull()
+  expect(secondBox, `${context}: segundo elemento invisível`).not.toBeNull()
+  if (!firstBox || !secondBox) return
+
+  const overlaps = firstBox.x < secondBox.x + secondBox.width
+    && firstBox.x + firstBox.width > secondBox.x
+    && firstBox.y < secondBox.y + secondBox.height
+    && firstBox.y + firstBox.height > secondBox.y
+  expect(overlaps, context).toBe(false)
+}
+
+function prepararEventoParaPublicacao(withFullHistory = false) {
+  const historySql = withFullHistory ? EVENTOS_HISTORICO_IDS.map((id, index) => `
+    insert into public.eventos (
+      id, name, description, type, photos, start_date, end_date,
+      fundraising_goal_cents, pix_key, pix_receiver, pix_city,
+      post_payment_instructions, data_verified_at
+    ) values (
+      '${id}', 'Histórico E2E ${index + 1}', 'Evento encerrado criado pelo E2E.',
+      'produtos', '{eventos/e2e/historico.jpg}', current_date - 1, current_date + 1,
+      10000, 'pix-e2e@example.com', 'Abrigo E2E', 'São Paulo', 'Envie o comprovante.', now()
+    );
+    insert into public.produtos (
+      id, event_id, name, description, photos, unit_price_cents, display_order
+    ) values (
+      'e2100000-0000-0000-0000-00000000000${index + 2}', '${id}', 'Produto E2E',
+      'Produto criado pelo E2E.', '{eventos/e2e/produto.jpg}', 1000, 1
+    );
+    select public.activate_event('${id}');
+    update public.eventos set status = 'encerrado' where id = '${id}';
+  `).join('\n') : ''
+
+  executarSql(`
+    update public.eventos set status = 'encerrado'
+    where id = 'a1000000-0000-0000-0000-000000000001' and status = 'ativo';
+    update public.event_settings set event_export_email = ${withFullHistory ? "'e2e@example.com'" : 'null'} where singleton;
+    insert into public.eventos (
+      id, name, description, type, photos, start_date, end_date,
+      fundraising_goal_cents, pix_key, pix_receiver, pix_city,
+      post_payment_instructions, data_verified_at
+    ) values (
+      '${EVENTO_PUBLICACAO_ID}', '${EVENTO_PUBLICACAO_NOME}', 'Evento válido criado pelo E2E.',
+      'produtos', '{eventos/e2e/capa.jpg}', current_date - 1, current_date + 1,
+      10000, 'pix-e2e@example.com', 'Abrigo E2E', 'São Paulo', 'Envie o comprovante.', now()
+    );
+    insert into public.produtos (
+      id, event_id, name, description, photos, unit_price_cents, display_order
+    ) values (
+      'e2100000-0000-0000-0000-000000000001', '${EVENTO_PUBLICACAO_ID}', 'Produto E2E',
+      'Produto criado pelo E2E.', '{eventos/e2e/produto.jpg}', 1000, 1
+    );
+    ${historySql}
+  `)
+}
+
+function limparEventoDePublicacao() {
+  executarSql(`
+    select set_config('app.confirmed_event_delete', 'on', false);
+    delete from public.eventos where id in ('${EVENTO_PUBLICACAO_ID}', '${EVENTOS_HISTORICO_IDS.join("', '")}');
+    update public.event_settings set event_export_email = null where singleton;
+    select public.activate_event('a1000000-0000-0000-0000-000000000001')
+    where not exists (select 1 from public.eventos where status = 'ativo');
+  `)
+}
+
+async function mockActivateEvent(page: Page, response: {
+  body?: Record<string, unknown>
+  onSuccess?: () => void
+  status?: number
+} | 'network-error') {
+  await page.route('**/functions/v1/activate-event', async (route: Route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Origin': ADMIN_URL,
+        },
+      })
+      return
+    }
+    if (response === 'network-error') {
+      await route.abort('failed')
+      return
+    }
+    response.onSuccess?.()
+    await route.fulfill({
+      status: response.status ?? 200,
+      contentType: 'application/json',
+      headers: {
+        'Access-Control-Allow-Origin': ADMIN_URL,
+        'x-request-id': 'e2e-request-id',
+      },
+      body: JSON.stringify(response.body ?? { cleanupWarning: null }),
+    })
+  })
+}
+
+async function abrirConfirmacaoDePublicacao(page: Page) {
+  await page.goto(`${ADMIN_URL}/#/eventos`)
+  const eventCard = page.locator('article').filter({ hasText: EVENTO_PUBLICACAO_NOME })
+  await expect(eventCard).toBeVisible()
+  await eventCard.getByRole('button', { name: 'Publicar' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Publicar evento' })
+  await expect(dialog).toBeVisible()
+  return dialog
+}
+
+async function confirmarPublicacao(dialog: Locator) {
+  await dialog.getByRole('button', { name: 'Publicar Evento' }).click()
+}
+
+function expectEventoComStatus(status: 'ativo' | 'rascunho') {
+  expect(executarSql(`select status from public.eventos where id = '${EVENTO_PUBLICACAO_ID}'`)).toBe(status)
 }
 
 test.describe('admin', () => {
@@ -263,7 +389,100 @@ test.describe('admin', () => {
     expect(await auditar(page)).toEqual([])
   })
 
-  test('grids do admin não transbordam entre 320 e 430 px', async ({ page }) => {
+  test.describe('publicação de evento', () => {
+    test.beforeEach(() => {
+      limparEventoDePublicacao()
+      prepararEventoParaPublicacao()
+    })
+
+    test.afterEach(() => {
+      limparEventoDePublicacao()
+    })
+
+    test('publica o rascunho com sucesso', async ({ page }) => {
+      await mockActivateEvent(page, {
+        onSuccess: () => executarSql(`select public.activate_event('${EVENTO_PUBLICACAO_ID}')`),
+      })
+      await entrar(page)
+      const dialog = await abrirConfirmacaoDePublicacao(page)
+      await confirmarPublicacao(dialog)
+
+      await expect(dialog).toBeHidden()
+      await expect(page.getByText('Evento publicado.', { exact: true })).toBeVisible()
+      expectEventoComStatus('ativo')
+    })
+
+    test('preserva o rascunho quando a função devolve falha HTTP', async ({ page }) => {
+      await mockActivateEvent(page, {
+        status: 500,
+        body: {
+          code: 'DATABASE_ERROR',
+          message: 'O banco recusou a publicação.',
+          requestId: 'http-error-id',
+        },
+      })
+      await entrar(page)
+      const dialog = await abrirConfirmacaoDePublicacao(page)
+      await confirmarPublicacao(dialog)
+
+      await expect(dialog.getByRole('alert')).toContainText('O banco recusou a publicação. Referência: http-error-id.')
+      await expect(dialog).toBeVisible()
+      expectEventoComStatus('rascunho')
+    })
+
+    test('traduz falha de rede ou CORS e preserva o rascunho', async ({ page }) => {
+      await mockActivateEvent(page, 'network-error')
+      await entrar(page)
+      const dialog = await abrirConfirmacaoDePublicacao(page)
+      await confirmarPublicacao(dialog)
+
+      await expect(dialog.getByRole('alert')).toContainText('Não foi possível alcançar a operação administrativa. Verifique a conexão e a configuração CORS.')
+      await expect(dialog).toBeVisible()
+      expectEventoComStatus('rascunho')
+    })
+
+    test('informa sessão expirada e preserva o rascunho', async ({ page }) => {
+      await mockActivateEvent(page, {
+        status: 401,
+        body: {
+          code: 'SESSION_REQUIRED',
+          message: 'Sua sessão administrativa expirou. Entre novamente.',
+          requestId: 'session-error-id',
+        },
+      })
+      await entrar(page)
+      const dialog = await abrirConfirmacaoDePublicacao(page)
+      await confirmarPublicacao(dialog)
+
+      await expect(dialog.getByRole('alert')).toContainText('Sua sessão administrativa expirou. Entre novamente. Referência: session-error-id.')
+      await expect(dialog).toBeVisible()
+      expectEventoComStatus('rascunho')
+    })
+
+    test('preserva evento e histórico quando a exportação falha', async ({ page }) => {
+      limparEventoDePublicacao()
+      prepararEventoParaPublicacao(true)
+      await mockActivateEvent(page, {
+        status: 502,
+        body: {
+          code: 'RESEND_ERROR',
+          message: 'O serviço de e-mail recusou a exportação. Nada foi excluído.',
+          requestId: 'export-error-id',
+        },
+      })
+      await entrar(page)
+      const dialog = await abrirConfirmacaoDePublicacao(page)
+      await expect(dialog).toContainText('Este será o quinto evento ativado.')
+      await confirmarPublicacao(dialog)
+
+      await expect(dialog.getByRole('alert')).toContainText('O serviço de e-mail recusou a exportação. Nada foi excluído. Referência: export-error-id.')
+      await expect(dialog).toBeVisible()
+      expectEventoComStatus('rascunho')
+      expect(Number(executarSql("select count(*) from public.eventos where status <> 'rascunho'"))).toBe(4)
+    })
+  })
+
+  test('grids do admin não transbordam nem sobrepõem controles entre 320 e 430 px', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 844 })
     await entrar(page)
     await expect(page.getByRole('heading', { name: 'Cães Cadastrados' })).toBeVisible()
@@ -277,8 +496,20 @@ test.describe('admin', () => {
         ['/configuracoes', 'Configurações'],
       ] as const) {
         await page.goto(`${ADMIN_URL}/#${path}`)
-        await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
+        const pageHeading = page.getByRole('heading', { name: heading, exact: true })
+        await expect(pageHeading).toBeVisible()
         await expectNoHorizontalOverflow(page, `${heading} em ${width}px`)
+        if (heading === 'Cães Cadastrados') {
+          await expectNoOverlap(pageHeading, page.getByLabel('Filtrar por status'), `${heading}: título e filtro em ${width}px`)
+          await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Novo Cão' }), `${heading}: título e ação em ${width}px`)
+        }
+        if (heading === 'Histórias Contadas') {
+          await expectNoOverlap(pageHeading, page.getByLabel('Filtrar histórias por publicação'), `${heading}: título e filtro em ${width}px`)
+          await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Nova História' }), `${heading}: título e ação em ${width}px`)
+        }
+        if (heading === 'Eventos') {
+          await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Novo Evento' }), `${heading}: título e ação em ${width}px`)
+        }
       }
     }
 

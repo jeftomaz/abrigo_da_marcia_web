@@ -25,8 +25,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['iPhone 12'] }, testIgnore: /admin\.spec\.ts/ },
+    { name: 'desktop', use: { ...devices['Desktop Chrome'], browserName: 'chromium' } },
+    { name: 'mobile-chromium', use: { ...devices['Pixel 5'], browserName: 'chromium' } },
+    { name: 'mobile-webkit', use: { ...devices['iPhone 12'], browserName: 'webkit' } },
   ],
   webServer: [
     {
