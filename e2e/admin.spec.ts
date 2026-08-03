@@ -11,6 +11,7 @@ import {
   removerAdminDeTeste,
   removerPerfilAdminDeTeste,
 } from './admin'
+import { executarSql } from './banco'
 import { expect, test } from './fixtures'
 
 const PADROES = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
@@ -261,6 +262,65 @@ test.describe('admin', () => {
     await page.getByRole('button', { name: 'Ativar tema escuro' }).click()
     await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
     expect(await auditar(page)).toEqual([])
+  })
+
+  test('preserva os dados e informa o erro ao criar uma rifa', async ({ page }) => {
+    const raffleName = 'Rifa E2E com falha'
+    await page.route('**/rest/v1/eventos*', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue()
+        return
+      }
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        headers: { 'Access-Control-Allow-Origin': ADMIN_URL },
+        body: JSON.stringify({
+          code: 'P0001',
+          message: 'Falha E2E ao criar a rifa.',
+        }),
+      })
+    })
+
+    await entrar(page)
+    await page.goto(`${ADMIN_URL}/#/eventos`)
+    await page.getByRole('button', { name: 'Novo Evento' }).click()
+    const form = page.getByRole('dialog', { name: 'Novo Evento' })
+    await expect(form).toBeVisible()
+
+    await form.getByLabel('Tipo').selectOption('raffle')
+    await form.getByLabel('Título').fill(raffleName)
+    await form.getByLabel('Descrição').fill('Rifa preenchida para validar a preservação do formulário.')
+    await form.getByLabel('Data de fim').fill(new Date(Date.now() + 86_400_000).toISOString().slice(0, 10))
+    await form.getByLabel('Quantidade de números*').fill('100')
+    await form.getByLabel('Valor por número (R$)*').fill('1000')
+    await form.getByLabel('Chave PIX').fill('pix-e2e@example.com')
+    await form.getByLabel('Nome do recebedor').fill('Abrigo E2E')
+    await form.getByLabel('Cidade do recebedor').fill('São Paulo')
+    await form.getByLabel('Instruções pós-pagamento').fill('Envie o comprovante.')
+    await form.locator('input[type="file"]').setInputFiles('supabase/seed-storage/eventos/rifa-teste/capa.jpg')
+    await expect(form.getByText('Galeria de Divulgação (1/5)')).toBeVisible()
+
+    await form.getByRole('button', { name: 'Adicionar prêmio' }).click()
+    const prizeDialog = page.getByRole('dialog', { name: 'Adicionar prêmio' })
+    await prizeDialog.getByLabel('Nome do Prêmio').fill('Prêmio E2E')
+    await prizeDialog.locator('input[type="file"]').setInputFiles('supabase/seed-storage/eventos/rifa-teste/premio-1.jpg')
+    await expect(prizeDialog.getByRole('button', { name: 'Salvar Prêmio' })).toBeEnabled()
+    await prizeDialog.getByRole('button', { name: 'Salvar Prêmio' }).click()
+    await expect(prizeDialog).toBeHidden()
+
+    const saveButton = form.getByRole('button', { name: 'Salvar Evento' })
+    await expect(saveButton).toBeEnabled()
+    await saveButton.click()
+    const confirmation = page.getByRole('dialog', { name: 'Confirmar verificação' })
+    await confirmation.getByRole('button', { name: 'Confirmar' }).click()
+
+    await expect(form.getByRole('alert')).toContainText('Não foi possível salvar o evento: Falha E2E ao criar a rifa.')
+    await expect(form).toBeVisible()
+    await expect(form.getByLabel('Título')).toHaveValue(raffleName)
+    await expect(form.getByLabel('Tipo')).toHaveValue('raffle')
+    await expect(form.getByText('Prêmio E2E', { exact: true })).toBeVisible()
+    expect(executarSql(`select count(*) from public.eventos where name = '${raffleName}'`)).toBe('0')
   })
 
   test('grids do admin não transbordam entre 320 e 430 px', async ({ page }) => {
