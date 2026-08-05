@@ -521,6 +521,7 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 
 - Todas as tabelas do domínio têm RLS habilitada; `anon` não lê nem escreve tabelas diretamente.
 - Views públicas expõem no máximo quatro eventos `ativo|encerrado`, produtos, variações, opções e disponibilidade dos números, sem dados pessoais ou identificadores de sessão. Rascunhos e arquivados legados não aparecem.
+- As onze views `*_public` usam `security definer` de forma intencional, pois `security_invoker` exigiria conceder leitura das tabelas-base ao público e quebraria esse limite arquitetural. Todas usam `security_barrier`; o pgTAP trava quantidade, colunas e privilégios.
 - `anon` cria a sessão e a reserva apenas por funções `security definer` com `search_path` fixo. As funções validam status/tipo do evento, intervalo da sessão, limites, opções, disponibilidade, preços, descontos e prazo no servidor.
 - Alterações de preço ou configuração não afetam reservas existentes porque totais, preços unitários e seleções são snapshots.
 - Admin autenticado com `aal2` gerencia catálogo, confirma pagamento, cancela reserva e marca a entrega ao ganhador.
