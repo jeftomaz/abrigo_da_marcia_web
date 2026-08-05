@@ -15,9 +15,9 @@ update public.site_settings set
 where singleton;
 
 update public.event_settings set
-  default_max_raffle_numbers = 10,
+  default_max_raffle_numbers = 5,
   default_max_product_units = 10,
-  default_reservation_ttl = interval '30 minutes',
+  default_reservation_ttl = interval '15 minutes',
   event_export_email = null,
   default_post_payment_instructions = null
 where singleton;

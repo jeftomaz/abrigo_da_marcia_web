@@ -32,7 +32,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 ### P1 — Hardening (auditoria de 2026-07-25)
 
-- `todo` **[Média]** Reserva de rifa trava números enquanto `pendente` (griefing/DoS de estoque): reduzir o TTL e o `max_items_per_reservation` padrão, avaliar verificação humana antes da RPC de reserva e documentar o cancelamento manual como resposta.
+- `done` **[Média]** Reserva de rifa trava números enquanto `pendente` (griefing/DoS de estoque): padrões reduzidos para 5 números/15 minutos, verificação humana avaliada e cancelamento manual documentado como resposta.
 - `todo` **[Info]** Confirmar no dashboard hospedado que o signup está desabilitado — `config.toml` não configura produção.
 - `todo` **[Info]** Manter os testes pgTAP de superfície das views `*_public` (são `security definer` e ignoram RLS; a proteção é só o `WHERE`); avaliar migrar para `security_invoker`.
 

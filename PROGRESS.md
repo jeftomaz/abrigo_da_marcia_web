@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Reservas de rifa endurecidas (2026-08-05): padrões reduzidos de 10 números/30 minutos para 5 números/15 minutos sem sobrescrever configurações personalizadas; cancelamento manual e decisão sobre verificação humana registrados no runbook. Validação aprovada com lint, builds, reset local, `db lint` e 207 pgTAP.
 - Organização do repositório concluída (2026-08-03): cobertura E2E mobile pendente integrada e log consolidado de 138 para 22 linhas, preservando decisões vigentes nas fontes de verdade. Validação aprovada com lint, builds, `db lint`, 205 pgTAP e 96 E2E.
 - Criação de rifa ganhou cobertura de erro (2026-08-03): o E2E percorre formulário, imagens e prêmio, simula rejeição do banco e confirma alerta, preservação integral dos dados e ausência de registro/imagem parcial.
 - E2E mobile do admin ampliado (2026-08-03): Chromium e WebKit executam a suíte administrativa; layout cobre overflow/sobreposição em 320/375/430 px e publicação de evento cobre sucesso, HTTP, rede/CORS, sessão expirada e falha de exportação sem perder rascunho/histórico.
