@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(86);
+select plan(88);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -11,6 +11,17 @@ update public.eventos set status = 'encerrado' where status = 'ativo';
 select set_config('app.confirmed_event_delete', 'on', true);
 delete from public.eventos;
 select set_config('app.confirmed_event_delete', 'off', true);
+
+select is(
+  (select default_max_raffle_numbers from public.event_settings where singleton),
+  5,
+  'limita o padrão de números por reserva de rifa'
+);
+select is(
+  (select default_reservation_ttl from public.event_settings where singleton),
+  interval '15 minutes',
+  'reduz o prazo padrão de reservas pendentes'
+);
 
 select throws_ok(
   $$update public.event_settings set default_reservation_ttl = interval '30 seconds' where singleton$$,

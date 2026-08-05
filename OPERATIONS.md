@@ -68,6 +68,12 @@ select count(*) from public.reservas where status = 'pendente' and expires_at <=
 select count(*) from public.reserva_ip_tentativas where created_at < now() - interval '24 hours';
 ```
 
+### Bloqueio abusivo de rifa
+
+O padrão limita cada reserva a 5 números por 15 minutos. Se várias reservas pendentes ainda bloquearem o estoque, abrir o evento ativo no admin, localizar as reservas sem pagamento confirmado e alterar o status para **Cancelado**. O cancelamento libera os números imediatamente; confirmar no catálogo público antes de continuar. Nunca cancelar uma reserva com pagamento em verificação sem conferir o contato e o comprovante.
+
+O teto por IP reduz trocas deliberadas de sessão. Verificação humana antes da reserva foi avaliada e permanece adiada: a RPC não pode confiar em um token validado somente no navegador, então a medida exige um backend intermediário e configuração externa. Reavaliar se os limites, o prazo e o cancelamento manual se mostrarem insuficientes.
+
 ### Quotas
 
 Consumo consolidado em Dashboard → Settings → Usage (banco, Storage, egress e MAU). Os limites do plano gratuito mudam com o tempo — conferir os valores vigentes no próprio Dashboard, não nesta página. Medição direta:
