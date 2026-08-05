@@ -19,7 +19,8 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `doing` Concluir o smoke hospedado de RLS, Storage, reservas, expiração, sorteio e onboarding por convite; fechar as variáveis finais de produção.
 - `todo` Domínio no Resend + `RESEND_FROM_EMAIL` de produção; até lá, envio restrito a `onboarding@resend.dev`.
 - `todo` Carregar dados reais (configurações, cães, histórias, eventos, fotos); `seed.sql` é só fictício e não abastece produção.
-- `todo` Aplicar a migration `20260726120000`, publicar as Edge Functions e definir `ADMIN_ALLOWED_ORIGINS` no hospedado para ativar o CORS restrito (código vai com fallback `*`).
+- `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
+- `todo` Publicar as Edge Functions e definir `ADMIN_ALLOWED_ORIGINS` no hospedado para ativar o CORS restrito; sem o secret, o código aceita apenas o admin local.
 
 ### P0 — Correções operacionais e mobile
 
@@ -33,7 +34,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 ### P1 — Hardening (auditoria de 2026-07-25)
 
 - `done` **[Média]** Reserva de rifa trava números enquanto `pendente` (griefing/DoS de estoque): padrões reduzidos para 5 números/15 minutos, verificação humana avaliada e cancelamento manual documentado como resposta.
-- `todo` **[Info]** Confirmar no dashboard hospedado que o signup está desabilitado — `config.toml` não configura produção.
+- `done` **[Info]** Signup confirmado como desabilitado no dashboard hospedado.
 - `done` **[Info]** Views `*_public` mantidas como `security definer` para não abrir tabelas-base, protegidas com `security_barrier` e cobertura pgTAP da superfície completa; `security_invoker` foi avaliado e rejeitado por incompatibilidade com esse limite.
 
 ### P1 — Rastreabilidade administrativa
