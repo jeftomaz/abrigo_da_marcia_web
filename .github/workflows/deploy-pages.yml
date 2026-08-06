@@ -33,6 +33,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v6
+
       - name: Validate production variables
         run: |
           test -n "$VITE_SUPABASE_URL" && test -n "$VITE_SUPABASE_PUBLISHABLE_KEY"
@@ -56,17 +60,14 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
-          VITE_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}/
-          VITE_ADMIN_BASE_PATH: /${{ github.event.repository.name }}/admin/
+          VITE_PUBLIC_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          VITE_ADMIN_BASE_PATH: ${{ steps.pages.outputs.base_path }}/admin/
 
       - name: Assemble Pages artifact
         run: |
           cp apps/public/dist/index.html apps/public/dist/404.html
           mkdir -p apps/public/dist/admin
           cp -R apps/admin/dist/. apps/public/dist/admin/
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v6
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5

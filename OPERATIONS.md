@@ -1,8 +1,24 @@
 # OPERATIONS.md — Runbook do ambiente hospedado
 
-Procedimentos de operação do Supabase hospedado. Schema e policies: `DATA_MODEL.md`.
+Procedimentos de operação do GitHub Pages, domínio e Supabase hospedado. Schema e policies: `DATA_MODEL.md`.
 
-Todos exigem acesso ao Dashboard do Supabase (dono da conta). Nenhum é executável pelo app admin: a RLS exige `aal2`, então quem perdeu o acesso não se recupera pela própria interface.
+As operações do backend exigem acesso ao Dashboard do Supabase (dono da conta). Nenhuma é executável pelo app admin: a RLS exige `aal2`, então quem perdeu o acesso não se recupera pela própria interface.
+
+## Domínio próprio
+
+Domínio canônico: `abrigodamarcia.com.br`. O site permanece no GitHub Pages; Registro.br hospeda a zona DNS e Supabase continua como backend.
+
+Ordem do corte, sem indisponibilidade:
+
+1. Registro.br → DNS → Modo avançado: criar quatro registros `A` no domínio raiz (`@`) para `185.199.108.153`, `185.199.109.153`, `185.199.110.153` e `185.199.111.153`.
+2. Criar `CNAME` de `www` para `jeftomaz.github.io` — sem `/abrigo_da_marcia_web`.
+3. Verificar a propagação dos registros `A` e do `CNAME`; não criar wildcard `*`.
+4. GitHub → repositório → Settings → Pages → Custom domain: salvar `abrigodamarcia.com.br` e disparar novamente `Deploy GitHub Pages`. O workflow usa `base_path` do Pages e muda automaticamente do prefixo `/abrigo_da_marcia_web/` para `/`.
+5. Supabase → Authentication → URL Configuration: definir Site URL como `https://abrigodamarcia.com.br/admin/` e permitir temporariamente os redirects `https://abrigodamarcia.com.br/admin/**`, `https://www.abrigodamarcia.com.br/admin/**` e `https://jeftomaz.github.io/abrigo_da_marcia_web/admin/**`.
+6. Confirmar certificado e HTTPS no GitHub Pages; testar `/`, `/adocao`, `/historias`, `/eventos` e `/admin/`, inclusive convite, login e MFA.
+7. Depois do smoke e da propagação completa, remover das configurações da Supabase a origem e o redirect antigos do GitHub Pages.
+
+As Edge Functions administrativas devem manter, durante a transição, `ADMIN_ALLOWED_ORIGINS=https://jeftomaz.github.io,https://abrigodamarcia.com.br,https://www.abrigodamarcia.com.br`. O `Origin` não contém caminho.
 
 ## Perda do TOTP
 

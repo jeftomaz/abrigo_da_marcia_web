@@ -6,7 +6,7 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 
 ## Stack
 
-- **Host:** GitHub Pages (estático). Público em `/abrigo_da_marcia_web/` com BrowserRouter + `404.html`; admin em `/abrigo_da_marcia_web/admin/` com HashRouter.
+- **Host:** GitHub Pages (estático). Domínio canônico em preparação: `https://abrigodamarcia.com.br/`; o endereço padrão `https://jeftomaz.github.io/abrigo_da_marcia_web/` permanece ativo durante a transição. O workflow deriva o prefixo do próprio Pages: público com BrowserRouter + `404.html`, admin em `/admin/` com HashRouter no domínio próprio.
 - **Frontend:** React + Vite + TypeScript. Tailwind CSS (tokens do design system em `tailwind.config`).
 - **Backend:** Supabase — Postgres (RLS rígido), Auth (MFA TOTP p/ admin), Storage (fotos), `pg_cron` (expiração de reservas).
 - **E-mail transacional:** Resend via Supabase Edge Function; credenciais somente em secrets (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`).

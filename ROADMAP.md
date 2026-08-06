@@ -16,14 +16,18 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 ### P0 — Publicação e produção
 
-- `doing` Concluir o smoke hospedado de RLS, Storage, reservas, expiração, sorteio e onboarding por convite; fechar as variáveis finais de produção.
-- `todo` Domínio no Resend + `RESEND_FROM_EMAIL` de produção; até lá, envio restrito a `onboarding@resend.dev`.
-- `todo` Carregar dados reais (configurações, cães, histórias, eventos, fotos); `seed.sql` é só fictício e não abastece produção.
-- `todo` Aplicar a migration `20260726120000`, publicar as Edge Functions e definir `ADMIN_ALLOWED_ORIGINS` no hospedado para ativar o CORS restrito (código vai com fallback `*`).
+- `doing` Configurar `abrigodamarcia.com.br`: build adaptativo e runbook prontos; faltam DNS avançado, domínio no Pages, URLs de Auth, HTTPS e smoke após a propagação.
+- `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
+- `done` Definir `ADMIN_ALLOWED_ORIGINS`, publicar `activate-event` e `delete-archived-event` e validar CORS permitido/negado no hospedado.
+- `todo` Conferir `RESEND_API_KEY`/`RESEND_FROM_EMAIL` antes do smoke de exportação.
+- `doing` Concluir o smoke hospedado com fixtures temporárias: views/RLS, Storage, convite + TOTP/AAL2, reservas, expiração via cron, sorteio, exportação e preservação em falhas; remover contas, registros e arquivos de teste ao final.
+- `todo` Verificar o domínio no Resend (SPF/DKIM), definir o remetente definitivo e validar a exportação por e-mail; até lá, o envio permanece restrito a `onboarding@resend.dev`.
+- `todo` Carregar pelo admin os dados reais na ordem: configurações/links/Pix, cães, histórias e eventos/fotos; `seed.sql` permanece exclusivamente fictício e fora da produção.
+- `todo` Revisar produção em mobile/desktop, conferir links e Pix com uma operação pequena e gerar novo backup completo após a carga real.
 
 ### P0 — Correções operacionais e mobile
 
-- `doing` CORS de `activate-event`/`delete-archived-event` corrigido no código: aceita os cabeçalhos do SDK e rejeita origens não permitidas; republicação com `ADMIN_ALLOWED_ORIGINS` hospedado permanece no item de produção acima.
+- `done` CORS de `activate-event`/`delete-archived-event` corrigido e coberto por E2E: aceita os cabeçalhos do SDK e rejeita origens não permitidas; implantação é acompanhada no P0 de produção.
 - `done` Erros administrativos padronizados: contrato `{ code, message, requestId }`, status HTTP coerente, log estruturado sem dados sensíveis e tradução compartilhada no client para rede/CORS, sessão/MFA, validação, conflito, banco, Storage e Resend; diálogos e rascunhos permanecem íntegros na falha.
 - `done` Corrigir as toolbars mobile de Cães e Histórias para reservar uma linha ao título e impedir colisão com filtro/ação; aplicar `text-marca` aos títulos principais de Cães, Histórias, Eventos e Configurações.
 - `done` Compactar os cards mobile de Cães e Histórias, mantendo foto/nome e ações lado a lado entre 320–430 px sem remover controles ou autoria.
@@ -34,7 +38,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 ### P1 — Hardening (auditoria de 2026-07-25)
 
 - `done` **[Média]** Reserva de rifa trava números enquanto `pendente` (griefing/DoS de estoque): padrões reduzidos para 5 números/15 minutos, verificação humana avaliada e cancelamento manual documentado como resposta.
-- `todo` **[Info]** Confirmar no dashboard hospedado que o signup está desabilitado — `config.toml` não configura produção.
+- `done` **[Info]** Signup confirmado como desabilitado no dashboard hospedado.
 - `done` **[Info]** Views `*_public` mantidas como `security definer` para não abrir tabelas-base, protegidas com `security_barrier` e cobertura pgTAP da superfície completa; `security_invoker` foi avaliado e rejeitado por incompatibilidade com esse limite.
 
 ### P1 — Rastreabilidade administrativa
