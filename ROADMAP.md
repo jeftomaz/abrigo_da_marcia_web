@@ -26,6 +26,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `doing` CORS de `activate-event`/`delete-archived-event` corrigido no código: aceita os cabeçalhos do SDK e rejeita origens não permitidas; republicação com `ADMIN_ALLOWED_ORIGINS` hospedado permanece no item de produção acima.
 - `done` Erros administrativos padronizados: contrato `{ code, message, requestId }`, status HTTP coerente, log estruturado sem dados sensíveis e tradução compartilhada no client para rede/CORS, sessão/MFA, validação, conflito, banco, Storage e Resend; diálogos e rascunhos permanecem íntegros na falha.
 - `done` Corrigir as toolbars mobile de Cães e Histórias para reservar uma linha ao título e impedir colisão com filtro/ação; aplicar `text-marca` aos títulos principais de Cães, Histórias, Eventos e Configurações.
+- `done` Compactar os cards mobile de Cães e Histórias, mantendo foto/nome e ações lado a lado entre 320–430 px sem remover controles ou autoria.
 - `done` Exibir Data de início/fim e os demais Objetivos de Eventos em uma coluna nas larguras estreitas, preservando duas colunas a partir de `sm` e o desktop.
 - `done` Auditar os demais grids de duas colunas em 320–430 px sem alterar o desktop.
 - `done` Incluir o admin nos projetos E2E mobile Chromium/WebKit, cobrindo ausência de overflow/sobreposição e publicação de evento com sucesso, falha HTTP, falha de rede/CORS, sessão expirada e falha de exportação.

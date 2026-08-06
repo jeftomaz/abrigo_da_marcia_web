@@ -20,17 +20,17 @@ const STATUS_TONE: Record<DogStatus, StatusTone> = {
 }
 
 const ACTION_CLASSES =
-  'min-h-11 w-full min-w-0 !gap-2 !px-3 !py-2 !text-sm [&_svg]:size-5'
+  'min-h-11 w-full min-w-0 !gap-0.5 !px-1 !py-2 !text-xs [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate min-[24rem]:!gap-1 min-[24rem]:!px-2 min-[24rem]:!text-sm min-[24rem]:[&_svg]:size-4'
 
 export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetStatus }: DogRowProps) {
   return (
     <AdminListRow
       audit={dog.audit}
       isEditing={isEditing}
-      className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] items-start gap-3 rounded-2xl p-3 min-[28rem]:grid-cols-[4rem_minmax(0,1fr)_13.5rem] min-[28rem]:items-center"
+      className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)_9.25rem] items-center gap-2 rounded-2xl p-3 min-[24rem]:grid-cols-[4rem_minmax(0,1fr)_11.5rem] min-[24rem]:gap-3 desk:grid-cols-[4rem_minmax(0,1fr)_13.5rem]"
     >
-      <div className="flex w-12 shrink-0 flex-col items-start gap-2 min-[28rem]:w-16 min-[28rem]:relative min-[28rem]:block">
-        <div className="relative size-12 overflow-hidden rounded-xl min-[28rem]:size-16">
+      <div className="flex w-12 shrink-0 flex-col items-start gap-2 min-[24rem]:relative min-[24rem]:block min-[24rem]:w-16">
+        <div className="relative size-12 overflow-hidden rounded-xl min-[24rem]:size-16">
           {dog.photos[0] ? (
             <img
               src={getDogPhotoUrl(dog.photos[0])}
@@ -41,16 +41,29 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetS
             <ImagePlaceholder label={`Sem foto de ${dog.name}`} className="h-full w-full" />
           )}
         </div>
-        <StatusBadge tone={STATUS_TONE[dog.status]} size="sm" className="min-[28rem]:absolute min-[28rem]:-bottom-2 min-[28rem]:left-0">
+        <StatusBadge tone={STATUS_TONE[dog.status]} size="sm" className="min-[24rem]:absolute min-[24rem]:-bottom-2 min-[24rem]:left-0">
           {STATUS_LABELS[dog.status]}
         </StatusBadge>
       </div>
 
-      <p className="min-w-0 self-center text-base leading-tight font-medium min-[28rem]:text-lg">{dog.name}</p>
+      <div className="flex min-w-0 flex-col items-start gap-2 self-center">
+        <p className="min-w-0 text-base leading-tight font-medium min-[24rem]:text-lg">{dog.name}</p>
+        <Action
+          onClick={() => onSetFeatured(!dog.featured)}
+          size="small"
+          variant={dog.featured ? 'secondary-adaptive' : 'neutral-adaptive'}
+          icon="star"
+          aria-pressed={dog.featured}
+          aria-label={dog.featured ? `Remover ${dog.name} do destaque do catálogo` : `Destacar ${dog.name} no catálogo`}
+          className="min-h-9 max-w-full min-w-0 !gap-1 !px-2 !py-1.5 !text-xs [&_svg]:size-4 [&_span]:min-w-0 [&_span]:truncate"
+        >
+          {dog.featured ? 'Em destaque' : 'Destacar'}
+        </Action>
+      </div>
 
-      <div className="col-span-2 grid min-w-0 grid-cols-2 items-stretch gap-2 min-[28rem]:col-span-1 min-[28rem]:col-start-3 min-[28rem]:row-start-1">
+      <div className="col-start-3 row-start-1 grid min-w-0 grid-cols-2 items-stretch gap-2">
         <OptionToggle
-          className="h-full w-full min-w-0"
+          className="h-full w-full min-w-0 [&>button]:!gap-0.5 [&>button]:!px-1 [&_svg]:!size-3 min-[24rem]:[&>button]:!gap-2 min-[24rem]:[&>button]:!px-2 min-[24rem]:[&_svg]:!size-3.5"
           size="compact"
           first={{
             label: 'Adotado',
@@ -91,18 +104,6 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetS
             Remover
           </Action>
         </div>
-
-        <Action
-          onClick={() => onSetFeatured(!dog.featured)}
-          size="small"
-          variant={dog.featured ? 'secondary-adaptive' : 'neutral-adaptive'}
-          icon="star"
-          aria-pressed={dog.featured}
-          aria-label={dog.featured ? `Remover ${dog.name} do destaque do catálogo` : `Destacar ${dog.name} no catálogo`}
-          className={`${ACTION_CLASSES} col-span-2`}
-        >
-          Destacar no catálogo
-        </Action>
       </div>
     </AdminListRow>
   )
