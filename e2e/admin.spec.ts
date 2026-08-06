@@ -115,6 +115,15 @@ async function expectNoOverlap(first: Locator, second: Locator, context: string)
   expect(overlaps, context).toBe(false)
 }
 
+async function expectToRightOf(left: Locator, right: Locator, context: string) {
+  const [leftBox, rightBox] = await Promise.all([left.boundingBox(), right.boundingBox()])
+  expect(leftBox, `${context}: elemento à esquerda invisível`).not.toBeNull()
+  expect(rightBox, `${context}: elemento à direita invisível`).not.toBeNull()
+  if (!leftBox || !rightBox) return
+
+  expect(rightBox.x, context).toBeGreaterThan(leftBox.x + leftBox.width)
+}
+
 function prepararEventoParaPublicacao(withFullHistory = false) {
   const historySql = withFullHistory ? EVENTOS_HISTORICO_IDS.map((id, index) => `
     insert into public.eventos (
@@ -561,10 +570,14 @@ test.describe('admin', () => {
         if (heading === 'Cães Cadastrados') {
           await expectNoOverlap(pageHeading, page.getByLabel('Filtrar por status'), `${heading}: título e filtro em ${width}px`)
           await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Novo Cão' }), `${heading}: título e ação em ${width}px`)
+          const dogCard = page.getByRole('button', { name: 'Editar' }).first().locator('xpath=ancestor::article[1]')
+          await expectToRightOf(dogCard.locator('img').first(), dogCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
         }
         if (heading === 'Histórias Contadas') {
           await expectNoOverlap(pageHeading, page.getByLabel('Filtrar histórias por publicação'), `${heading}: título e filtro em ${width}px`)
           await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Nova História' }), `${heading}: título e ação em ${width}px`)
+          const storyCard = page.getByRole('button', { name: 'Editar' }).first().locator('xpath=ancestor::article[1]')
+          await expectToRightOf(storyCard.locator('img').first(), storyCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
         }
         if (heading === 'Eventos') {
           await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Novo Evento' }), `${heading}: título e ação em ${width}px`)

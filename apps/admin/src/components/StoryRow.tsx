@@ -12,17 +12,17 @@ type StoryRowProps = {
 }
 
 const ACTION_CLASSES =
-  'min-h-11 w-full min-w-0 !gap-1 !px-2 !py-2 !text-sm [&_svg]:size-5'
+  'min-h-11 w-full min-w-0 !gap-0.5 !px-1 !py-2 !text-xs [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate min-[24rem]:!gap-1 min-[24rem]:!px-2 min-[24rem]:!text-sm min-[24rem]:[&_svg]:size-4'
 
 export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story }: StoryRowProps) {
   return (
     <AdminListRow
       audit={story.audit}
       isEditing={isEditing}
-      className="grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-3 rounded-2xl p-3 min-[28rem]:grid-cols-[4rem_minmax(0,1fr)_13.5rem]"
+      className="grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)_9.25rem] items-center gap-2 rounded-2xl p-3 min-[24rem]:grid-cols-[4rem_minmax(0,1fr)_11.5rem] min-[24rem]:gap-3 desk:grid-cols-[4rem_minmax(0,1fr)_13.5rem]"
     >
       <div className="relative shrink-0">
-        <div className="size-14 overflow-hidden rounded-xl sm:size-16">
+        <div className="size-14 overflow-hidden rounded-xl min-[24rem]:size-16">
           {story.photos[0] ? (
             <img
               src={getStoryPhotoUrl(story.photos[0])}
@@ -40,9 +40,9 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
         )}
       </div>
 
-      <p className="min-w-0 flex-1 text-base leading-tight font-medium sm:text-lg">{story.name}</p>
+      <p className="min-w-0 flex-1 text-base leading-tight font-medium min-[24rem]:text-lg">{story.name}</p>
 
-      <div className="col-span-2 grid min-w-0 grid-cols-2 items-stretch gap-2 min-[28rem]:col-span-1 min-[28rem]:col-start-3 min-[28rem]:row-start-1">
+      <div className="col-start-3 row-start-1 grid min-w-0 grid-cols-2 items-stretch gap-2">
         <Action
           onClick={onTogglePublished}
           size="small"
@@ -72,7 +72,7 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
           size="small"
           variant="neutral-adaptive"
           icon="trash-solid"
-          className={ACTION_CLASSES}
+          className={`${ACTION_CLASSES} col-start-2 row-start-2`}
         >
           Remover
         </Action>
