@@ -1,6 +1,6 @@
 # PROGRESS.md
 
-- Domínio próprio preparado (2026-08-06): o deploy deriva o prefixo do GitHub Pages para manter o endereço atual e migrar automaticamente para `abrigodamarcia.com.br`; CORS hospedado aceita as origens de transição e rejeita externas, e o restante do corte está documentado em `OPERATIONS.md`.
+- Domínio próprio preparado (2026-08-07): o deploy deriva o prefixo do GitHub Pages para manter o endereço atual e migrar automaticamente para `abrigodamarcia.com.br`; CORS hospedado aceita as origens de transição e rejeita externas, e a ordem segura do corte está documentada em `OPERATIONS.md`.
 - Cards mobile de Cães e Histórias compactados (2026-08-06): ações ficam à direita da foto/nome entre 320–430 px, o destaque foi preservado sem criar uma linha adicional e a cobertura E2E trava o alinhamento. Lint e build do admin aprovados.
 - Banco hospedado atualizado (2026-08-05): backup privado de papéis, schema, dados e 7 objetos do Storage salvo em `Documents/Backups/abrigo_da_marcia_web/20260805-195530`; quatro migrations aplicadas sem seed e remoto confirmado sem pendências.
 - Views públicas endurecidas (2026-08-05): `security_invoker` foi rejeitado por exigir acesso anônimo às tabelas-base; as 11 views receberam `security_barrier` e uma suíte trava colunas e privilégios. Validação aprovada com reset local, `db lint` e 214 pgTAP.
