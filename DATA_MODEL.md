@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260725150000`, com as migrations posteriores pendentes de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
+Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260805130000`. O projeto legado `site-do-abrigo` permanece fora de uso.
 
 ## Imagens no Storage
 

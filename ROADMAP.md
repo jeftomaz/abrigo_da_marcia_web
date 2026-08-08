@@ -16,7 +16,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 ### P0 — Publicação e produção
 
-- `doing` Configurar `abrigodamarcia.com.br`: build adaptativo e runbook prontos; faltam DNS avançado, domínio no Pages, URLs de Auth, HTTPS e smoke após a propagação.
+- `doing` Configurar `abrigodamarcia.com.br`: build adaptativo e domínio no Pages prontos; faltam DNS avançado, URLs de Auth, HTTPS e smoke após a propagação.
 - `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
 - `done` Definir `ADMIN_ALLOWED_ORIGINS`, publicar `activate-event` e `delete-archived-event` e validar CORS permitido/negado no hospedado.
 - `todo` Conferir `RESEND_API_KEY`/`RESEND_FROM_EMAIL` antes do smoke de exportação.
@@ -34,6 +34,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `done` Exibir Data de início/fim e os demais Objetivos de Eventos em uma coluna nas larguras estreitas, preservando duas colunas a partir de `sm` e o desktop.
 - `done` Auditar os demais grids de duas colunas em 320–430 px sem alterar o desktop.
 - `done` Incluir o admin nos projetos E2E mobile Chromium/WebKit, cobrindo ausência de overflow/sobreposição e publicação de evento com sucesso, falha HTTP, falha de rede/CORS, sessão expirada e falha de exportação.
+- `doing` Completar a verificação de Eventos pela interface: CRUD de rifa e produtos, reserva pública de produto, encerramento/reativação, gestão e reversão de reservas, sorteio, configurações e exclusão/exportação; repetir no hospedado antes de encerrar o projeto.
 
 ### P1 — Hardening (auditoria de 2026-07-25)
 

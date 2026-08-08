@@ -571,13 +571,13 @@ test.describe('admin', () => {
           await expectNoOverlap(pageHeading, page.getByLabel('Filtrar por status'), `${heading}: título e filtro em ${width}px`)
           await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Novo Cão' }), `${heading}: título e ação em ${width}px`)
           const dogCard = page.getByRole('button', { name: 'Editar' }).first().locator('xpath=ancestor::article[1]')
-          await expectToRightOf(dogCard.locator('img').first(), dogCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
+          await expectToRightOf(dogCard.getByRole('img').first(), dogCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
         }
         if (heading === 'Histórias Contadas') {
           await expectNoOverlap(pageHeading, page.getByLabel('Filtrar histórias por publicação'), `${heading}: título e filtro em ${width}px`)
           await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Nova História' }), `${heading}: título e ação em ${width}px`)
           const storyCard = page.getByRole('button', { name: 'Editar' }).first().locator('xpath=ancestor::article[1]')
-          await expectToRightOf(storyCard.locator('img').first(), storyCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
+          await expectToRightOf(storyCard.getByRole('img').first(), storyCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
         }
         if (heading === 'Eventos') {
           await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Novo Evento' }), `${heading}: título e ação em ${width}px`)
