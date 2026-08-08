@@ -6,6 +6,8 @@ import {
   ambientePublicoLocal,
   codigoTotpComJanelaFolgada,
   convidarAdminDeTeste,
+  definirSenhaAdminDeTeste,
+  gerarCodigoTotp,
   INVITED_ADMIN_EMAIL,
   provisionarAdmin,
   removerAdminDeTeste,
@@ -376,6 +378,69 @@ test.describe('admin', () => {
     await expect(page.getByLabel('Código do autenticador')).toHaveCount(0)
   })
 
+  test('recupera a senha por e-mail somente após confirmar o TOTP', async ({ page, request }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'O envio de e-mail é coberto uma vez.')
+    const newPassword = 'Senha-Nova-Recuperacao-E2E-7!'
+
+    try {
+      await page.goto(ADMIN_URL)
+      await page.getByRole('button', { name: 'Esqueci a senha' }).click()
+      await expect(page.getByRole('heading', { name: 'Recuperar senha' })).toBeVisible()
+      await page.getByLabel('E-mail').fill(credenciais.email)
+      await page.getByRole('button', { name: 'Enviar link de recuperação' }).click()
+      await expect(page.getByRole('heading', { name: 'Confira seu e-mail' })).toBeVisible()
+
+      const mensagens = await request.get('http://127.0.0.1:54324/api/v1/messages')
+      const { messages } = await mensagens.json()
+      const mensagem = messages
+        .filter((item: { To: Array<{ Address: string }> }) =>
+          item.To.some((recipient) => recipient.Address === credenciais.email))
+        .sort((left: { Created: string }, right: { Created: string }) => right.Created.localeCompare(left.Created))[0]
+      const email = await request.get(`http://127.0.0.1:54324/view/${mensagem.ID}.html`)
+      const html = await email.text()
+      const recoveryUrl = html.match(/href="([^"]+)"/)?.[1]?.replaceAll('&amp;', '&')
+      if (!recoveryUrl) throw new Error('Link de recuperação não encontrado.')
+
+      await page.goto(recoveryUrl)
+      await expect(page.getByRole('heading', { name: 'Confirme sua identidade' })).toBeVisible()
+      await expect(page.getByLabel('Nova senha')).toHaveCount(0)
+      await page.getByLabel('Código do autenticador').fill(await codigoTotpComJanelaFolgada(credenciais.segredo))
+      await page.getByRole('button', { name: 'Verificar' }).click()
+
+      await expect(page.getByRole('heading', { name: 'Redefinir senha' })).toBeVisible()
+      await page.getByLabel('Nova senha', { exact: true }).fill(newPassword)
+      await page.getByLabel('Confirmar nova senha').fill(newPassword)
+      await page.getByRole('button', { name: 'Salvar nova senha' }).click()
+      await expect(page.getByText('Senha alterada. Entre novamente com a nova senha.')).toBeVisible()
+    } finally {
+      await definirSenhaAdminDeTeste(credenciais.senha)
+    }
+  })
+
+  test('altera a senha nas Configurações após uma nova confirmação TOTP', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'O fluxo funcional é coberto uma vez.')
+    const newPassword = 'Senha-Nova-Configuracoes-E2E-8!'
+
+    try {
+      await entrar(page)
+      await page.goto(`${ADMIN_URL}/#/configuracoes`)
+      await page.getByRole('button', { name: 'Alterar senha' }).click()
+      const dialog = page.getByRole('dialog', { name: 'Alterar senha' })
+      await expect(dialog.getByRole('heading', { name: 'Confirmar alteração de senha' })).toBeVisible()
+      await expect(dialog.getByLabel('Nova senha')).toHaveCount(0)
+      await dialog.getByLabel('Código do autenticador').fill(gerarCodigoTotp(credenciais.segredo, Date.now() + 30_000))
+      await dialog.getByRole('button', { name: 'Verificar' }).click()
+
+      await expect(dialog.getByRole('heading', { name: 'Alterar senha' })).toBeVisible()
+      await dialog.getByLabel('Nova senha', { exact: true }).fill(newPassword)
+      await dialog.getByLabel('Confirmar nova senha').fill(newPassword)
+      await dialog.getByRole('button', { name: 'Alterar senha' }).click()
+      await expect(page.getByText('Senha alterada.', { exact: true })).toBeVisible()
+    } finally {
+      await definirSenhaAdminDeTeste(credenciais.senha)
+    }
+  })
+
   test('navega entre as gestões e encerra a sessão', async ({ page }) => {
     await entrar(page)
 
@@ -554,6 +619,9 @@ test.describe('admin', () => {
     await page.setViewportSize({ width: 320, height: 844 })
     await entrar(page)
     await expect(page.getByRole('heading', { name: 'Cães Cadastrados' })).toBeVisible()
+    const navigationBox = await page.getByRole('navigation').boundingBox()
+    expect(navigationBox?.x).toBe(0)
+    expect(navigationBox?.width).toBe(320)
 
     for (const width of [320, 375, 430]) {
       await page.setViewportSize({ width, height: 844 })
@@ -571,13 +639,13 @@ test.describe('admin', () => {
           await expectNoOverlap(pageHeading, page.getByLabel('Filtrar por status'), `${heading}: título e filtro em ${width}px`)
           await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Novo Cão' }), `${heading}: título e ação em ${width}px`)
           const dogCard = page.getByRole('button', { name: 'Editar' }).first().locator('xpath=ancestor::article[1]')
-          await expectToRightOf(dogCard.locator('img').first(), dogCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
+          await expectToRightOf(dogCard.getByRole('img').first(), dogCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
         }
         if (heading === 'Histórias Contadas') {
           await expectNoOverlap(pageHeading, page.getByLabel('Filtrar histórias por publicação'), `${heading}: título e filtro em ${width}px`)
           await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Nova História' }), `${heading}: título e ação em ${width}px`)
           const storyCard = page.getByRole('button', { name: 'Editar' }).first().locator('xpath=ancestor::article[1]')
-          await expectToRightOf(storyCard.locator('img').first(), storyCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
+          await expectToRightOf(storyCard.getByRole('img').first(), storyCard.getByRole('button', { name: 'Editar' }), `${heading}: ações ao lado da foto em ${width}px`)
         }
         if (heading === 'Eventos') {
           await expectNoOverlap(pageHeading, page.getByRole('button', { name: 'Novo Evento' }), `${heading}: título e ação em ${width}px`)

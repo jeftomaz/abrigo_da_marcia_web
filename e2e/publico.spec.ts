@@ -10,8 +10,13 @@ const RIFA_ATIVA = 'Rifa de Inverno'
 
 test.describe('site público', () => {
   test('navega pelo header entre landing, adoção e histórias', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 844 })
     await page.goto('/')
-    await expect(page.getByRole('navigation')).toBeVisible()
+    const navigation = page.getByRole('navigation')
+    await expect(navigation).toBeVisible()
+    const navigationBox = await navigation.boundingBox()
+    expect(navigationBox?.x).toBe(0)
+    expect(navigationBox?.width).toBe(320)
 
     await page.getByRole('link', { name: 'Adoção', exact: true }).click()
     await expect(page).toHaveURL(/\/adocao$/)
@@ -94,7 +99,7 @@ test.describe('site público', () => {
     expect(qrSize.width).toBeGreaterThanOrEqual(192)
     expect(qrSize.height).toBe(qrSize.width)
     expect(await fechar.evaluate((element) => element.getBoundingClientRect().width))
-      .toBe(await copiar.evaluate((element) => element.getBoundingClientRect().width))
+      .toBeLessThan(await copiar.evaluate((element) => element.getBoundingClientRect().width))
   })
 
   test('reserva números da rifa ativa e recebe o Pix', async ({ page }) => {

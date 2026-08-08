@@ -6,6 +6,8 @@ export type AdminAuthValue = {
   factorId: string
   removeAuthenticator: () => Promise<void>
   signOut: () => Promise<void>
+  updatePassword: (password: string) => Promise<void>
+  verifyAuthenticator: (code: string) => Promise<void>
 }
 
 export const AdminAuthContext = createContext<AdminAuthValue | null>(null)

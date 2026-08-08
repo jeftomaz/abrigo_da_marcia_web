@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Action, Icon, Logo, supabase, TextField } from '@abrigo/shared'
+import { AuthenticatorCodeForm } from './AuthenticatorCodeForm'
 import { AdminAuthContext } from './AdminAuthContext'
+import { isStrongPassword, PasswordChangeForm } from './PasswordChangeForm'
 
 const LAST_ACTIVITY_KEY = 'abrigo-admin-last-activity-at'
 const INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000
@@ -12,9 +14,12 @@ type AuthState =
   | { status: 'enroll'; email: string }
   | { status: 'forbidden' }
   | { status: 'profile'; email: string; factorId: string; userId: string }
+  | { status: 'recovery-challenge'; email: string; factorId: string }
+  | { status: 'recovery-password'; email: string }
+  | { status: 'recovery-unavailable' }
   | { status: 'registration'; email: string }
   | { status: 'ready'; displayName: string; email: string; factorId: string }
-  | { status: 'signed-out' }
+  | { status: 'signed-out'; notice?: string }
 
 type Enrollment = { factorId: string; qrCode: string; secret: string }
 
@@ -37,16 +42,78 @@ const isValidDisplayName = (displayName: string) => {
   const length = displayName.trim().length
   return length >= 2 && length <= 60
 }
-const isStrongPassword = (password: string) => password.length >= 12
-  && /[a-z]/.test(password)
-  && /[A-Z]/.test(password)
-  && /\d/.test(password)
-  && /[^A-Za-z0-9]/.test(password)
+function PasswordRecoveryRequest({
+  onBack,
+  onSubmit,
+}: {
+  onBack: () => void
+  onSubmit: (email: string) => Promise<void>
+}) {
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSent, setIsSent] = useState(false)
 
-function Login({ onSubmit }: { onSubmit: (email: string, password: string) => Promise<void> }) {
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setIsSubmitting(true)
+    setError('')
+    try {
+      await onSubmit(email.trim())
+      setIsSent(true)
+    } catch {
+      setError('Não foi possível enviar o e-mail de recuperação. Tente novamente.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <AuthLayout>
+      {isSent ? (
+        <div>
+          <h1 className="text-3xl font-medium text-marca">Confira seu e-mail</h1>
+          <p role="status" className="mt-3">
+            Se o endereço pertencer a uma conta administrativa, enviaremos um link para redefinir a senha.
+          </p>
+          <Action onClick={onBack} variant="secondary" className="mt-6 w-full px-6">
+            Voltar ao acesso
+          </Action>
+        </div>
+      ) : (
+        <form onSubmit={submit}>
+          <h1 className="text-3xl font-medium text-marca">Recuperar senha</h1>
+          <p className="mt-3">Enviaremos um link de recuperação para o e-mail administrativo.</p>
+          <label className="mt-6 block font-medium">
+            E-mail
+            <TextField type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} className={fieldClasses} />
+          </label>
+          {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
+          <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
+            {isSubmitting ? 'Enviando...' : 'Enviar link de recuperação'}
+          </Action>
+          <Action onClick={onBack} variant="secondary" className="mt-4 w-full px-6">
+            Voltar
+          </Action>
+        </form>
+      )}
+    </AuthLayout>
+  )
+}
+
+function Login({
+  notice,
+  onRequestReset,
+  onSubmit,
+}: {
+  notice?: string
+  onRequestReset: (email: string) => Promise<void>
+  onSubmit: (email: string, password: string) => Promise<void>
+}) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showRecovery, setShowRecovery] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -63,10 +130,15 @@ function Login({ onSubmit }: { onSubmit: (email: string, password: string) => Pr
     }
   }
 
+  if (showRecovery) return (
+    <PasswordRecoveryRequest onBack={() => setShowRecovery(false)} onSubmit={onRequestReset} />
+  )
+
   return (
     <AuthLayout>
       <form onSubmit={submit}>
         <h1 className="text-3xl font-medium text-marca">Acesso administrativo</h1>
+        {notice && <p role="status" className="mt-3 text-sm font-medium text-status-verde-on-surface">{notice}</p>}
         <label className="mt-6 block font-medium">
           E-mail
           <TextField type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} className={fieldClasses} />
@@ -92,6 +164,13 @@ function Login({ onSubmit }: { onSubmit: (email: string, password: string) => Pr
             </button>
           </div>
         </label>
+        <button
+          type="button"
+          onClick={() => setShowRecovery(true)}
+          className="mt-3 text-sm font-medium text-marca underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
+        >
+          Esqueci a senha
+        </button>
         {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
         <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
           {isSubmitting ? 'Entrando...' : 'Entrar'}
@@ -239,64 +318,6 @@ function ProfileRegistration({
   )
 }
 
-function CodeForm({
-  description,
-  embedded = false,
-  onSubmit,
-  title,
-}: {
-  description: string
-  embedded?: boolean
-  onSubmit: (code: string) => Promise<void>
-  title: string
-}) {
-  const [code, setCode] = useState('')
-  const [error, setError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!/^\d{6}$/.test(code)) {
-      setError('Informe o código de 6 dígitos.')
-      return
-    }
-    setIsSubmitting(true)
-    setError('')
-    try {
-      await onSubmit(code)
-    } catch {
-      setError('Código inválido ou expirado.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const Heading = embedded ? 'h2' : 'h1'
-
-  return (
-    <form onSubmit={submit}>
-      <Heading className="text-3xl font-medium text-marca">{title}</Heading>
-      <p className="mt-3">{description}</p>
-      <label className="mt-6 block font-medium">
-        Código do autenticador
-        <TextField
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={6}
-          required
-          value={code}
-          onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
-          className={`${fieldClasses} text-center text-2xl tracking-[0.35em]`}
-        />
-      </label>
-      {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
-      <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
-        {isSubmitting ? 'Verificando...' : 'Verificar'}
-      </Action>
-    </form>
-  )
-}
-
 function EnrollmentScreen({
   beginEnrollment,
   verify,
@@ -340,7 +361,7 @@ function EnrollmentScreen({
             <summary className="cursor-pointer font-medium">Não consigo escanear</summary>
             <code className="mt-2 block break-all rounded-lg bg-cinza-claro p-3 text-cinza-escuro">{enrollment.secret}</code>
           </details>
-          <CodeForm
+          <AuthenticatorCodeForm
             title="Confirmar ativação"
             description="Digite o primeiro código gerado pelo aplicativo."
             embedded
@@ -355,9 +376,11 @@ function EnrollmentScreen({
 export function AdminAuth({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'checking' })
   const completingRegistration = useRef(false)
+  const recoveringPassword = useRef(false)
   const refreshedInvitationRole = useRef(false)
 
   const signOut = useCallback(async () => {
+    recoveringPassword.current = false
     refreshedInvitationRole.current = false
     localStorage.removeItem(LAST_ACTIVITY_KEY)
     await supabase.auth.signOut()
@@ -419,14 +442,41 @@ export function AdminAuth({ children }: { children: ReactNode }) {
       : { status: 'profile', email, factorId: factor.id, userId: activeSession.user.id })
   }, [signOut])
 
+  const inspectRecoverySession = useCallback(async (
+    session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'],
+  ) => {
+    recoveringPassword.current = true
+    if (!session || session.user.app_metadata.role !== 'admin') {
+      setState({ status: 'forbidden' })
+      return
+    }
+    const { data: factors, error } = await supabase.auth.mfa.listFactors()
+    if (error) throw error
+    const factor = factors.totp.find((item) => item.status === 'verified')
+    if (!factor) {
+      setState({ status: 'recovery-unavailable' })
+      return
+    }
+    setState({
+      status: 'recovery-challenge',
+      email: session.user.email ?? 'administrador',
+      factorId: factor.id,
+    })
+  }, [])
+
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => inspectSession(data.session)).catch(() => setState({ status: 'signed-out' }))
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (completingRegistration.current) return
+      if (event === 'PASSWORD_RECOVERY') {
+        window.setTimeout(() => void inspectRecoverySession(session).catch(() => setState({ status: 'signed-out' })), 0)
+        return
+      }
+      if (recoveringPassword.current) return
       window.setTimeout(() => void inspectSession(session).catch(() => setState({ status: 'signed-out' })), 0)
     })
     return () => listener.subscription.unsubscribe()
-  }, [inspectSession])
+  }, [inspectRecoverySession, inspectSession])
 
   useEffect(() => {
     if (state.status !== 'ready') return
@@ -460,6 +510,28 @@ export function AdminAuth({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     await inspectSession(data.session)
+  }
+
+  const requestPasswordReset = async (email: string) => {
+    const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+    if (error) throw error
+  }
+
+  const verifyRecovery = async (factorId: string, code: string) => {
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code })
+    if (error) throw error
+    const email = state.status === 'recovery-challenge' ? state.email : 'administrador'
+    setState({ status: 'recovery-password', email })
+  }
+
+  const completePasswordRecovery = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw error
+    localStorage.removeItem(LAST_ACTIVITY_KEY)
+    await supabase.auth.signOut()
+    recoveringPassword.current = false
+    setState({ status: 'signed-out', notice: 'Senha alterada. Entre novamente com a nova senha.' })
   }
 
   const completeRegistration = async (displayName: string, password: string) => {
@@ -523,16 +595,30 @@ export function AdminAuth({ children }: { children: ReactNode }) {
     await signOut()
   }
 
+  const verifyAuthenticator = async (code: string) => {
+    if (state.status !== 'ready') throw new Error('Sessão administrativa indisponível.')
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: state.factorId, code })
+    if (error) throw error
+  }
+
+  const updatePassword = async (password: string) => {
+    if (state.status !== 'ready') throw new Error('Sessão administrativa indisponível.')
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw error
+  }
+
   const contextValue = state.status === 'ready' ? {
     displayName: state.displayName,
     email: state.email,
     factorId: state.factorId,
     removeAuthenticator,
     signOut,
+    updatePassword,
+    verifyAuthenticator,
   } : null
 
   if (state.status === 'checking') return <AuthLayout><p role="status" className="text-center">Verificando sessão...</p></AuthLayout>
-  if (state.status === 'signed-out') return <Login onSubmit={login} />
+  if (state.status === 'signed-out') return <Login notice={state.notice} onRequestReset={requestPasswordReset} onSubmit={login} />
   if (state.status === 'forbidden') return (
     <AuthLayout>
       <h1 className="text-3xl font-medium text-marca">Acesso negado</h1>
@@ -547,9 +633,39 @@ export function AdminAuth({ children }: { children: ReactNode }) {
     <ProfileRegistration email={state.email} onSubmit={completeProfile} />
   )
   if (state.status === 'enroll') return <EnrollmentScreen beginEnrollment={beginEnrollment} verify={verify} />
+  if (state.status === 'recovery-unavailable') return (
+    <AuthLayout>
+      <h1 className="text-3xl font-medium text-marca">Recuperação indisponível</h1>
+      <p className="mt-3">Esta conta não possui um autenticador ativo. Solicite ao responsável pelo Supabase a recuperação do acesso.</p>
+      <Action onClick={() => void signOut()} className="mt-6 w-full px-6">Voltar ao acesso</Action>
+    </AuthLayout>
+  )
+  if (state.status === 'recovery-challenge') return (
+    <AuthLayout>
+      <AuthenticatorCodeForm
+        title="Confirme sua identidade"
+        description={`Antes de redefinir a senha, informe o código do autenticador vinculado a ${state.email}.`}
+        onSubmit={(code) => verifyRecovery(state.factorId, code)}
+      />
+      <Action variant="secondary" onClick={() => void signOut()} className="mt-4 w-full px-6">
+        Cancelar recuperação
+      </Action>
+    </AuthLayout>
+  )
+  if (state.status === 'recovery-password') return (
+    <AuthLayout>
+      <PasswordChangeForm
+        title="Redefinir senha"
+        description={`Defina a nova senha de acesso para ${state.email}.`}
+        submitLabel="Salvar nova senha"
+        onCancel={() => void signOut()}
+        onSubmit={completePasswordRecovery}
+      />
+    </AuthLayout>
+  )
   if (state.status === 'challenge') return (
     <AuthLayout>
-      <CodeForm
+      <AuthenticatorCodeForm
         title="Confirmação em duas etapas"
         description={`Abra o autenticador vinculado a ${state.email}.`}
         onSubmit={(code) => verify(state.factorId, code)}

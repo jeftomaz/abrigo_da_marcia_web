@@ -99,6 +99,15 @@ export async function convidarAdminDeTeste() {
   })
 }
 
+export async function definirSenhaAdminDeTeste(password: string) {
+  const userId = executarSql(`select id from auth.users where email = '${ADMIN_EMAIL}'`)
+  if (!/^[0-9a-f-]{36}$/.test(userId)) throw new Error('Administrador E2E não encontrado.')
+  await chamar(`/admin/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ password }),
+  })
+}
+
 export async function provisionarAdmin() {
   removerAdminDeTeste()
 
