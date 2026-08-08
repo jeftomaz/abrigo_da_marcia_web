@@ -200,7 +200,7 @@ export function PixConfirmationDialog({
         </p>
       )}
       <div className="mt-8 flex justify-center">
-        <Action onClick={onClose} className="w-full max-w-56 py-2" size="small">
+        <Action onClick={onClose} size="compact" variant="secondary-adaptive">
           Fechar
         </Action>
       </div>

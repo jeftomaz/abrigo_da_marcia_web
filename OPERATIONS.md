@@ -38,6 +38,10 @@ Fatores `unverified` remanescentes podem ser apagados: o frontend já descarta i
 
 **Risco de bloqueio total:** com um único admin cadastrado, perder o TOTP *e* o acesso à conta Supabase deixa o banco inalcançável — não há terceiro caminho. Mitigação: manter ao menos duas contas convidadas com TOTP em dispositivos diferentes, e a recuperação da própria conta Supabase (e-mail + 2FA) documentada fora deste repositório.
 
+## Senha administrativa
+
+O botão **Esqueci a senha** envia o link do Supabase para o e-mail administrativo. Ao abrir o link, o app exige o TOTP já cadastrado antes de aceitar a nova senha; sem esse fator, seguir o procedimento de perda do TOTP acima. Um admin autenticado também pode usar **Configurações → Segurança → Alterar senha**, com nova confirmação TOTP.
+
 ## Backup e restauração
 
 O plano Free não tem backup automático restaurável nem PITR — o backup é manual e responsabilidade do operador. Rodar antes de qualquer migration em produção e em rotina periódica:

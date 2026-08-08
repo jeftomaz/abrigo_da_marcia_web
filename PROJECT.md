@@ -56,4 +56,6 @@ Status detalhado: `ROADMAP.md`. Operação do ambiente hospedado (perda de TOTP,
 
 Refresh token longo (padrão Supabase). A sessão é encerrada no client após 7 dias sem atividade, controlados por `abrigo-admin-last-activity-at`; o próximo acesso exige senha e novo desafio TOTP. `auth.sessions.inactivity_timeout` permanece desabilitado no Supabase Free porque exige plano Pro.
 
+A recuperação por e-mail e a troca de senha em Configurações exigem um novo código TOTP antes de aceitar a nova senha. O link de recuperação nunca permite cadastrar ou substituir o autenticador.
+
 Para provisionar um admin local ou hospedado: convidar a conta pelo Studio/Dashboard ou Admin API. O banco atribui `app_metadata.role = admin` somente a usuários convidados; o link exige nome/apelido, definição de senha e cadastro do TOTP antes de liberar a gestão. Admins legados sem `admin_profiles` completam o perfil uma vez após o MFA. Nenhuma credencial administrativa vive no repositório.

@@ -13,6 +13,8 @@ import {
 } from '@abrigo/shared'
 import type { AuditMetadata, EventSettings, SiteSettings, SocialLinks } from '@abrigo/shared'
 import { useAdminAuth } from '../auth/AdminAuthContext'
+import { AuthenticatorCodeForm } from '../auth/AuthenticatorCodeForm'
+import { PasswordChangeForm } from '../auth/PasswordChangeForm'
 import { AdminListRow } from '../components/AdminListRow'
 import { ConfirmationDialog } from '../components/ConfirmationDialog'
 import { EventSettingsForm } from '../components/EventSettingsForm'
@@ -22,6 +24,7 @@ import { useIsDesktop } from '../hooks/useIsDesktop'
 import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
 type Editor = 'dogs' | 'events' | 'general' | 'landing'
+type SecurityDialog = 'password' | 'verification'
 
 type SettingsCardProps = {
   actions: ReactNode
@@ -65,7 +68,7 @@ function latestAudit(...audits: Array<AuditMetadata | null | undefined>) {
 }
 
 export function Configuracoes() {
-  const { displayName, email, removeAuthenticator } = useAdminAuth()
+  const { displayName, email, removeAuthenticator, updatePassword, verifyAuthenticator } = useAdminAuth()
   const { data: siteSettings, error: siteError, isLoading: isLoadingSite } = useAdminSiteSettings()
   const { data: socialLinks, error: socialError, isLoading: isLoadingSocial } = useAdminSocialLinks()
   const { data: eventSettings, error: eventError, isLoading: isLoadingEvents } = useEventSettings()
@@ -75,6 +78,7 @@ export function Configuracoes() {
   const [editor, setEditor] = useState<Editor | null>(null)
   const [securityError, setSecurityError] = useState('')
   const [confirmMfaRemoval, setConfirmMfaRemoval] = useState(false)
+  const [securityDialog, setSecurityDialog] = useState<SecurityDialog | null>(null)
   const [successMessage, showSuccess] = useSuccessMessage()
   const isDesktop = useIsDesktop()
 
@@ -99,6 +103,17 @@ export function Configuracoes() {
     } catch (error) {
       setSecurityError(getAdminErrorMessage(error, 'Não foi possível remover o autenticador.'))
     }
+  }
+
+  const verifyPasswordChange = async (code: string) => {
+    await verifyAuthenticator(code)
+    setSecurityDialog('password')
+  }
+
+  const changePassword = async (password: string) => {
+    await updatePassword(password)
+    setSecurityDialog(null)
+    showSuccess('Senha alterada.')
   }
 
   const generalDetails = siteSettings && socialLinks ? [
@@ -196,7 +211,12 @@ export function Configuracoes() {
                 title="Autenticação em 2 fatores (2FA)"
                 details={[`Perfil: ${displayName}`, `Autenticador TOTP ativo para ${email}`, 'Sessão encerrada após 7 dias sem atividade']}
                 status={<StatusBadge tone="verde" size="sm">Ativa</StatusBadge>}
-                actions={<Action onClick={() => setConfirmMfaRemoval(true)} icon="trash-solid" size="small" variant="neutral-adaptive" className="h-11 px-5">Remover</Action>}
+                actions={(
+                  <div className="flex flex-wrap justify-end gap-3">
+                    <Action onClick={() => setSecurityDialog('verification')} size="small" variant="neutral-adaptive" className="h-11 px-5">Alterar senha</Action>
+                    <Action onClick={() => setConfirmMfaRemoval(true)} icon="trash-solid" size="small" variant="neutral-adaptive" className="h-11 px-5">Remover 2FA</Action>
+                  </div>
+                )}
               />
               {securityError && <p role="alert" className="mt-2 text-sm font-medium text-marca">{securityError}</p>}
             </section>
@@ -209,6 +229,26 @@ export function Configuracoes() {
       {editorContent && !isDesktop && (
         <Dialog ariaLabel="Editar configurações" onClose={() => setEditor(null)} className="max-h-[94vh] w-full max-w-[55rem] overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-12">
           {editorContent}
+        </Dialog>
+      )}
+      {securityDialog && (
+        <Dialog ariaLabel="Alterar senha" onClose={() => setSecurityDialog(null)} className="w-full max-w-md rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-10">
+          {securityDialog === 'verification' ? (
+            <AuthenticatorCodeForm
+              embedded
+              title="Confirmar alteração de senha"
+              description="Informe um novo código do autenticador antes de definir a nova senha."
+              onSubmit={verifyPasswordChange}
+            />
+          ) : (
+            <PasswordChangeForm
+              embedded
+              title="Alterar senha"
+              description={`Defina a nova senha de acesso para ${email}.`}
+              onCancel={() => setSecurityDialog(null)}
+              onSubmit={changePassword}
+            />
+          )}
         </Dialog>
       )}
       {confirmMfaRemoval && <ConfirmationDialog title="Remover autenticador" description="A sessão será encerrada e uma nova ativação será exigida no próximo acesso." onCancel={() => setConfirmMfaRemoval(false)} onConfirm={() => void removeMfa()} />}

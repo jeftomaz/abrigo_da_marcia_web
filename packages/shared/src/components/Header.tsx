@@ -75,7 +75,7 @@ export function Header() {
 
         {/* `safe center` centraliza enquanto couber e volta a alinhar no início quando não cabe:
             `center` puro transborda pelos dois lados e o começo da lista fica fora de alcance. */}
-        <nav ref={navRef} className="order-2 flex min-w-0 basis-full gap-10 overflow-x-auto lg:basis-auto lg:flex-1 lg:justify-safe-center">
+        <nav ref={navRef} className="relative left-1/2 order-2 flex w-dvw shrink-0 -translate-x-1/2 gap-10 overflow-x-auto lg:static lg:w-auto lg:min-w-0 lg:shrink lg:translate-none lg:basis-auto lg:flex-1 lg:justify-safe-center">
           {NAV_ITEMS.map((item) => {
             const isActive = item.kind === 'route' && pathname === item.to
             const usesPrimaryVariant = isLanding

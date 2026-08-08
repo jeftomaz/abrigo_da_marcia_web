@@ -46,7 +46,7 @@ export function AdminHeader() {
           <span className="text-xl font-medium sm:text-2xl">Admin</span>
         </Link>
 
-        <nav ref={navRef} className="order-2 flex min-w-0 basis-full gap-3 overflow-x-auto desk:basis-auto desk:flex-1 desk:justify-center">
+        <nav ref={navRef} className="relative left-1/2 order-2 flex w-dvw shrink-0 -translate-x-1/2 gap-3 overflow-x-auto desk:static desk:w-auto desk:min-w-0 desk:shrink desk:translate-none desk:basis-auto desk:flex-1 desk:justify-center">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.to
 
