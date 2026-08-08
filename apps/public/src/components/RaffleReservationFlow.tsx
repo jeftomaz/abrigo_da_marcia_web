@@ -18,6 +18,24 @@ function formatNumber(number: number, digits: number) {
   return String(number).padStart(digits, '0')
 }
 
+function RaffleReservationSummary({ numbers, total }: { numbers: string; total: number }) {
+  return (
+    <section className="mt-5 rounded-2xl bg-cinza-claro p-4 dark:bg-cinza-medio">
+      <h3 className="text-2xl font-medium">Reserva</h3>
+      <dl className="mt-3 grid gap-3">
+        <div>
+          <dt className="text-sm">Números escolhidos</dt>
+          <dd className="mt-1 text-2xl leading-tight font-medium sm:text-3xl">{numbers}</dd>
+        </div>
+        <div>
+          <dt className="text-sm">Valor da rifa</dt>
+          <dd className="mt-1 text-3xl leading-none font-medium text-marca sm:text-4xl">{formatCurrency(total)}</dd>
+        </div>
+      </dl>
+    </section>
+  )
+}
+
 export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowProps) {
   const [stage, setStage] = useState<FlowStage>('raffle')
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([])
@@ -76,11 +94,10 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
         setStage('confirmation')
       }}
     >
-      <section className="mt-4">
-        <h3 className="text-2xl font-medium">Reserva</h3>
-        <p>Números escolhidos: {selectedNumbers.map((number) => formatNumber(number, numberDigits)).join(', ')}</p>
-        <p>Total: {formatCurrency(total)}</p>
-      </section>
+      <RaffleReservationSummary
+        numbers={selectedNumbers.map((number) => formatNumber(number, numberDigits)).join(', ')}
+        total={total}
+      />
     </ReservationCheckoutDialog>
   ) : null
 
@@ -92,11 +109,10 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
       postPaymentInstructions={result.postPaymentInstructions}
       onClose={onClose}
     >
-      <section className="mt-4">
-        <h3 className="text-2xl font-medium sm:text-3xl">Reserva</h3>
-        <p>Números escolhidos: {selectedNumbers.map((number) => formatNumber(number, numberDigits)).join(', ')}</p>
-        <p>Total: {formatCurrency(result.totalCents / 100)}</p>
-      </section>
+      <RaffleReservationSummary
+        numbers={selectedNumbers.map((number) => formatNumber(number, numberDigits)).join(', ')}
+        total={result.totalCents / 100}
+      />
     </PixConfirmationDialog>
   ) : null
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Action, getAdminErrorMessage, useAdminEvents, useDrawRafflePrize, useEventReservations } from '@abrigo/shared'
+import { Action, Dialog, getAdminErrorMessage, useAdminEvents, useDrawRafflePrize, useEventReservations } from '@abrigo/shared'
 import { useParams } from 'react-router-dom'
 import type { RafflePrize } from '../events/events'
 
@@ -28,14 +28,20 @@ export function RaffleDraw() {
   const drawPrize = useDrawRafflePrize(eventId)
   const event = events.find((item) => item.id === eventId)
   const timeoutRef = useRef<number | null>(null)
+  const shortageConfirmedRef = useRef(false)
   const [prizes, setPrizes] = useState<RafflePrize[]>([])
   const [currentPrizeId, setCurrentPrizeId] = useState('')
   const [displayNumber, setDisplayNumber] = useState<number | null>(null)
   const [winner, setWinner] = useState<DrawWinner | null>(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [drawError, setDrawError] = useState('')
+  const [showShortageWarning, setShowShortageWarning] = useState(false)
 
   useEffect(() => () => { if (timeoutRef.current !== null) window.clearTimeout(timeoutRef.current) }, [])
+  useEffect(() => {
+    shortageConfirmedRef.current = false
+    setShowShortageWarning(false)
+  }, [eventId])
 
   useEffect(() => {
     const nextPrizes = event?.prizes ?? []
@@ -61,7 +67,11 @@ export function RaffleDraw() {
   const totalNumbers = Math.max(1, Number(event.raffleTotalNumbers) || 1)
   const numberDigits = Math.max(2, String(totalNumbers).length)
   const canDraw = event.status === 'active'
-  const paidNumberCount = reservations.filter((reservation) => reservation.status === 'paid').reduce((count, reservation) => count + reservation.numbers.length, 0)
+  const paidNumberCount = reservations.filter((reservation) => reservation.status === 'paid' || reservation.status === 'delivered').reduce((count, reservation) => count + reservation.numbers.length, 0)
+  const drawnNumberCount = new Set(prizes.flatMap((prize) => typeof prize.winningNumber === 'number' ? [prize.winningNumber] : [])).size
+  const pendingPrizeCount = prizes.filter((prize) => !prizeWinner(prize)).length
+  const eligibleNumberCount = Math.max(0, paidNumberCount - drawnNumberCount)
+  const hasPrizeShortage = eligibleNumberCount < pendingPrizeCount
 
   const selectPrize = (prize: RafflePrize) => {
     if (isDrawing) return
@@ -105,8 +115,15 @@ export function RaffleDraw() {
   }
 
   const handleDrawAction = () => {
-    if (winner && nextPrize) selectPrize(nextPrize)
-    else void runDraw()
+    if (winner && nextPrize) {
+      selectPrize(nextPrize)
+      return
+    }
+    if (hasPrizeShortage && !shortageConfirmedRef.current) {
+      setShowShortageWarning(true)
+      return
+    }
+    void runDraw()
   }
 
   const prizeList = (
@@ -132,10 +149,33 @@ export function RaffleDraw() {
             {winner ? <div className="raffle-draw-result"><p className="text-3xl">Ganhador</p><p className="mt-2 text-4xl leading-tight font-medium sm:text-5xl">{winner.name}</p><p className="mt-10 text-2xl">Prêmio</p><p className="mt-2 text-3xl leading-tight font-medium sm:text-4xl">{currentPrize?.name}</p></div> : !canDraw ? <p className="pt-12 text-3xl font-medium">Sorteio sem resultado registrado</p> : null}
             {drawError && <p role="alert" className="mt-4 text-xl font-medium">{drawError}</p>}
           </div>
-          {canDraw && <Action onClick={handleDrawAction} disabled={isDrawing || (paidNumberCount === 0 && !winner)} icon="dice-five" size="small" variant="secondary-on-brand" className="mt-2 min-h-12 px-7 text-base">{isDrawing ? 'Sorteando...' : winner && nextPrize ? 'Próximo Sorteio' : winner ? 'Sortear novamente' : paidNumberCount > 0 ? 'Sortear' : 'Sem números pagos'}</Action>}
+          {canDraw && <Action onClick={handleDrawAction} disabled={isDrawing} icon="dice-five" size="small" variant="secondary-on-brand" className="mt-2 min-h-12 px-7 text-base">{isDrawing ? 'Sorteando...' : winner && nextPrize ? 'Próximo Sorteio' : winner ? 'Sortear novamente' : 'Sortear'}</Action>}
           <div className="mt-10 w-full desk:hidden">{prizeList}</div>
         </section>
       </div>
+      {showShortageWarning && (
+        <Dialog ariaLabel="Reservas insuficientes para o sorteio" onClose={() => setShowShortageWarning(false)} className="w-full max-w-xl rounded-3xl bg-surface-raised p-8 text-left text-on-surface-raised sm:p-10">
+          <h2 className="text-3xl font-medium text-marca">Reservas pagas insuficientes</h2>
+          <p className="mt-4 text-lg">
+            Há {eligibleNumberCount} {eligibleNumberCount === 1 ? 'número pago ainda elegível' : 'números pagos ainda elegíveis'} para {pendingPrizeCount} {pendingPrizeCount === 1 ? 'prêmio não sorteado' : 'prêmios não sorteados'}.
+          </p>
+          <p className="mt-3">
+            {eligibleNumberCount === 0
+              ? 'O sorteio não pode começar enquanto nenhuma reserva estiver paga.'
+              : 'Nem todos os prêmios poderão receber um número ganhador. Deseja iniciar mesmo assim?'}
+          </p>
+          <div className="mt-8 flex gap-4">
+            <Action onClick={() => setShowShortageWarning(false)} size="small" variant="secondary-adaptive" className="min-w-0 flex-1">
+              {eligibleNumberCount === 0 ? 'Entendi' : 'Cancelar'}
+            </Action>
+            {eligibleNumberCount > 0 && (
+              <Action onClick={() => { shortageConfirmedRef.current = true; setShowShortageWarning(false); void runDraw() }} size="small" variant="primary-adaptive" icon="dice-five" className="min-w-0 flex-1">
+                Iniciar sorteio
+              </Action>
+            )}
+          </div>
+        </Dialog>
+      )}
     </main>
   )
 }

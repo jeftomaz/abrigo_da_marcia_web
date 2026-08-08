@@ -173,7 +173,7 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
                   </select>
                 </label>
                 <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={reservation.receiptSaved} disabled={isPending} onChange={(event) => void updateReservation(reservation.id, { receiptSaved: event.target.checked })} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-40 disabled:cursor-not-allowed accent-marca" />{isPending ? 'Salvando...' : 'Comprovante salvo'}</label>
-                {event.receiptFolderUrl && <Action href={event.receiptFolderUrl} target="_blank" rel="noreferrer" icon="open-book" size="small" variant="neutral-adaptive" className="px-3 py-1 text-xs">Comprovantes</Action>}
+                {event.receiptFolderUrl && <Action href={event.receiptFolderUrl} target="_blank" rel="noreferrer" icon="open-book" size="small" variant="neutral-adaptive" className="px-3 py-1 text-xs">Pasta de comprovantes</Action>}
                 <strong className="text-sm">{formatMoney(reservation.totalCents)}</strong>
               </div>
             </AdminListRow>
@@ -188,7 +188,7 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
           <h3 className="mt-5 text-2xl font-medium">{paidConfirmation.name}</h3>
           <p className="mt-3">Você já salvou o comprovante de pagamento desta reserva no destino externo?</p>
           {event.receiptFolderUrl && (
-            <Action href={event.receiptFolderUrl} target="_blank" rel="noreferrer" icon="open-book" size="small" variant="neutral-adaptive" className="mt-4 px-4">Abrir comprovantes</Action>
+            <Action href={event.receiptFolderUrl} target="_blank" rel="noreferrer" icon="open-book" size="small" variant="neutral-adaptive" className="mt-4 px-4">Abrir pasta de comprovantes</Action>
           )}
           <div className="mt-8 flex gap-4">
             <Action onClick={() => setPaidConfirmation(null)} disabled={pendingReservationIds.has(paidConfirmation.id)} size="small" variant="secondary-adaptive" className="w-28 shrink-0">Cancelar</Action>

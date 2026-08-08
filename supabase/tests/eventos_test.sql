@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(88);
+select plan(89);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -220,6 +220,11 @@ select isnt(
   (select winning_number from public.rifa_premios where id = '11000000-0000-0000-0000-000000000001'),
   (select winning_number from public.rifa_premios where id = '11000000-0000-0000-0000-000000000002'),
   'um número não ganha dois prêmios'
+);
+select ok(
+  (select bool_and(winning_number = any(array[1, 2])) from public.rifa_premios
+    where event_id = '10000000-0000-0000-0000-000000000001' and winning_number is not null),
+  'reservas pendentes não participam do sorteio'
 );
 
 select throws_ok($$

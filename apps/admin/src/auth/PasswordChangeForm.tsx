@@ -10,12 +10,39 @@ type PasswordChangeFormProps = {
   title: string
 }
 
+const PASSWORD_REQUIREMENTS = [
+  { label: '12 caracteres ou mais', test: (password: string) => password.length >= 12 },
+  { label: 'Uma letra maiúscula', test: (password: string) => /[A-Z]/.test(password) },
+  { label: 'Uma letra minúscula', test: (password: string) => /[a-z]/.test(password) },
+  { label: 'Um número', test: (password: string) => /\d/.test(password) },
+  { label: 'Um caractere especial', test: (password: string) => /[^A-Za-z0-9]/.test(password) },
+]
+
 // oxlint-disable-next-line react/only-export-components -- política compartilhada com o onboarding.
-export const isStrongPassword = (password: string) => password.length >= 12
-  && /[a-z]/.test(password)
-  && /[A-Z]/.test(password)
-  && /\d/.test(password)
-  && /[^A-Za-z0-9]/.test(password)
+export const isStrongPassword = (password: string) => PASSWORD_REQUIREMENTS.every((requirement) => requirement.test(password))
+
+export function PasswordRequirements({ id, password }: { id: string; password: string }) {
+  const valid = isStrongPassword(password)
+
+  return (
+    <div id={id} className="mt-3 text-sm">
+      <p role="status" aria-live="polite" className={`font-medium ${valid ? 'text-status-verde-on-surface' : 'text-on-surface-raised'}`}>
+        {valid ? 'Senha válida.' : 'A senha ainda não é válida.'}
+      </p>
+      <ul aria-label="Requisitos da senha" className="mt-2 grid gap-1 sm:grid-cols-2">
+        {PASSWORD_REQUIREMENTS.map((requirement) => {
+          const satisfied = requirement.test(password)
+          return (
+            <li key={requirement.label} className={satisfied ? 'text-status-verde-on-surface' : 'text-cinza-medio dark:text-cinza-claro'}>
+              <span aria-hidden="true" className="mr-1">{satisfied ? '✓' : '○'}</span>
+              {requirement.label}
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
 
 export function PasswordChangeForm({
   description,
@@ -70,9 +97,7 @@ export function PasswordChangeForm({
           aria-describedby="new-password-requirements"
         />
       </label>
-      <p id="new-password-requirements" className="mt-2 text-sm">
-        Mínimo de 12 caracteres, com maiúscula, minúscula, número e símbolo.
-      </p>
+      <PasswordRequirements id="new-password-requirements" password={password} />
       <label className="mt-4 block font-medium">
         Confirmar nova senha
         <TextField
@@ -83,8 +108,14 @@ export function PasswordChangeForm({
           value={confirmation}
           onChange={(event) => setConfirmation(event.target.value)}
           className="mt-1 h-11 px-4"
+          aria-describedby={confirmation ? 'new-password-confirmation-status' : undefined}
         />
       </label>
+      {confirmation && (
+        <p id="new-password-confirmation-status" role="status" aria-live="polite" className={`mt-2 text-sm font-medium ${password === confirmation ? 'text-status-verde-on-surface' : 'text-marca'}`}>
+          {password === confirmation ? 'As senhas coincidem.' : 'As senhas não coincidem.'}
+        </p>
+      )}
       {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
       <div className="mt-6 flex gap-3">
         {onCancel && (

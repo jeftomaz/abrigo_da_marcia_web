@@ -130,6 +130,10 @@ test.describe('site público', () => {
     await page.getByRole('button', { name: 'Finalizar sua reserva' }).click()
 
     const checkout = page.getByRole('dialog').filter({ hasText: 'Nome completo' })
+    const selectedNumbers = checkout.getByText('Números escolhidos', { exact: true }).locator('xpath=following-sibling::dd')
+    const raffleValue = checkout.getByText('Valor da rifa', { exact: true }).locator('xpath=following-sibling::dd')
+    expect(Number.parseFloat(await selectedNumbers.evaluate((element) => getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(24)
+    expect(Number.parseFloat(await raffleValue.evaluate((element) => getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(30)
     await checkout.getByLabel('Nome completo').fill(nomeDaReserva)
     await checkout.getByLabel('Telefone com DDD').fill('(16) 98765-4321')
     await checkout.getByRole('button', { name: 'Finalizar sua reserva' }).click()

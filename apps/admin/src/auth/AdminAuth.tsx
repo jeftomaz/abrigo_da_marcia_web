@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Action, Icon, Logo, supabase, TextField } from '@abrigo/shared'
 import { AuthenticatorCodeForm } from './AuthenticatorCodeForm'
 import { AdminAuthContext } from './AdminAuthContext'
-import { isStrongPassword, PasswordChangeForm } from './PasswordChangeForm'
+import { isStrongPassword, PasswordChangeForm, PasswordRequirements } from './PasswordChangeForm'
 
 const LAST_ACTIVITY_KEY = 'abrigo-admin-last-activity-at'
 const INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000
@@ -244,9 +244,7 @@ function Registration({
             aria-describedby="password-requirements"
           />
         </label>
-        <p id="password-requirements" className="mt-2 text-sm">
-          Mínimo de 12 caracteres, com maiúscula, minúscula, número e símbolo.
-        </p>
+        <PasswordRequirements id="password-requirements" password={password} />
         <label className="mt-4 block font-medium">
           Confirmar senha
           <TextField
@@ -257,8 +255,14 @@ function Registration({
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}
             className={fieldClasses}
+            aria-describedby={confirmation ? 'password-confirmation-status' : undefined}
           />
         </label>
+        {confirmation && (
+          <p id="password-confirmation-status" role="status" aria-live="polite" className={`mt-2 text-sm font-medium ${password === confirmation ? 'text-status-verde-on-surface' : 'text-marca'}`}>
+            {password === confirmation ? 'As senhas coincidem.' : 'As senhas não coincidem.'}
+          </p>
+        )}
         {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
         <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
           {isSubmitting ? 'Salvando...' : 'Criar senha e continuar'}

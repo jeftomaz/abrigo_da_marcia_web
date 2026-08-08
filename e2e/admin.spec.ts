@@ -320,9 +320,16 @@ test.describe('admin', () => {
 
     await page.goto(confirmationUrl)
     await expect(page.getByRole('heading', { name: 'Concluir cadastro' })).toBeVisible()
+    await expect(page.getByText('A senha ainda não é válida.', { exact: true })).toBeVisible()
     await page.getByLabel('Nome ou apelido').fill('Convidada E2E')
+    await page.getByLabel('Senha', { exact: true }).fill('Ab1!')
+    await expect(page.getByText('A senha ainda não é válida.', { exact: true })).toBeVisible()
     await page.getByLabel('Senha', { exact: true }).fill(credenciais.senha)
+    await expect(page.getByText('Senha válida.', { exact: true })).toBeVisible()
+    await page.getByLabel('Confirmar senha').fill(`${credenciais.senha}x`)
+    await expect(page.getByText('As senhas não coincidem.', { exact: true })).toBeVisible()
     await page.getByLabel('Confirmar senha').fill(credenciais.senha)
+    await expect(page.getByText('As senhas coincidem.', { exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Criar senha e continuar' }).click()
 
     await expect(page.getByRole('heading', { name: 'Proteja sua conta' })).toBeVisible()
@@ -408,8 +415,12 @@ test.describe('admin', () => {
       await page.getByRole('button', { name: 'Verificar' }).click()
 
       await expect(page.getByRole('heading', { name: 'Redefinir senha' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Cães Cadastrados' })).toHaveCount(0)
+      await expect(page.getByText('A senha ainda não é válida.', { exact: true })).toBeVisible()
       await page.getByLabel('Nova senha', { exact: true }).fill(newPassword)
+      await expect(page.getByText('Senha válida.', { exact: true })).toBeVisible()
       await page.getByLabel('Confirmar nova senha').fill(newPassword)
+      await expect(page.getByText('As senhas coincidem.', { exact: true })).toBeVisible()
       await page.getByRole('button', { name: 'Salvar nova senha' }).click()
       await expect(page.getByText('Senha alterada. Entre novamente com a nova senha.')).toBeVisible()
     } finally {
@@ -451,6 +462,58 @@ test.describe('admin', () => {
 
     await page.getByRole('button', { name: 'Sair' }).click()
     await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
+  })
+
+  test('destaca Reservas abertas e oferece a pasta ao confirmar pagamento', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'O fluxo funcional é coberto uma vez.')
+    executarSql(`update public.eventos set receipt_folder_url = 'https://example.com/comprovantes-e2e' where id = 'a1000000-0000-0000-0000-000000000001';
+      update public.reservas set status = 'pendente', expires_at = now() + interval '15 minutes'
+      where session_id = 'a1200000-0000-0000-0000-000000000001'`)
+
+    try {
+      await entrar(page)
+      await page.goto(`${ADMIN_URL}/#/eventos`)
+      const raffleCard = page.locator('article').filter({ hasText: 'Rifa de Inverno' })
+      const reservationsButton = raffleCard.getByRole('button', { name: 'Reservas' })
+      const inactiveBackground = await reservationsButton.evaluate((element) => getComputedStyle(element).backgroundColor)
+      await reservationsButton.click()
+
+      await expect(reservationsButton).toHaveAttribute('aria-pressed', 'true')
+      expect(await reservationsButton.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(inactiveBackground)
+
+      await page.getByLabel('Alterar status da reserva de Fulano Pendente').selectOption('paid')
+      const confirmation = page.getByRole('dialog', { name: 'Confirmar pagamento' })
+      await expect(confirmation.getByRole('button', { name: 'Cancelar' })).toBeVisible()
+      await expect(confirmation.getByRole('button', { name: 'Sim, foi salvo' })).toBeVisible()
+      await expect(confirmation.getByRole('link', { name: 'Abrir pasta de comprovantes' })).toHaveAttribute('href', 'https://example.com/comprovantes-e2e')
+    } finally {
+      executarSql("update public.eventos set receipt_folder_url = null where id = 'a1000000-0000-0000-0000-000000000001'")
+    }
+  })
+
+  test('alerta antes do sorteio quando faltam números pagos para os prêmios', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'O fluxo funcional é coberto uma vez.')
+    executarSql(`insert into public.rifa_premios (id, event_id, name, photo, display_order) values
+      ('e2100000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'Prêmio extra E2E 1', 'eventos/rifa-teste/premio-1.jpg', 3),
+      ('e2100000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000001', 'Prêmio extra E2E 2', 'eventos/rifa-teste/premio-2.jpg', 4)
+      on conflict (id) do nothing`)
+
+    try {
+      await entrar(page)
+      await page.goto(`${ADMIN_URL}/#/eventos`)
+      const raffleCard = page.locator('article').filter({ hasText: 'Rifa de Inverno' })
+      await raffleCard.getByRole('button', { name: 'Sortear' }).click()
+      await expect(page.getByText('Sorteio', { exact: true })).toBeVisible()
+      await page.getByRole('button', { name: 'Sortear', exact: true }).click()
+
+      const warning = page.getByRole('dialog', { name: 'Reservas insuficientes para o sorteio' })
+      await expect(warning.getByRole('heading', { name: 'Reservas pagas insuficientes' })).toBeVisible()
+      await expect(warning).toContainText('números pagos ainda elegíveis')
+      await expect(warning.getByRole('button', { name: 'Iniciar sorteio' })).toBeVisible()
+      expect(executarSql("select count(*) from public.rifa_premios where event_id = 'a1000000-0000-0000-0000-000000000001' and winning_number is not null")).toBe('0')
+    } finally {
+      executarSql("delete from public.rifa_premios where id in ('e2100000-0000-0000-0000-000000000001', 'e2100000-0000-0000-0000-000000000002')")
+    }
   })
 
   test('gestão de Cães passa na auditoria nos dois temas', async ({ page }) => {

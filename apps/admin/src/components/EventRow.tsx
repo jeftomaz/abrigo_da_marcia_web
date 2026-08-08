@@ -62,7 +62,7 @@ export function EventRow({
         {event.status !== 'draft' && (
           <Action
             size="small"
-            variant="neutral-adaptive"
+            variant={isManaging ? 'secondary-adaptive' : 'neutral-adaptive'}
             icon="book-solid"
             aria-pressed={isManaging}
             className={`${actionClasses} col-start-1 row-start-1`}
@@ -157,7 +157,7 @@ export function EventRow({
             icon="open-book"
             className={`${actionClasses} col-span-2`}
           >
-            Comprovantes
+            Pasta de comprovantes
           </Action>
         )}
       </div>
