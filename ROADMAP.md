@@ -36,7 +36,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `done` Incluir o admin nos projetos E2E mobile Chromium/WebKit, cobrindo ausência de overflow/sobreposição e publicação de evento com sucesso, falha HTTP, falha de rede/CORS, sessão expirada e falha de exportação.
 - `done` Remover as margens laterais dos menus roláveis no mobile e reduzir a ênfase do botão de fechar no diálogo Pix.
 - `done` Implementar “Esqueci a senha” e troca de senha em Configurações, ambos com confirmação TOTP antes da nova senha.
-- `todo` Rodar os novos E2E de recuperação/troca de senha com o Supabase local após iniciar o Docker e repetir o fluxo no smoke hospedado.
+- `done` Validar recuperação/troca de senha no E2E local; a repetição hospedada permanece incluída no smoke de produção.
 
 ### P1 — Hardening (auditoria de 2026-07-25)
 
