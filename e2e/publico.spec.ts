@@ -9,14 +9,23 @@ const HISTORIAS_EM_RASCUNHO = ['Maia', 'Moleque']
 const RIFA_ATIVA = 'Rifa de Inverno'
 
 test.describe('site público', () => {
-  test('navega pelo header entre landing, adoção e histórias', async ({ page }) => {
+  test('navega pela barra mobile com espaçamento lateral e posição inferior', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 844 })
     await page.goto('/')
-    const navigation = page.getByRole('navigation')
+    const navigation = page.getByRole('navigation', { name: 'Navegação mobile' })
     await expect(navigation).toBeVisible()
     const navigationBox = await navigation.boundingBox()
     expect(navigationBox?.x).toBe(0)
     expect(navigationBox?.width).toBe(320)
+    expect(navigationBox ? navigationBox.y + navigationBox.height : 0).toBeCloseTo(844, 0)
+    expect(await navigation.evaluate((element) => {
+      const styles = getComputedStyle(element)
+      return {
+        gap: styles.columnGap,
+        paddingLeft: styles.paddingLeft,
+        paddingRight: styles.paddingRight,
+      }
+    })).toEqual({ gap: '24px', paddingLeft: '24px', paddingRight: '24px' })
 
     await page.getByRole('link', { name: 'Adoção', exact: true }).click()
     await expect(page).toHaveURL(/\/adocao$/)
@@ -27,6 +36,10 @@ test.describe('site público', () => {
 
     await page.getByRole('link', { name: 'Ir para a página inicial' }).click()
     await expect(page).toHaveURL(/\/$/)
+
+    await page.setViewportSize({ width: 1024, height: 844 })
+    await expect(navigation).toBeHidden()
+    await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeVisible()
   })
 
   test('mostra no catálogo somente os cães disponíveis', async ({ page }) => {
@@ -115,16 +128,21 @@ test.describe('site público', () => {
     const disponiveis = rifa.getByRole('button', { name: /: disponível$/ })
     await expect(disponiveis.first()).toBeVisible()
 
+    await expect(rifa.getByText('Selecione até 5 números por reserva.')).toBeVisible()
     const escolhidos = await disponiveis.evaluateAll((botoes) =>
-      botoes.slice(0, 2).map((botao) => botao.getAttribute('aria-label') ?? ''),
+      botoes.slice(0, 5).map((botao) => botao.getAttribute('aria-label') ?? ''),
     )
-    expect(escolhidos).toHaveLength(2)
+    expect(escolhidos).toHaveLength(5)
     for (const rotulo of escolhidos) {
       await rifa.getByRole('button', { name: rotulo }).click()
     }
     for (const rotulo of escolhidos) {
       const numero = rotulo.replace(': disponível', ': selecionado')
       await expect(rifa.getByRole('button', { name: numero })).toHaveAttribute('aria-pressed', 'true')
+    }
+    await expect(rifa.getByText('Você atingiu o limite de 5 números por reserva. Desmarque um número para escolher outro.')).toBeVisible()
+    for (const rotulo of escolhidos.slice(2)) {
+      await rifa.getByRole('button', { name: rotulo.replace(': disponível', ': selecionado') }).click()
     }
 
     await page.getByRole('button', { name: 'Finalizar sua reserva' }).click()

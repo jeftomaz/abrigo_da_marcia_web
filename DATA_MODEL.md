@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260725150000`, com as migrations posteriores pendentes de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
+Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260805130000`, com `20260809120000` pendente de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
 
 ## Imagens no Storage
 
@@ -480,7 +480,7 @@ Cabeçalho comum a reservas de rifa e de produtos.
 
 O trigger `reservas_validate_contact` protege inserções e alterações de qualquer origem. Telefones exigem DDD oficial e formato brasileiro de fixo/celular, rejeitam assinantes com dígitos repetidos e são normalizados para `+55...`; e-mails exigem endereço e domínio completos e normalizam o domínio para minúsculas. A validação é de plausibilidade e não comprova titularidade ou existência do contato.
 
-O limite efetivo é resolvido no momento da reserva: override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` (5) ou `default_max_product_units` (10). O prazo padrão é 15 minutos; eventos podem substituí-lo. Reservas pendentes que ultrapassam `expires_at` passam automaticamente para `cancelada` via `pg_cron`; reservas pagas não expiram. Cancelamento libera números da rifa. `entregue` só sucede `paga` após o encerramento: para produto, em qualquer reserva paga; para rifa, apenas na reserva ganhadora. Os valores e rótulos selecionados ficam registrados como snapshots. `receipt_saved` é somente o controle administrativo do destino externo.
+O limite efetivo é o override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` (5) ou `default_max_product_units` (10). `eventos_public.max_items_per_reservation` já expõe esse valor resolvido para orientar a seleção, e as RPCs repetem a resolução ao efetivar a reserva. O prazo padrão é 15 minutos; eventos podem substituí-lo. Reservas pendentes que ultrapassam `expires_at` passam automaticamente para `cancelada` via `pg_cron`; reservas pagas não expiram. Cancelamento libera números da rifa. `entregue` só sucede `paga` após o encerramento: para produto, em qualquer reserva paga; para rifa, apenas na reserva ganhadora. Os valores e rótulos selecionados ficam registrados como snapshots. `receipt_saved` é somente o controle administrativo do destino externo.
 
 Transições de status permitidas pelo trigger `validate_reservation_status`:
 
@@ -520,7 +520,7 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 ### Exposição, RLS e funções
 
 - Todas as tabelas do domínio têm RLS habilitada; `anon` não lê nem escreve tabelas diretamente.
-- Views públicas expõem no máximo quatro eventos `ativo|encerrado`, produtos, variações, opções e disponibilidade dos números, sem dados pessoais ou identificadores de sessão. Rascunhos e arquivados legados não aparecem.
+- Views públicas expõem no máximo quatro eventos `ativo|encerrado` com o limite efetivo por reserva, produtos, variações, opções e disponibilidade dos números, sem dados pessoais ou identificadores de sessão. Rascunhos e arquivados legados não aparecem.
 - As onze views `*_public` usam `security definer` de forma intencional, pois `security_invoker` exigiria conceder leitura das tabelas-base ao público e quebraria esse limite arquitetural. Todas usam `security_barrier`; o pgTAP trava quantidade, colunas e privilégios.
 - `anon` cria a sessão e a reserva apenas por funções `security definer` com `search_path` fixo. As funções validam status/tipo do evento, intervalo da sessão, limites, opções, disponibilidade, preços, descontos e prazo no servidor.
 - Alterações de preço ou configuração não afetam reservas existentes porque totais, preços unitários e seleções são snapshots.

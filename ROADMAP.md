@@ -18,6 +18,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 - `doing` Configurar `abrigodamarcia.com.br`: build adaptativo e runbook prontos; faltam DNS avançado, domínio no Pages, URLs de Auth, HTTPS e smoke após a propagação.
 - `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
+- `todo` Aplicar no hospedado a migration `20260809120000`, que expõe à interface pública o limite efetivo por reserva.
 - `done` Definir `ADMIN_ALLOWED_ORIGINS`, publicar `activate-event` e `delete-archived-event` e validar CORS permitido/negado no hospedado.
 - `todo` Conferir `RESEND_API_KEY`/`RESEND_FROM_EMAIL` antes do smoke de exportação.
 - `doing` Concluir o smoke hospedado com fixtures temporárias: views/RLS, Storage, convite + TOTP/AAL2, reservas, expiração via cron, sorteio, exportação e preservação em falhas; remover contas, registros e arquivos de teste ao final.
@@ -38,6 +39,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `done` Implementar “Esqueci a senha” e troca de senha em Configurações, ambos com confirmação TOTP antes da nova senha.
 - `done` Exibir os requisitos da senha em tempo real; ampliar números/valor na conferência da rifa; destacar Reservas abertas, oferecer a pasta de comprovantes na confirmação de pagamento e alertar quando faltarem números pagos para os prêmios.
 - `done` Validar recuperação/troca de senha no E2E local; a repetição hospedada permanece incluída no smoke de produção.
+- `done` Levar a navegação pública para a base no mobile, confirmar logout e pagamento após comprovante, oferecer colagem do TOTP e destacar o limite de números da rifa.
 
 ### P1 — Hardening (auditoria de 2026-07-25)
 

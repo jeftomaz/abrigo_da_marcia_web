@@ -62,6 +62,8 @@
   --text-tag: clamp(0.5313rem, 0.5096rem + 0.0962vw, 0.625rem);
   --text-footer-copy: clamp(0.875rem, 0.8462rem + 0.1282vw, 1rem);
   --text-footer-meta: clamp(0.75rem, 0.7212rem + 0.1282vw, 0.875rem);
+  --text-raffle-numbers: clamp(1.5rem, 1.4135rem + 0.3846vw, 1.875rem);
+  --text-raffle-value: clamp(1.875rem, 1.7885rem + 0.3846vw, 2.25rem);
   --text-care-heading: clamp(1.6875rem, 7.5vw, 4.8rem);
   --text-care-title: clamp(1.3125rem, 0.753rem + 2.4849vw, 2.3438rem);
   --text-care-copy: clamp(1rem, 0.7471rem + 1.1242vw, 1.4666rem);

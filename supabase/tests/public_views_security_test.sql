@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(7);
+select plan(8);
 
 select is(
   (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -77,6 +77,13 @@ select is(
     "social_links_public": "network,url,display_order"
   }'::jsonb,
   'trava a superfície exata de colunas das views públicas'
+);
+
+select is(
+  (select max_items_per_reservation from public.eventos_public
+    where id = 'a1000000-0000-0000-0000-000000000001'),
+  (select default_max_raffle_numbers from public.event_settings where singleton),
+  'eventos_public expõe o limite padrão efetivo quando o evento não possui override'
 );
 
 select * from finish();

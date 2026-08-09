@@ -34,16 +34,18 @@ function App() {
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <ScrollToTop />
         <Header />
-        <Suspense fallback={<div role="status" aria-live="polite" className="min-h-screen" />}>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/adocao" element={<Adocao />} />
-            <Route path="/historias" element={<Historias />} />
-            <Route path="/eventos" element={<Eventos />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-        <Footer />
+        <div className="pb-20 lg:pb-0">
+          <Suspense fallback={<div role="status" aria-live="polite" className="min-h-screen" />}>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/adocao" element={<Adocao />} />
+              <Route path="/historias" element={<Historias />} />
+              <Route path="/eventos" element={<Eventos />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+          <Footer />
+        </div>
       </BrowserRouter>
     </ThemeProvider>
   )

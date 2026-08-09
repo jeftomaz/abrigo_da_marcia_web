@@ -42,7 +42,7 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
   const [statusFilter, setStatusFilter] = useState<ReservationStatus | ''>('')
   const [actionError, setActionError] = useState('')
   const [pendingReservationIds, setPendingReservationIds] = useState<Set<string>>(new Set())
-  const [paidConfirmation, setPaidConfirmation] = useState<EventReservation | null>(null)
+  const [paidConfirmation, setPaidConfirmation] = useState<{ reservation: EventReservation; source: 'receipt' | 'status' } | null>(null)
   const [editingReservation, setEditingReservation] = useState<EventReservation | null>(null)
   const isPanel = layout === 'panel'
   // A opção "Entregue" só é alcançável após o encerramento; o filtro reflete essa condição.
@@ -62,15 +62,24 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
   const activeReservations = reservations.filter((reservation) => reservation.status === 'reserved' || reservation.status === 'paid').length
 
   const updateReservation = async (id: string, changes: { receiptSaved?: boolean; status?: ReservationStatus }) => {
-    if (pendingReservationIds.has(id)) return
+    if (pendingReservationIds.has(id)) return false
     setActionError('')
     setPendingReservationIds((current) => new Set(current).add(id))
     try {
       await onUpdateReservation(id, changes)
+      return true
     } catch (error) {
       setActionError(getAdminErrorMessage(error, 'Não foi possível atualizar a reserva.'))
+      return false
     } finally {
       setPendingReservationIds((current) => { const next = new Set(current); next.delete(id); return next })
+    }
+  }
+
+  const updateReceiptSaved = async (reservation: EventReservation, receiptSaved: boolean) => {
+    const updated = await updateReservation(reservation.id, { receiptSaved })
+    if (updated && receiptSaved && reservation.status === 'reserved') {
+      setPaidConfirmation({ reservation: { ...reservation, receiptSaved: true }, source: 'receipt' })
     }
   }
 
@@ -164,7 +173,7 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
               <div className="col-start-2 row-span-2 row-start-1 flex flex-col items-end gap-2 desk:col-start-3 desk:row-span-1 desk:items-center">
                 <Action onClick={() => setEditingReservation(reservation)} disabled={isPending || reservation.status === 'canceled' || reservation.status === 'delivered'} icon="edit-pencil" size="small" variant="neutral-adaptive" className="min-w-28 px-3 text-xs">Editar</Action>
                 <label className="relative rounded-lg has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-marca"><span className={`block rounded-lg px-4 py-1 text-sm font-medium ${status.classes}`}>{status.label}</span>
-                  <select value={reservation.status} disabled={isPending} onChange={(changeEvent) => { const next = changeEvent.target.value as ReservationStatus; if (next === 'paid' && reservation.status === 'reserved') setPaidConfirmation(reservation); else void updateReservation(reservation.id, { status: next }) }} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed">
+                  <select value={reservation.status} disabled={isPending} onChange={(changeEvent) => { const next = changeEvent.target.value as ReservationStatus; if (next === 'paid' && reservation.status === 'reserved') setPaidConfirmation({ reservation, source: 'status' }); else void updateReservation(reservation.id, { status: next }) }} aria-label={`Alterar status da reserva de ${reservation.name}`} className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed">
                     <option value={reservation.status}>{status.label}</option>
                     {reservation.status === 'reserved' && <><option value="paid">Pago</option><option value="canceled">Cancelado</option></>}
                     {reservation.status === 'paid' && <><option value="reserved">Reservado</option><option value="canceled">Cancelado</option>{event.status !== 'active' && <option value="delivered">Entregue</option>}</>}
@@ -172,7 +181,7 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
                     {reservation.status === 'delivered' && <option value="paid">Pago</option>}
                   </select>
                 </label>
-                <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={reservation.receiptSaved} disabled={isPending} onChange={(event) => void updateReservation(reservation.id, { receiptSaved: event.target.checked })} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-40 disabled:cursor-not-allowed accent-marca" />{isPending ? 'Salvando...' : 'Comprovante salvo'}</label>
+                <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={reservation.receiptSaved} disabled={isPending} onChange={(changeEvent) => void updateReceiptSaved(reservation, changeEvent.target.checked)} className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:opacity-40 disabled:cursor-not-allowed accent-marca" />{isPending ? 'Salvando...' : 'Comprovante salvo'}</label>
                 {event.receiptFolderUrl && <Action href={event.receiptFolderUrl} target="_blank" rel="noreferrer" icon="open-book" size="small" variant="neutral-adaptive" className="px-3 py-1 text-xs">Pasta de comprovantes</Action>}
                 <strong className="text-sm">{formatMoney(reservation.totalCents)}</strong>
               </div>
@@ -184,15 +193,15 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
 
       {paidConfirmation && (
         <Dialog ariaLabel="Confirmar pagamento" onClose={() => setPaidConfirmation(null)} className="w-full max-w-[34rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised">
-          <h2 className="text-3xl font-medium text-marca">Marcar como paga</h2>
-          <h3 className="mt-5 text-2xl font-medium">{paidConfirmation.name}</h3>
-          <p className="mt-3">Você já salvou o comprovante de pagamento desta reserva no destino externo?</p>
+          <h2 className="text-3xl font-medium text-marca">{paidConfirmation.source === 'receipt' ? 'Marcar também como paga?' : 'Marcar como paga'}</h2>
+          <h3 className="mt-5 text-2xl font-medium">{paidConfirmation.reservation.name}</h3>
+          <p className="mt-3">{paidConfirmation.source === 'receipt' ? 'O comprovante foi salvo. Esta reserva já deve ser marcada como paga?' : 'Você já salvou o comprovante de pagamento desta reserva no destino externo?'}</p>
           {event.receiptFolderUrl && (
             <Action href={event.receiptFolderUrl} target="_blank" rel="noreferrer" icon="open-book" size="small" variant="neutral-adaptive" className="mt-4 px-4">Abrir pasta de comprovantes</Action>
           )}
           <div className="mt-8 flex gap-4">
-            <Action onClick={() => setPaidConfirmation(null)} disabled={pendingReservationIds.has(paidConfirmation.id)} size="small" variant="secondary-adaptive" className="w-28 shrink-0">Cancelar</Action>
-            <Action onClick={() => { const reservation = paidConfirmation; setPaidConfirmation(null); void updateReservation(reservation.id, { status: 'paid', receiptSaved: true }) }} disabled={pendingReservationIds.has(paidConfirmation.id)} size="small" variant="primary-adaptive" icon="check-circle-solid" className="min-w-0 flex-1">Sim, foi salvo</Action>
+            <Action onClick={() => setPaidConfirmation(null)} disabled={pendingReservationIds.has(paidConfirmation.reservation.id)} size="small" variant="secondary-adaptive" className="w-28 shrink-0">{paidConfirmation.source === 'receipt' ? 'Agora não' : 'Cancelar'}</Action>
+            <Action onClick={() => { const { reservation } = paidConfirmation; setPaidConfirmation(null); void updateReservation(reservation.id, { status: 'paid', receiptSaved: true }) }} disabled={pendingReservationIds.has(paidConfirmation.reservation.id)} size="small" variant="primary-adaptive" icon="check-circle-solid" className="min-w-0 flex-1">{paidConfirmation.source === 'receipt' ? 'Marcar como paga' : 'Sim, foi salvo'}</Action>
           </div>
         </Dialog>
       )}

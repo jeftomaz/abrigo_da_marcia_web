@@ -363,12 +363,19 @@ test.describe('admin', () => {
   })
 
   test('recusa código TOTP inválido', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'clipboard', {
+        configurable: true,
+        get: () => ({ readText: async () => '000 000' }),
+      })
+    })
     await page.goto(ADMIN_URL)
     await page.getByLabel('E-mail').fill(credenciais.email)
     await page.getByLabel('Senha', { exact: true }).fill(credenciais.senha)
     await page.getByRole('button', { name: 'Entrar' }).click()
 
-    await page.getByLabel('Código do autenticador').fill('000000')
+    await page.getByRole('button', { name: 'Colar' }).click()
+    await expect(page.getByLabel('Código do autenticador')).toHaveValue('000000')
     await page.getByRole('button', { name: 'Verificar' }).click()
 
     await expect(page.getByRole('alert')).toBeVisible()
@@ -461,10 +468,17 @@ test.describe('admin', () => {
     }
 
     await page.getByRole('button', { name: 'Sair' }).click()
+    const signOutConfirmation = page.getByRole('dialog', { name: 'Sair da área administrativa' })
+    await expect(signOutConfirmation).toContainText('Será necessário entrar novamente com senha e código do autenticador.')
+    await signOutConfirmation.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(page.getByRole('heading', { name: 'Configurações', exact: true })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Sair' }).click()
+    await page.getByRole('dialog', { name: 'Sair da área administrativa' }).getByRole('button', { name: 'Sair' }).click()
     await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
   })
 
-  test('destaca Reservas abertas e oferece a pasta ao confirmar pagamento', async ({ page }, testInfo) => {
+  test('confirma pagamento por status ou após salvar o comprovante', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'O fluxo funcional é coberto uma vez.')
     executarSql(`update public.eventos set receipt_folder_url = 'https://example.com/comprovantes-e2e' where id = 'a1000000-0000-0000-0000-000000000001';
       update public.reservas set status = 'pendente', expires_at = now() + interval '15 minutes'
@@ -486,8 +500,17 @@ test.describe('admin', () => {
       await expect(confirmation.getByRole('button', { name: 'Cancelar' })).toBeVisible()
       await expect(confirmation.getByRole('button', { name: 'Sim, foi salvo' })).toBeVisible()
       await expect(confirmation.getByRole('link', { name: 'Abrir pasta de comprovantes' })).toHaveAttribute('href', 'https://example.com/comprovantes-e2e')
+      await confirmation.getByRole('button', { name: 'Cancelar' }).click()
+
+      const pendingReservation = page.locator('article').filter({ hasText: 'Fulano Pendente' })
+      await pendingReservation.getByLabel('Comprovante salvo').click()
+      const receiptConfirmation = page.getByRole('dialog', { name: 'Confirmar pagamento' })
+      await expect(receiptConfirmation.getByRole('heading', { name: 'Marcar também como paga?' })).toBeVisible()
+      await expect(receiptConfirmation).toContainText('O comprovante foi salvo.')
+      await receiptConfirmation.getByRole('button', { name: 'Marcar como paga' }).click()
+      await expect.poll(() => executarSql("select status || '|' || receipt_saved from public.reservas where session_id = 'a1200000-0000-0000-0000-000000000001'")).toBe('paga|true')
     } finally {
-      executarSql("update public.eventos set receipt_folder_url = null where id = 'a1000000-0000-0000-0000-000000000001'")
+      executarSql("update public.eventos set receipt_folder_url = null where id = 'a1000000-0000-0000-0000-000000000001'; update public.reservas set status = 'pendente', receipt_saved = false, expires_at = now() + interval '15 minutes' where session_id = 'a1200000-0000-0000-0000-000000000001'")
     }
   })
 
