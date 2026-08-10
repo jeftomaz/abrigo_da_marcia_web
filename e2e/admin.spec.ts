@@ -117,6 +117,30 @@ async function expectNoOverlap(first: Locator, second: Locator, context: string)
   expect(overlaps, context).toBe(false)
 }
 
+async function expectAlignedTop(controls: Locator[], context: string) {
+  const boxes = await Promise.all(controls.map((control) => control.boundingBox()))
+  boxes.forEach((box) => expect(box, `${context}: controle invisível`).not.toBeNull())
+  const tops = boxes.flatMap((box) => box ? [box.y] : [])
+  expect(Math.max(...tops) - Math.min(...tops), context).toBeLessThanOrEqual(2)
+}
+
+async function expectNoLabelControlOverlaps(scope: Locator, context: string) {
+  const overlaps = await scope.locator('label[for]').evaluateAll((labels) => labels.flatMap((label) => {
+    const control = document.getElementById((label as HTMLLabelElement).htmlFor)
+    if (!control || (control as HTMLInputElement).type === 'file') return []
+    const labelBox = label.getBoundingClientRect()
+    const controlBox = control.getBoundingClientRect()
+    if (controlBox.width <= 1 || controlBox.height <= 1) return []
+    const overlap = labelBox.left < controlBox.right
+      && labelBox.right > controlBox.left
+      && labelBox.top < controlBox.bottom
+      && labelBox.bottom > controlBox.top
+    return overlap ? [label.textContent?.trim() || (label as HTMLLabelElement).htmlFor] : []
+  }))
+
+  expect(overlaps, context).toEqual([])
+}
+
 async function expectToRightOf(left: Locator, right: Locator, context: string) {
   const [leftBox, rightBox] = await Promise.all([left.boundingBox(), right.boundingBox()])
   expect(leftBox, `${context}: elemento à esquerda invisível`).not.toBeNull()
@@ -480,6 +504,12 @@ test.describe('admin', () => {
 
   test('confirma pagamento por status ou após salvar o comprovante', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'O fluxo funcional é coberto uma vez.')
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'clipboard', {
+        configurable: true,
+        get: () => ({ writeText: async (value: string) => sessionStorage.setItem('e2e-clipboard', value) }),
+      })
+    })
     executarSql(`update public.eventos set receipt_folder_url = 'https://example.com/comprovantes-e2e' where id = 'a1000000-0000-0000-0000-000000000001';
       update public.reservas set status = 'pendente', expires_at = now() + interval '15 minutes'
       where session_id = 'a1200000-0000-0000-0000-000000000001'`)
@@ -494,15 +524,31 @@ test.describe('admin', () => {
 
       await expect(reservationsButton).toHaveAttribute('aria-pressed', 'true')
       expect(await reservationsButton.evaluate((element) => getComputedStyle(element).backgroundColor)).not.toBe(inactiveBackground)
+      const receiptFolderLink = page.getByRole('link', { name: 'Pasta de comprovantes', exact: true })
+      await expect(receiptFolderLink).toHaveCount(1)
+      await expect(receiptFolderLink).toHaveAttribute('href', 'https://example.com/comprovantes-e2e')
+      const [managementBox, receiptFolderBox] = await Promise.all([
+        receiptFolderLink.locator('xpath=ancestor::section[1]').boundingBox(),
+        receiptFolderLink.boundingBox(),
+      ])
+      expect(managementBox, 'gestão de reservas invisível').not.toBeNull()
+      expect(receiptFolderBox, 'pasta de comprovantes invisível').not.toBeNull()
+      expect((receiptFolderBox?.x ?? 0) + (receiptFolderBox?.width ?? 0), 'pasta de comprovantes extrapola a gestão').toBeLessThanOrEqual((managementBox?.x ?? 0) + (managementBox?.width ?? 0))
+
+      const pendingReservation = page.locator('article').filter({ hasText: 'Fulano Pendente' })
+      const referenceCode = executarSql("select reference_code from public.reservas where session_id = 'a1200000-0000-0000-0000-000000000001'")
+      await pendingReservation.getByRole('button', { name: `Copiar código da reserva ${referenceCode}` }).click()
+      expect(await page.evaluate(() => sessionStorage.getItem('e2e-clipboard'))).toBe(referenceCode)
+      await expect(pendingReservation.getByRole('status')).toHaveText('Código da reserva copiado.')
+      await expect(pendingReservation.getByRole('link', { name: /Pasta de comprovantes/ })).toHaveCount(0)
 
       await page.getByLabel('Alterar status da reserva de Fulano Pendente').selectOption('paid')
       const confirmation = page.getByRole('dialog', { name: 'Confirmar pagamento' })
       await expect(confirmation.getByRole('button', { name: 'Cancelar' })).toBeVisible()
       await expect(confirmation.getByRole('button', { name: 'Sim, foi salvo' })).toBeVisible()
-      await expect(confirmation.getByRole('link', { name: 'Abrir pasta de comprovantes' })).toHaveAttribute('href', 'https://example.com/comprovantes-e2e')
+      await expect(confirmation.getByRole('link', { name: /pasta de comprovantes/i })).toHaveCount(0)
       await confirmation.getByRole('button', { name: 'Cancelar' }).click()
 
-      const pendingReservation = page.locator('article').filter({ hasText: 'Fulano Pendente' })
       await pendingReservation.getByLabel('Comprovante salvo').click()
       const receiptConfirmation = page.getByRole('dialog', { name: 'Confirmar pagamento' })
       await expect(receiptConfirmation.getByRole('heading', { name: 'Marcar também como paga?' })).toBeVisible()
@@ -514,8 +560,44 @@ test.describe('admin', () => {
     }
   })
 
-  test('alerta antes do sorteio quando faltam números pagos para os prêmios', async ({ page }, testInfo) => {
+  test('leva a reserva vencedora ao topo e a destaca após o sorteio', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'O fluxo funcional é coberto uma vez.')
+    executarSql(`
+      update public.rifa_premios set winning_number = null, winner_name = null, drawn_at = null
+      where event_id = 'a1000000-0000-0000-0000-000000000001';
+      update public.reservas set status = 'pendente'
+      where session_id = 'a1200000-0000-0000-0000-000000000001';
+      update public.reservas set status = 'paga'
+      where session_id = 'a1200000-0000-0000-0000-000000000002';
+    `)
+
+    try {
+      await page.emulateMedia({ reducedMotion: 'reduce' })
+      await entrar(page)
+      await page.goto(`${ADMIN_URL}/#/eventos/a1000000-0000-0000-0000-000000000001/sorteio`)
+      await page.getByRole('button', { name: 'Sortear pela esfera', exact: true }).click()
+      await expect(page.getByText('Maria Compradora', { exact: true })).toBeVisible()
+
+      await page.getByRole('link', { name: 'Voltar' }).click()
+      const raffleCard = page.locator('article').filter({ hasText: 'Rifa de Inverno' })
+      await raffleCard.getByRole('button', { name: 'Reservas' }).click()
+
+      const management = page.getByRole('heading', { name: 'Reservas', exact: true }).locator('xpath=ancestor::section[1]')
+      const reservationRows = management.locator('article')
+      const winnerRow = reservationRows.filter({ hasText: 'Maria Compradora' })
+      const otherRow = reservationRows.filter({ hasText: 'Fulano Pendente' })
+      await expect(reservationRows.first()).toContainText('Maria Compradora')
+      await expect(winnerRow.getByText('Ganhador', { exact: true })).toBeVisible()
+      expect(await winnerRow.evaluate((element) => getComputedStyle(element).backgroundColor))
+        .not.toBe(await otherRow.evaluate((element) => getComputedStyle(element).backgroundColor))
+    } finally {
+      executarSql(`update public.rifa_premios set winning_number = null, winner_name = null, drawn_at = null
+        where event_id = 'a1000000-0000-0000-0000-000000000001'`)
+    }
+  })
+
+  test('alerta antes do sorteio ao tocar a esfera quando faltam números pagos', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile-chromium', 'O gesto mobile é coberto uma vez.')
     executarSql(`insert into public.rifa_premios (id, event_id, name, photo, display_order) values
       ('e2100000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'Prêmio extra E2E 1', 'eventos/rifa-teste/premio-1.jpg', 3),
       ('e2100000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000001', 'Prêmio extra E2E 2', 'eventos/rifa-teste/premio-2.jpg', 4)
@@ -527,7 +609,7 @@ test.describe('admin', () => {
       const raffleCard = page.locator('article').filter({ hasText: 'Rifa de Inverno' })
       await raffleCard.getByRole('button', { name: 'Sortear' }).click()
       await expect(page.getByText('Sorteio', { exact: true })).toBeVisible()
-      await page.getByRole('button', { name: 'Sortear', exact: true }).click()
+      await page.getByRole('button', { name: 'Sortear pela esfera', exact: true }).tap()
 
       const warning = page.getByRole('dialog', { name: 'Reservas insuficientes para o sorteio' })
       await expect(warning.getByRole('heading', { name: 'Reservas pagas insuficientes' })).toBeVisible()
@@ -537,6 +619,21 @@ test.describe('admin', () => {
     } finally {
       executarSql("delete from public.rifa_premios where id in ('e2100000-0000-0000-0000-000000000001', 'e2100000-0000-0000-0000-000000000002')")
     }
+  })
+
+  test('mantém o botão de sorteio no primeiro viewport mobile', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'desktop', 'O ajuste é exclusivo do layout mobile.')
+    await page.setViewportSize({ width: 320, height: 844 })
+    await entrar(page)
+    await page.goto(`${ADMIN_URL}/#/eventos/a1000000-0000-0000-0000-000000000001/sorteio`)
+
+    await expect(page.getByRole('button', { name: 'Sortear pela esfera', exact: true })).toBeEnabled()
+    const drawButton = page.getByRole('button', { name: 'Sortear', exact: true })
+    await expect(drawButton).toBeVisible()
+    const drawButtonBox = await drawButton.boundingBox()
+    expect(drawButtonBox, 'botão de sorteio invisível').not.toBeNull()
+    expect((drawButtonBox?.y ?? 844) + (drawButtonBox?.height ?? 0), 'botão de sorteio exige rolagem inicial').toBeLessThanOrEqual(844)
+    await expectNoHorizontalOverflow(page, 'Sorteio em 320px')
   })
 
   test('gestão de Cães passa na auditoria nos dois temas', async ({ page }) => {
@@ -758,6 +855,24 @@ test.describe('admin', () => {
     const eventDialog = page.getByRole('dialog', { name: 'Novo Evento' })
     await expect(eventDialog).toBeVisible()
     await expectNoHorizontalOverflow(page, 'Formulário de Eventos em 320px')
+    await eventDialog.getByLabel('Tipo').selectOption('raffle')
+    await expectAlignedTop(
+      [eventDialog.getByLabel('Tipo'), eventDialog.getByLabel('Título')],
+      'Geral do formulário de Eventos em 320px',
+    )
+    await expectAlignedTop(
+      [eventDialog.getByLabel('Data de início'), eventDialog.getByLabel('Data de fim'), eventDialog.getByLabel('Arrecadação (R$)')],
+      'Objetivos do formulário de Eventos em 320px',
+    )
+    await expectAlignedTop(
+      [eventDialog.getByLabel('Quantidade de números*'), eventDialog.getByLabel('Valor por número (R$)*'), eventDialog.getByLabel('Máx. por reserva')],
+      'Detalhes da rifa em 320px',
+    )
+    await expectAlignedTop(
+      [eventDialog.getByLabel('Chave PIX'), eventDialog.getByLabel('Cidade do recebedor')],
+      'Pagamento do formulário de Eventos em 320px',
+    )
+    await expectNoLabelControlOverlaps(eventDialog, 'Rótulos do formulário de Eventos em 320px')
     await eventDialog.getByRole('button', { name: 'Cancelar' }).click()
 
     const bazaarCard = page.locator('article').filter({ hasText: 'Bazar de Inverno' })
@@ -765,6 +880,7 @@ test.describe('admin', () => {
     const savedEventDialog = page.getByRole('dialog', { name: 'Editar Evento' })
     await expect(savedEventDialog).toBeVisible()
     await expectNoHorizontalOverflow(page, 'Variações de produto em 320px')
+    await expectNoLabelControlOverlaps(savedEventDialog, 'Rótulos do produto em 320px')
     await savedEventDialog.getByRole('button', { name: 'Cancelar' }).click()
 
     await bazaarCard.getByRole('button', { name: 'Reservas' }).click()
@@ -781,5 +897,35 @@ test.describe('admin', () => {
     await eventSettings.getByRole('button', { name: 'Editar' }).click()
     await expect(page.getByRole('dialog', { name: 'Editar configurações' })).toBeVisible()
     await expectNoHorizontalOverflow(page, 'Configurações de Eventos em 320px')
+
+    await page.setViewportSize({ width: 1360, height: 900 })
+    await page.goto(`${ADMIN_URL}/#/eventos`)
+    await page.locator('article').filter({ hasText: 'Bazar de Inverno' }).getByRole('button', { name: 'Editar' }).click()
+    const panelForm = page.getByRole('heading', { name: 'Editar Evento' }).locator('xpath=ancestor::form[1]')
+    await expect(panelForm).toBeVisible()
+    await expectAlignedTop(
+      [panelForm.getByRole('heading', { name: 'Imagens', exact: true }), panelForm.getByRole('heading', { name: 'Geral', exact: true })],
+      'Seções iniciais do painel desktop de Eventos',
+    )
+    await expectAlignedTop(
+      [panelForm.getByLabel('Data de início'), panelForm.getByLabel('Data de fim'), panelForm.getByLabel('Arrecadação (R$)')],
+      'Objetivos do painel desktop de Eventos',
+    )
+    await expectAlignedTop(
+      [panelForm.getByLabel('Chave PIX'), panelForm.getByLabel('Cidade do recebedor')],
+      'Pagamento do painel desktop de Eventos',
+    )
+    await expectNoLabelControlOverlaps(panelForm, 'Rótulos do painel desktop de Eventos')
+
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Eventos', exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Novo Evento' }).click()
+    const rafflePanelForm = page.getByRole('heading', { name: 'Novo Evento' }).locator('xpath=ancestor::form[1]')
+    await rafflePanelForm.getByLabel('Tipo').selectOption('raffle')
+    await expectAlignedTop(
+      [rafflePanelForm.getByLabel('Quantidade de números*'), rafflePanelForm.getByLabel('Valor por número (R$)*'), rafflePanelForm.getByLabel('Máx. por reserva')],
+      'Detalhes da rifa no painel desktop',
+    )
+    await expectNoLabelControlOverlaps(rafflePanelForm, 'Rótulos da rifa no painel desktop')
   })
 })

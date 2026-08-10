@@ -3,9 +3,9 @@ import { QRCodeSVG } from 'qrcode.react'
 import {
   Action,
   Dialog,
-  Switch,
   formatBrazilPhoneInput,
   getReservationContactError,
+  getReservationNameError,
   normalizeReservationContact,
 } from '@abrigo/shared'
 import type { ReservationContactType } from '@abrigo/shared'
@@ -40,11 +40,13 @@ export function ReservationCheckoutDialog({
 }: ReservationCheckoutDialogProps) {
   const [customerName, setCustomerName] = useState('')
   const [contact, setContact] = useState('')
-  const [contactType, setContactType] = useState<ReservationContactType>('phone')
+  const [contactType, setContactType] = useState<ReservationContactType>('mobile')
+  const [nameTouched, setNameTouched] = useState(false)
   const [contactTouched, setContactTouched] = useState(false)
   const titleId = useId()
-  const canSubmit = Boolean(customerName.trim() && contact.trim())
+  const nameError = getReservationNameError(customerName)
   const contactError = getReservationContactError(contactType, contact)
+  const canSubmit = Boolean(!nameError && contact.trim())
 
   return (
     <Dialog
@@ -62,6 +64,7 @@ export function ReservationCheckoutDialog({
         className="mt-8"
         onSubmit={(event) => {
           event.preventDefault()
+          setNameTouched(true)
           setContactTouched(true)
           if (canSubmit && !contactError && !isSubmitting) void onConfirm({
             contact: normalizeReservationContact(contactType, contact),
@@ -77,40 +80,45 @@ export function ReservationCheckoutDialog({
           id={`${titleId}-customer-name`}
           value={customerName}
           onChange={(event) => setCustomerName(event.target.value)}
+          onBlur={() => setNameTouched(true)}
           placeholder="Ex.: João Maria da Silva"
           autoComplete="name"
+          aria-invalid={nameTouched && Boolean(nameError)}
+          aria-describedby={nameTouched && nameError ? `${titleId}-customer-name-error` : undefined}
           required
           className="mt-1 h-11 w-full rounded-full bg-cinza-claro px-5 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
         />
+        {nameTouched && nameError && (
+          <p id={`${titleId}-customer-name-error`} role="alert" className="mt-2 text-sm font-medium text-marca">
+            {nameError}
+          </p>
+        )}
         <div className="mt-5 flex items-center justify-between gap-4">
           <span className="font-medium">Contato</span>
-          <div className="flex items-center gap-2 text-sm">
-            <span>Telefone</span>
-            <Switch
-              checked={contactType === 'email'}
-              onChange={(useEmail) => {
-                setContactType(useEmail ? 'email' : 'phone')
-                setContact('')
-                setContactTouched(false)
-              }}
-              aria-label="Usar e-mail em vez de telefone"
-              className="origin-center scale-75"
-            />
-            <span>E-mail</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setContactType(contactType === 'email' ? 'mobile' : 'email')
+              setContact('')
+              setContactTouched(false)
+            }}
+            className="rounded text-sm font-medium text-marca-escura underline underline-offset-4 hover:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca dark:text-marca-clara"
+          >
+            {contactType === 'email' ? 'Colocar celular' : 'Não tenho celular'}
+          </button>
         </div>
         <label htmlFor={`${titleId}-customer-contact`} className="mt-2 block">
-          {contactType === 'phone' ? 'Telefone com DDD' : 'E-mail'}
+          {contactType === 'email' ? 'E-mail' : 'Celular com DDD'}
         </label>
         <input
           id={`${titleId}-customer-contact`}
-          type={contactType === 'phone' ? 'tel' : 'email'}
-          inputMode={contactType === 'phone' ? 'tel' : 'email'}
+          type={contactType === 'email' ? 'email' : 'tel'}
+          inputMode={contactType === 'email' ? 'email' : 'tel'}
           value={contact}
-          onChange={(event) => setContact(contactType === 'phone' ? formatBrazilPhoneInput(event.target.value) : event.target.value)}
+          onChange={(event) => setContact(contactType === 'email' ? event.target.value : formatBrazilPhoneInput(event.target.value))}
           onBlur={() => setContactTouched(true)}
-          placeholder={contactType === 'phone' ? '(11) 98765-4321' : 'nome@dominio.com'}
-          autoComplete={contactType === 'phone' ? 'tel' : 'email'}
+          placeholder={contactType === 'email' ? 'nome@dominio.com' : '(11) 98765-4321'}
+          autoComplete={contactType === 'email' ? 'email' : 'tel'}
           aria-invalid={contactTouched && Boolean(contactError)}
           aria-describedby={contactTouched && contactError ? `${titleId}-customer-contact-error` : undefined}
           required

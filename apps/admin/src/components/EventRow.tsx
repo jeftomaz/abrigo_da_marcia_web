@@ -147,19 +147,6 @@ export function EventRow({
             Remover
           </Action>
         )}
-        {event.receiptFolderUrl && (
-          <Action
-            href={event.receiptFolderUrl}
-            target="_blank"
-            rel="noreferrer"
-            size="small"
-            variant="neutral-adaptive"
-            icon="open-book"
-            className={`${actionClasses} col-span-2`}
-          >
-            Pasta de comprovantes
-          </Action>
-        )}
       </div>
     </AdminListRow>
   )

@@ -6,6 +6,7 @@ type AdminListRowProps = {
   children: ReactNode
   className?: string
   isEditing: boolean
+  tone?: 'default' | 'winner'
 }
 
 export function AdminListRow({
@@ -13,16 +14,21 @@ export function AdminListRow({
   children,
   className = '',
   isEditing,
+  tone = 'default',
 }: AdminListRowProps) {
+  const toneClasses = tone === 'winner'
+    ? 'bg-status-verde text-status-verde-texto'
+    : 'bg-surface-raised text-on-surface-raised'
+
   return (
     <article
-      className={`bg-surface-raised text-on-surface-raised ${className} ${
+      className={`${toneClasses} ${className} ${
         isEditing ? 'desk:bg-surface-inverted desk:text-on-surface-inverted' : ''
       }`}
     >
       {children}
       {audit && (
-        <p className="col-span-full mt-1 text-xs text-cinza-medio dark:text-cinza-claro/70">
+        <p className={`col-span-full mt-1 text-xs ${tone === 'winner' ? 'text-status-verde-texto' : 'text-cinza-medio dark:text-cinza-claro/70'}`}>
           Última alteração em {new Intl.DateTimeFormat('pt-BR', {
             dateStyle: 'short',
             timeStyle: 'short',

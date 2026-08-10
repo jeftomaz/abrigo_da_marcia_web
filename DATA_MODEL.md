@@ -463,10 +463,11 @@ Cabeçalho comum a reservas de rifa e de produtos.
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `id` | `uuid` | PK; default `gen_random_uuid()` |
+| `reference_code` | `text` | not null; 12 caracteres hexadecimais maiúsculos; default aleatório; unique; visível somente ao admin |
 | `event_id` | `uuid` | not null; FK → `eventos.id`; somente evento `ativo` |
 | `session_id` | `uuid` | not null; FK → `sessoes_reserva.id` |
 | `status` | `reserva_status` | not null; default `pendente` |
-| `customer_name` | `text` | not null na criação; torna-se null na limpeza pós-evento |
+| `customer_name` | `text` | not null na criação; mínimo de duas partes separadas por espaço; torna-se null na limpeza pós-evento |
 | `customer_contact` | `text` | not null na criação; telefone brasileiro válido em `+55...` ou e-mail completo; torna-se null na limpeza pós-evento |
 | `total_cents` | `bigint` | not null; `> 0`; calculado no banco |
 | `receipt_saved` | `boolean` | not null; default `false`; controle administrativo de que o comprovante foi salvo no destino externo |
@@ -478,7 +479,7 @@ Cabeçalho comum a reservas de rifa e de produtos.
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-O trigger `reservas_validate_contact` protege inserções e alterações de qualquer origem. Telefones exigem DDD oficial e formato brasileiro de fixo/celular, rejeitam assinantes com dígitos repetidos e são normalizados para `+55...`; e-mails exigem endereço e domínio completos e normalizam o domínio para minúsculas. A validação é de plausibilidade e não comprova titularidade ou existência do contato.
+`reference_code` é o identificador operacional curto e persistente usado pelo admin para localizar uma reserva sem depender do nome do visitante. Ele entra nas buscas e exportações administrativas, mas não nas views nem nas respostas públicas. O trigger `reservas_validate_name` exige ao menos duas partes no nome em inserções e alterações de qualquer origem; a limpeza pós-evento pode torná-lo nulo. O trigger `reservas_validate_contact` protege o contato. Telefones exigem DDD oficial e formato brasileiro de fixo/celular, rejeitam assinantes com dígitos repetidos e são normalizados para `+55...`; e-mails exigem endereço e domínio completos e normalizam o domínio para minúsculas. A validação é de plausibilidade e não comprova titularidade ou existência do contato.
 
 O limite efetivo é o override do evento, se preenchido; caso contrário, `default_max_raffle_numbers` (5) ou `default_max_product_units` (10). `eventos_public.max_items_per_reservation` já expõe esse valor resolvido para orientar a seleção, e as RPCs repetem a resolução ao efetivar a reserva. O prazo padrão é 15 minutos; eventos podem substituí-lo. Reservas pendentes que ultrapassam `expires_at` passam automaticamente para `cancelada` via `pg_cron`; reservas pagas não expiram. Cancelamento libera números da rifa. `entregue` só sucede `paga` após o encerramento: para produto, em qualquer reserva paga; para rifa, apenas na reserva ganhadora. Os valores e rótulos selecionados ficam registrados como snapshots. `receipt_saved` é somente o controle administrativo do destino externo.
 

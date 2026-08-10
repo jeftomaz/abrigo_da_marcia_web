@@ -33,6 +33,7 @@ export type EventFormHandle = { dismiss: () => Promise<void> }
 
 type FieldProps = {
   children?: React.ReactNode
+  className?: string
   htmlFor: string
   label: string
   wide?: boolean
@@ -173,9 +174,9 @@ function resizeMeasurementTable(table: MeasurementTable, sizes: string[], variat
   }
 }
 
-function FormField({ children, htmlFor, label, wide = false }: FieldProps) {
+function FormField({ children, className = '', htmlFor, label, wide = false }: FieldProps) {
   return (
-    <div className={`block min-w-0 font-medium ${wide ? 'col-span-2' : ''}`}>
+    <div className={`grid min-w-0 content-start font-medium ${wide ? 'col-span-2' : ''} ${className}`}>
       <label htmlFor={htmlFor} className="mb-1 block text-sm">{label}</label>
       {children}
     </div>
@@ -586,7 +587,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
         className={`mt-3 grid gap-3 ${
           isPanel
             ? 'grid-cols-[7rem_minmax(0,1fr)]'
-            : 'grid-cols-[minmax(7rem,0.75fr)_minmax(0,1.75fr)]'
+            : 'grid-cols-[minmax(0,0.85fr)_minmax(0,2fr)]'
         }`}
       >
         <FormField htmlFor={`${formId}-kind`} label="Tipo">
@@ -596,7 +597,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
               value={draft.kind}
               disabled={Boolean(event && event.status !== 'draft')}
               onChange={(changeEvent) => setField('kind', changeEvent.target.value as EventKind)}
-              className="h-10 w-full appearance-none rounded-full bg-marca px-4 text-center text-sm text-marca-clara outline-none focus-visible:ring-2 focus-visible:ring-marca disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-10 min-w-0 w-full appearance-none overflow-hidden text-ellipsis rounded-full bg-marca px-4 text-center text-sm whitespace-nowrap text-marca-clara outline-none focus-visible:ring-2 focus-visible:ring-marca disabled:cursor-not-allowed disabled:opacity-40"
             >
               <option value="product">Venda de Produto</option>
               <option value="raffle">Rifa</option>
@@ -636,8 +637,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const objectivesSection = (
     <section className={sectionClasses}>
       <h3 className={sectionTitleClasses}>Objetivos</h3>
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 desk:grid-cols-5">
-        <FormField htmlFor={`${formId}-start-date`} label="Data de início">
+      <div className={`mt-3 grid items-end gap-3 ${isPanel ? 'grid-cols-6' : 'grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]'}`}>
+        <FormField className={isPanel ? 'col-span-2' : ''} htmlFor={`${formId}-start-date`} label="Data de início">
           <TextField
             id={`${formId}-start-date`}
             type="date"
@@ -647,7 +648,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             className={fieldClasses}
           />
         </FormField>
-        <FormField htmlFor={`${formId}-end-date`} label="Data de fim">
+        <FormField className={isPanel ? 'col-span-2' : ''} htmlFor={`${formId}-end-date`} label="Data de fim">
           <TextField
             id={`${formId}-end-date`}
             type="date"
@@ -657,7 +658,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             className={fieldClasses}
           />
         </FormField>
-        <FormField htmlFor={`${formId}-goal`} label="Arrecadação (R$)">
+        <FormField className={isPanel ? 'col-span-2' : ''} htmlFor={`${formId}-goal`} label="Arrecadação (R$)">
           <TextField
             id={`${formId}-goal`}
             inputMode="decimal"
@@ -668,53 +669,61 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             className={fieldClasses}
           />
         </FormField>
-        {draft.kind === 'product' && (
-          <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
-            <TextField
-              id={`${formId}-max-items`}
-              inputMode="numeric"
-              value={draft.maxItemsPerReservation}
-              onChange={(changeEvent) => setField('maxItemsPerReservation', changeEvent.target.value)}
-              placeholder="Padrão"
-              className={fieldClasses}
-            />
-          </FormField>
-        )}
-        <FormField htmlFor={`${formId}-ttl`} label="Expiração da reserva">
-          <div>
-            <TextField
-              id={`${formId}-ttl`}
-              inputMode={expirationUnit === 'hours' ? 'decimal' : 'numeric'}
-              value={expirationUnit === 'hours' ? expirationHours : draft.reservationTtlMinutes}
-              onChange={(changeEvent) => {
-                const value = changeEvent.target.value
-                if (expirationUnit === 'minutes') {
-                  setField('reservationTtlMinutes', value.replace(/\D/g, ''))
-                  return
-                }
-                if (!/^\d*(?:[,.]\d*)?$/.test(value)) return
-                setExpirationHours(value)
-                const hours = Number(value.replace(',', '.'))
-                setField('reservationTtlMinutes', value && Number.isFinite(hours) ? String(Math.round(hours * 60)) : '')
-              }}
-              placeholder="Padrão"
-              className={fieldClasses}
-            />
-            <div className="mt-1 flex items-center justify-end gap-1">
-              <span className="whitespace-nowrap text-xs" aria-hidden="true">Minutos</span>
-              <Switch
-                checked={expirationUnit === 'hours'}
-                onChange={(hours) => {
-                  setExpirationUnit(hours ? 'hours' : 'minutes')
-                  if (hours) setExpirationHours(formatMinutesAsHours(draft.reservationTtlMinutes))
-                }}
-                aria-label="Usar horas no tempo de expiração"
-                className="origin-center scale-75"
+        <div className={`${isPanel ? 'col-span-6' : 'col-span-3'} grid grid-cols-2 items-start gap-3`}>
+          {draft.kind === 'product' && (
+            <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
+              <TextField
+                id={`${formId}-max-items`}
+                inputMode="numeric"
+                value={draft.maxItemsPerReservation}
+                onChange={(changeEvent) => setField('maxItemsPerReservation', changeEvent.target.value)}
+                placeholder="Padrão"
+                className={fieldClasses}
               />
-              <span className="whitespace-nowrap text-xs" aria-hidden="true">Horas</span>
+            </FormField>
+          )}
+          <FormField htmlFor={`${formId}-ttl`} label="Expiração da reserva">
+            <div>
+              <TextField
+                id={`${formId}-ttl`}
+                inputMode={expirationUnit === 'hours' ? 'decimal' : 'numeric'}
+                value={expirationUnit === 'hours' ? expirationHours : draft.reservationTtlMinutes}
+                onChange={(changeEvent) => {
+                  const value = changeEvent.target.value
+                  if (expirationUnit === 'minutes') {
+                    setField('reservationTtlMinutes', value.replace(/\D/g, ''))
+                    return
+                  }
+                  if (!/^\d*(?:[,.]\d*)?$/.test(value)) return
+                  setExpirationHours(value)
+                  const hours = Number(value.replace(',', '.'))
+                  setField('reservationTtlMinutes', value && Number.isFinite(hours) ? String(Math.round(hours * 60)) : '')
+                }}
+                placeholder="Padrão"
+                className={fieldClasses}
+              />
+              <div className="mt-1 flex items-center justify-end gap-1">
+                <span className="whitespace-nowrap text-xs" aria-hidden="true">
+                  <span className="min-[24rem]:hidden">min</span>
+                  <span className="hidden min-[24rem]:inline">Minutos</span>
+                </span>
+                <Switch
+                  checked={expirationUnit === 'hours'}
+                  onChange={(hours) => {
+                    setExpirationUnit(hours ? 'hours' : 'minutes')
+                    if (hours) setExpirationHours(formatMinutesAsHours(draft.reservationTtlMinutes))
+                  }}
+                  aria-label="Usar horas no tempo de expiração"
+                  className="origin-center scale-75"
+                />
+                <span className="whitespace-nowrap text-xs" aria-hidden="true">
+                  <span className="min-[24rem]:hidden">h</span>
+                  <span className="hidden min-[24rem]:inline">Horas</span>
+                </span>
+              </div>
             </div>
-          </div>
-        </FormField>
+          </FormField>
+        </div>
       </div>
     </section>
   )
@@ -722,7 +731,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const productSection = (
     <section id={`${formId}-products`} tabIndex={-1} className={sectionClasses}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className={sectionTitleClasses}>Catálogo de Produtos</h3>
+        <h3 className={sectionTitleClasses}>Detalhes - Produto</h3>
         <Action onClick={() => setField('products', [...draft.products, emptyProduct()])} icon="plus-circle-solid" size="small" variant="primary-adaptive" className="px-3">Novo Produto</Action>
       </div>
       <div className="mt-3 space-y-4">
@@ -739,7 +748,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                 <h4 className="text-lg font-medium">Produto {productIndex + 1}</h4>
                 {draft.products.length > 1 && <Action onClick={() => setField('products', draft.products.filter((item) => item.id !== product.id))} icon="trash-solid" size="small" variant="primary-adaptive" className="px-3">Remover</Action>}
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid grid-cols-2 items-end gap-3">
                 <FormField htmlFor={`${formId}-product-name-${product.id}`} label="Nome*">
                   <TextField id={`${formId}-product-name-${product.id}`} value={product.name} onChange={(event) => updateProduct(product.id, { name: event.target.value })} required className={fieldClasses} />
                 </FormField>
@@ -770,7 +779,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
 
               <div className="mt-4 space-y-3">
                 {product.variations.map((variation, index) => (
-                  <div key={variation.id} className="grid grid-cols-2 gap-3 rounded-2xl bg-surface-raised p-3 text-on-surface-raised">
+                  <div key={variation.id} className="grid grid-cols-2 items-end gap-3 rounded-2xl bg-surface-raised p-3 text-on-surface-raised">
                     <FormField htmlFor={`${formId}-variation-${variation.id}`} label="Nome da variação">
                       <TextField id={`${formId}-variation-${variation.id}`} value={variation.name} onChange={(event) => updateVariation(product, variation.id, { name: event.target.value })} placeholder={index === 0 ? 'Tamanho' : 'Cor'} className={fieldClasses} />
                     </FormField>
@@ -930,7 +939,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const raffleSection = (
     <section className={sectionClasses}>
       <h3 className={sectionTitleClasses}>Detalhes - Rifa</h3>
-      <div className="mt-3 grid grid-cols-3 gap-3">
+      <div className="mt-3 grid grid-cols-3 items-end gap-3">
         <FormField htmlFor={`${formId}-raffle-total`} label="Quantidade de números*">
           <TextField
             id={`${formId}-raffle-total`}
@@ -1044,22 +1053,12 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       <p className="mt-1 text-xs text-cinza-medio dark:text-cinza-claro">
         Chave, recebedor e cidade são obrigatórios para publicar. O Pix copia-e-cola é gerado a partir deles, já com o valor de cada reserva.
       </p>
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <FormField htmlFor={`${formId}-payment-key`} label="Chave PIX" wide>
+      <div className="mt-3 grid grid-cols-2 items-end gap-3">
+        <FormField htmlFor={`${formId}-payment-key`} label="Chave PIX">
           <TextField
             id={`${formId}-payment-key`}
             value={draft.paymentKey}
             onChange={(changeEvent) => setField('paymentKey', changeEvent.target.value)}
-            required={event?.status === 'active'}
-            className={fieldClasses}
-          />
-        </FormField>
-        <FormField htmlFor={`${formId}-receiver`} label="Nome do recebedor">
-          <TextField
-            id={`${formId}-receiver`}
-            value={draft.paymentReceiver}
-            onChange={(changeEvent) => setField('paymentReceiver', changeEvent.target.value)}
-            maxLength={25}
             required={event?.status === 'active'}
             className={fieldClasses}
           />
@@ -1070,6 +1069,16 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             value={draft.city}
             onChange={(changeEvent) => setField('city', changeEvent.target.value)}
             maxLength={15}
+            required={event?.status === 'active'}
+            className={fieldClasses}
+          />
+        </FormField>
+        <FormField htmlFor={`${formId}-receiver`} label="Nome do recebedor">
+          <TextField
+            id={`${formId}-receiver`}
+            value={draft.paymentReceiver}
+            onChange={(changeEvent) => setField('paymentReceiver', changeEvent.target.value)}
+            maxLength={25}
             required={event?.status === 'active'}
             className={fieldClasses}
           />
@@ -1230,12 +1239,10 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   if (isPanel) {
     return (
       <>
-        <form noValidate onSubmit={handleSubmit} className="grid grid-cols-[14rem_minmax(0,1fr)] items-start gap-6">
-          <div>
-            <h2 className="text-3xl font-medium text-marca">{title}</h2>
-            <div className="mt-4">{imagesSection}</div>
-          </div>
-          <div className="space-y-3">
+        <form noValidate onSubmit={handleSubmit} className="grid min-w-0 grid-cols-[14rem_minmax(0,1fr)] items-start gap-x-6 gap-y-3">
+          <h2 className="col-span-2 text-3xl font-medium text-marca">{title}</h2>
+          <div className="min-w-0">{imagesSection}</div>
+          <div className="min-w-0 space-y-3">
             {generalSection}
             {objectivesSection}
             {detailsSection}
