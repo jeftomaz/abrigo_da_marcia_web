@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import { Action, TextField, getAdminErrorMessage, toEditableStoryPhotos } from '@abrigo/shared'
 import type { Story, StoryDraft } from '@abrigo/shared'
 import { PhotoGalleryField } from './PhotoGalleryField'
+import { getImageSubmitLabel } from './imageSubmitLabel'
 
 type StoryFormProps = {
   layout: 'modal' | 'panel'
@@ -26,6 +27,12 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
   const isPanel = layout === 'panel'
   const fieldClasses = `mt-1 ${isPanel ? 'h-8 px-3 text-sm' : 'h-10 px-4'}`
   const labelClasses = `${isPanel ? 'mt-2 text-sm' : 'mt-3'} block font-medium`
+  const submitLabel = getImageSubmitLabel({
+    hasPendingUploads: photos.some((photo) => Boolean(photo.file)),
+    idleLabel: 'Salvar História',
+    isProcessing: isCompressing,
+    isSaving,
+  })
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -134,9 +141,10 @@ export function StoryForm({ layout, onCancel, onSave, story, title }: StoryFormP
         size="small"
         variant="primary-adaptive"
         disabled={isCompressing || isSaving}
+        aria-live="polite"
         className="min-w-0 flex-1"
       >
-        {isSaving ? 'Salvando...' : 'Salvar História'}
+        {submitLabel}
       </Action>
     </div>
   )

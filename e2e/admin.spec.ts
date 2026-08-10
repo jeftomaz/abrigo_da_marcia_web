@@ -556,7 +556,8 @@ test.describe('admin', () => {
       expect(referenceCode).toMatch(/^[0-9A-F]{12}$/)
       await pendingReservation.getByRole('button', { name: `Copiar código da reserva ${referenceCode}` }).click()
       expect(await page.evaluate(() => sessionStorage.getItem('e2e-clipboard'))).toBe(referenceCode)
-      await expect(pendingReservation.getByRole('status')).toHaveText('Código da reserva copiado.')
+      await expect(pendingReservation.getByRole('status')).toHaveText('Código copiado')
+      await expect(pendingReservation.getByRole('status')).toBeVisible()
       await expect(pendingReservation.getByRole('link', { name: /Pasta de comprovantes/ })).toHaveCount(0)
 
       await page.getByLabel('Alterar status da reserva de Fulano Pendente').selectOption('paid')
@@ -680,6 +681,15 @@ test.describe('admin', () => {
 
   test('preserva os dados e informa o erro ao criar uma rifa', async ({ page }) => {
     const raffleName = 'Rifa E2E com falha'
+    let releaseUpload: () => void = () => undefined
+    let reportUploadStarted: () => void = () => undefined
+    const uploadGate = new Promise<void>((resolve) => { releaseUpload = resolve })
+    const uploadStarted = new Promise<void>((resolve) => { reportUploadStarted = resolve })
+    await page.route('**/storage/v1/object/dog-photos/**', async (route) => {
+      reportUploadStarted()
+      await uploadGate
+      await route.continue()
+    })
     await page.route('**/rest/v1/eventos*', async (route) => {
       if (route.request().method() !== 'POST') {
         await route.continue()
@@ -706,6 +716,7 @@ test.describe('admin', () => {
     await form.getByLabel('Título').fill(raffleName)
     await form.getByLabel('Descrição').fill('Rifa preenchida para validar a preservação do formulário.')
     await form.getByLabel('Data de fim').fill(new Date(Date.now() + 86_400_000).toISOString().slice(0, 10))
+    await form.getByLabel('Arrecadação (R$)').fill('1000')
     await form.getByLabel('Quantidade de números*').fill('100')
     await form.getByLabel('Valor por número (R$)*').fill('1000')
     await form.getByLabel('Chave PIX').fill('pix-e2e@example.com')
@@ -728,6 +739,12 @@ test.describe('admin', () => {
     await saveButton.click()
     const confirmation = page.getByRole('dialog', { name: 'Confirmar verificação' })
     await confirmation.getByRole('button', { name: 'Confirmar' }).click()
+    try {
+      await uploadStarted
+      await expect(form.getByRole('button', { name: 'Enviando...' })).toBeDisabled()
+    } finally {
+      releaseUpload()
+    }
 
     await expect(form.getByRole('alert')).toContainText('Não foi possível salvar o evento: Falha E2E ao criar a rifa.')
     await expect(form).toBeVisible()
@@ -834,9 +851,27 @@ test.describe('admin', () => {
     await page.setViewportSize({ width: 320, height: 844 })
     await entrar(page)
     await expect(page.getByRole('heading', { name: 'Cães Cadastrados' })).toBeVisible()
-    const navigationBox = await page.getByRole('navigation').boundingBox()
+    const navigationBox = await page.getByRole('navigation', { name: 'Navegação administrativa' }).boundingBox()
     expect(navigationBox?.x).toBe(0)
     expect(navigationBox?.width).toBe(320)
+    expect(navigationBox ? navigationBox.y + navigationBox.height : 0).toBeCloseTo(844, 0)
+    const mobileNavigation = page.getByRole('navigation', { name: 'Navegação administrativa' })
+    expect(await mobileNavigation.evaluate((element) => {
+      const styles = getComputedStyle(element)
+      return { gap: styles.columnGap, paddingLeft: styles.paddingLeft, paddingRight: styles.paddingRight }
+    })).toEqual({ gap: '24px', paddingLeft: '24px', paddingRight: '24px' })
+    const mobileTab = mobileNavigation.getByRole('link', { name: 'Cães', exact: true })
+    expect((await mobileTab.boundingBox())?.height).toBe(48)
+    expect(await mobileTab.evaluate((element) => {
+      const styles = getComputedStyle(element)
+      return { fontSize: styles.fontSize, paddingLeft: styles.paddingLeft, paddingRight: styles.paddingRight }
+    })).toEqual({ fontSize: '16px', paddingLeft: '28px', paddingRight: '28px' })
+
+    await page.setViewportSize({ width: 1024, height: 844 })
+    const desktopNavigation = page.getByRole('navigation', { name: 'Navegação administrativa' })
+    expect((await desktopNavigation.boundingBox())?.y).toBe(16)
+    expect(await desktopNavigation.evaluate((element) => getComputedStyle(element).columnGap)).toBe('40px')
+    expect((await desktopNavigation.getByRole('link', { name: 'Cães', exact: true }).boundingBox())?.height).toBe(48)
 
     for (const width of [320, 375, 430]) {
       await page.setViewportSize({ width, height: 844 })

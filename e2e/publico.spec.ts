@@ -26,6 +26,12 @@ test.describe('site público', () => {
         paddingRight: styles.paddingRight,
       }
     })).toEqual({ gap: '24px', paddingLeft: '24px', paddingRight: '24px' })
+    const mobileTab = navigation.getByRole('link', { name: 'Adoção', exact: true })
+    expect((await mobileTab.boundingBox())?.height).toBe(48)
+    expect(await mobileTab.evaluate((element) => {
+      const styles = getComputedStyle(element)
+      return { fontSize: styles.fontSize, paddingLeft: styles.paddingLeft, paddingRight: styles.paddingRight }
+    })).toEqual({ fontSize: '16px', paddingLeft: '28px', paddingRight: '28px' })
 
     await page.getByRole('link', { name: 'Adoção', exact: true }).click()
     await expect(page).toHaveURL(/\/adocao$/)
@@ -39,7 +45,11 @@ test.describe('site público', () => {
 
     await page.setViewportSize({ width: 1024, height: 844 })
     await expect(navigation).toBeHidden()
-    await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toBeVisible()
+    const desktopNavigation = page.getByRole('navigation', { name: 'Navegação principal' })
+    await expect(desktopNavigation).toBeVisible()
+    expect((await desktopNavigation.boundingBox())?.y).toBe(16)
+    expect(await desktopNavigation.evaluate((element) => getComputedStyle(element).columnGap)).toBe('40px')
+    expect((await desktopNavigation.getByRole('link', { name: 'Adoção', exact: true }).boundingBox())?.height).toBe(48)
   })
 
   test('mostra no catálogo somente os cães disponíveis', async ({ page }) => {

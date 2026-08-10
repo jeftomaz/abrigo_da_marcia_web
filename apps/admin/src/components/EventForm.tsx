@@ -19,6 +19,7 @@ import { formatCentsForInput, formatCurrencyInput, parseCurrencyToCents, toEdita
 import { PhotoGalleryField } from './PhotoGalleryField'
 import { ConfirmationDialog } from './ConfirmationDialog'
 import { TagInput } from './TagInput'
+import { getImageSubmitLabel } from './imageSubmitLabel'
 
 type EventFormProps = {
   event: FundraisingEvent | null
@@ -207,6 +208,21 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const fieldClasses = isPanel ? 'h-8 px-3 text-sm' : 'h-11 px-4'
   const sectionClasses = 'border-t border-cinza-medio pt-3 dark:border-cinza-claro'
   const sectionTitleClasses = `${isPanel ? 'text-xl' : 'text-3xl'} font-medium`
+  const isProcessingImages = isCompressing || isPrizeCompressing
+  const hasPendingImageUploads = [
+    ...photos,
+    ...draft.prizes.map((prize) => prize.image),
+    ...draft.products.flatMap((product) => [
+      ...product.gallery,
+      ...(product.measurementGuide?.kind === 'image' ? [product.measurementGuide.photo] : []),
+    ]),
+  ].some((photo) => Boolean(photo.file))
+  const submitLabel = getImageSubmitLabel({
+    hasPendingUploads: hasPendingImageUploads,
+    idleLabel: 'Salvar Evento',
+    isProcessing: isProcessingImages,
+    isSaving,
+  })
 
   useEffect(() => () => {
     createdPrizeUrls.current.forEach((url) => URL.revokeObjectURL(url))
@@ -936,7 +952,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                 )}
                 <input id={`${formId}-measurement-${product.id}`} type="file" accept={ACCEPTED_UPLOAD_IMAGE_TYPES.join(',')} onChange={(event) => void handleMeasurementImage(product, event.target.files?.[0])} className="sr-only" />
                 {guideKind === 'image' && (
-                  <Action id={`${formId}-measurement-upload-${product.id}`} onClick={() => document.getElementById(`${formId}-measurement-${product.id}`)?.click()} icon="upload" size="small" variant="neutral-adaptive" className="mt-3 px-3">{product.measurementGuide?.kind === 'image' ? 'Trocar imagem' : 'Enviar imagem'}</Action>
+                  <Action id={`${formId}-measurement-upload-${product.id}`} onClick={() => document.getElementById(`${formId}-measurement-${product.id}`)?.click()} disabled={isCompressing} icon="upload" size="small" variant="neutral-adaptive" className="mt-3 px-3">{isCompressing ? 'Processando imagem...' : product.measurementGuide?.kind === 'image' ? 'Trocar imagem' : 'Enviar imagem'}</Action>
                 )}
               </div>
             </article>
@@ -1165,10 +1181,11 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
           type="submit"
           size="small"
           variant="primary-adaptive"
-          disabled={isCompressing || isPrizeCompressing || isSaving}
+          disabled={isProcessingImages || isSaving}
+          aria-live="polite"
           className="min-w-0 flex-1"
         >
-          {isSaving ? 'Salvando...' : 'Salvar Evento'}
+          {submitLabel}
         </Action>
       </div>
     </div>
@@ -1202,7 +1219,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             variant="neutral-adaptive"
             className="px-4 py-2"
           >
-            Editar
+            {isPrizeCompressing ? 'Processando...' : 'Editar'}
           </Action>
           <Action
             onClick={() => setPrizePhoto(null)}
@@ -1240,11 +1257,12 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
         <Action
           onClick={savePrize}
           disabled={!prizeDraft.trim() || !prizePhoto || isPrizeCompressing}
+          aria-live="polite"
           size="small"
           variant="primary-adaptive"
           className="min-w-0 flex-1"
         >
-          Salvar Prêmio
+          {isPrizeCompressing ? 'Processando...' : 'Salvar Prêmio'}
         </Action>
       </div>
     </Dialog>

@@ -29,6 +29,9 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 ### P0 — Correções operacionais e mobile
 
+- `todo` Alinhar o QR Pix mobile ao contrato E2E: hoje renderiza com 160 px, abaixo dos 192 px esperados.
+- `done` Padronizar tamanho, espaçamento, alinhamento e breakpoint das abas nos headers público e administrativo.
+- `done` Exibir feedback visual durante processamento e envio de imagens nos formulários administrativos de Cães, Histórias e Eventos.
 - `done` Corrigir o cadastro de Eventos: impedir sobreposição dos Objetivos, exibir e exigir o prazo de reserva configurado, manter a meta fixa no equilíbrio da rifa e compactar o card Pix para preservar a ação de fechar.
 - `done` CORS de `activate-event`/`delete-archived-event` corrigido e coberto por E2E: aceita os cabeçalhos do SDK e rejeita origens não permitidas; implantação é acompanhada no P0 de produção.
 - `done` Erros administrativos padronizados: contrato `{ code, message, requestId }`, status HTTP coerente, log estruturado sem dados sensíveis e tradução compartilhada no client para rede/CORS, sessão/MFA, validação, conflito, banco, Storage e Resend; diálogos e rascunhos permanecem íntegros na falha.
@@ -42,7 +45,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `done` Exibir os requisitos da senha em tempo real; ampliar números/valor na conferência da rifa; destacar Reservas abertas, oferecer a pasta de comprovantes na confirmação de pagamento, alertar quando faltarem reservas pagas para os prêmios e limitar cada reserva a um prêmio por rifa.
 - `done` Permitir excluir eventos encerrados no admin somente após exportação por e-mail e exclusão auditada; arquivados legados continuam compatíveis.
 - `done` Validar recuperação/troca de senha no E2E local; a repetição hospedada permanece incluída no smoke de produção.
-- `done` Levar a navegação pública para a base no mobile, confirmar logout e pagamento após comprovante, oferecer colagem do TOTP e destacar o limite de números da rifa.
+- `done` Levar a navegação pública e administrativa para a base no mobile, confirmar logout e pagamento após comprovante, oferecer colagem do TOTP e destacar o limite de números da rifa.
 - `done` Centralizar a pasta de comprovantes por evento, identificar reservas por código hexadecimal copiável e compactar o sorteio mobile; a esfera inteira também aciona o sorteio por clique, toque ou teclado.
 - `done` Exigir ao menos dois nomes em reservas, com feedback imediato no público e proteção de banco para criação e edição administrativa.
 - `done` Após o sorteio da rifa, levar as reservas ganhadoras ao topo da gestão e destacá-las visualmente para os admins.

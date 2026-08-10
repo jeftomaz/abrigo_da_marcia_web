@@ -245,7 +245,7 @@ export function PhotoGalleryField({
         ))}
       </div>
       {isProcessing && (
-        <p role="status" className="mt-2 text-sm font-medium">
+        <p role="status" className="mt-2 rounded-xl bg-marca-clara p-2 text-sm font-medium text-marca-escura dark:bg-marca-escura dark:text-marca">
           Processando imagens...
         </p>
       )}

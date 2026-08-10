@@ -155,7 +155,7 @@ export function EventRow({
             className={`${actionClasses} col-start-2 row-start-2`}
             onClick={onRemove}
           >
-            Remover
+            Excluir
           </Action>
         )}
       </div>

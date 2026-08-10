@@ -14,6 +14,7 @@ import type {
   DogSize,
 } from '@abrigo/shared'
 import { PhotoGalleryField } from './PhotoGalleryField'
+import { getImageSubmitLabel } from './imageSubmitLabel'
 
 type DogFormProps = {
   dog: Dog | null
@@ -70,6 +71,12 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
   const labelClasses = 'mt-2 block text-sm font-medium'
   const nestedLabelClasses = 'block text-sm font-medium'
   const fieldGridClasses = `${isPanel ? 'gap-3' : 'gap-4'} mt-2 grid grid-cols-2`
+  const submitLabel = getImageSubmitLabel({
+    hasPendingUploads: photos.some((photo) => Boolean(photo.file)),
+    idleLabel: 'Salvar Cão',
+    isProcessing: isCompressing,
+    isSaving,
+  })
 
   const handleBirthYearChange = (value: string) => {
     const year = parseBoundedInteger(value, MIN_BIRTH_YEAR, CURRENT_YEAR)
@@ -342,9 +349,10 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         size={isPanel ? 'small' : 'compact'}
         variant="primary"
         disabled={isCompressing || isSaving}
+        aria-live="polite"
         className="min-w-0 flex-1"
       >
-        {isSaving ? 'Salvando...' : 'Salvar Cão'}
+        {submitLabel}
       </Action>
     </div>
   )
