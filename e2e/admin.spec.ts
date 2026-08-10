@@ -587,7 +587,11 @@ test.describe('admin', () => {
       const winnerRow = reservationRows.filter({ hasText: 'Maria Compradora' })
       const otherRow = reservationRows.filter({ hasText: 'Fulano Pendente' })
       await expect(reservationRows.first()).toContainText('Maria Compradora')
-      await expect(winnerRow.getByText('Ganhador', { exact: true })).toBeVisible()
+      const winnerBadge = winnerRow.getByText('Ganhador', { exact: true })
+      await expect(winnerBadge).toBeVisible()
+      await expect(winnerRow).toHaveCSS('background-color', 'rgb(251, 209, 208)')
+      await expect(winnerRow).toHaveCSS('border-color', 'rgb(141, 14, 12)')
+      await expect(winnerBadge).toHaveCSS('background-color', 'rgb(141, 14, 12)')
       expect(await winnerRow.evaluate((element) => getComputedStyle(element).backgroundColor))
         .not.toBe(await otherRow.evaluate((element) => getComputedStyle(element).backgroundColor))
     } finally {

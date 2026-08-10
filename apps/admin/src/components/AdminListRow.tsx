@@ -17,7 +17,7 @@ export function AdminListRow({
   tone = 'default',
 }: AdminListRowProps) {
   const toneClasses = tone === 'winner'
-    ? 'bg-status-verde text-status-verde-texto'
+    ? 'bg-marca-clara text-marca-escura'
     : 'bg-surface-raised text-on-surface-raised'
 
   return (
@@ -28,7 +28,7 @@ export function AdminListRow({
     >
       {children}
       {audit && (
-        <p className={`col-span-full mt-1 text-xs ${tone === 'winner' ? 'text-status-verde-texto' : 'text-cinza-medio dark:text-cinza-claro/70'}`}>
+        <p className={`col-span-full mt-1 text-xs ${tone === 'winner' ? 'text-marca-escura' : 'text-cinza-medio dark:text-cinza-claro/70'}`}>
           Última alteração em {new Intl.DateTimeFormat('pt-BR', {
             dateStyle: 'short',
             timeStyle: 'short',

@@ -132,15 +132,6 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
               {event.gallery[0]
                 ? <img src={getEventPhotoUrl(event.gallery[0])} alt={event.title} className="aspect-square w-full object-cover" />
                 : <ImagePlaceholder label={`Sem foto de ${event.title}`} className="aspect-square w-full" />}
-              <div className="mt-4 flex flex-col gap-2 text-center text-xs sm:text-sm">
-                {event.prizes.map((prize, index) => (
-                  <div key={prize.id} className="rounded-md bg-marca px-2 py-2 text-marca-clara">
-                    {prize.image && <img src={getEventPhotoUrl(prize.image)} alt={`Prêmio ${index + 1}: ${prize.name}`} className="mb-2 aspect-square w-full rounded-md object-cover" />}
-                    <p>Prêmio {index + 1}: {prize.name}</p>
-                    {prize.winningNumber && <p className="mt-1">Nº {formatNumber(prize.winningNumber, numberDigits)} — {prize.winnerName}</p>}
-                  </div>
-                ))}
-              </div>
             </div>
             <div>
               <h2 id={titleId} className="text-3xl leading-tight font-medium text-marca lg:text-4xl">{event.title}</h2>
@@ -148,6 +139,16 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
               {!reservable && <p className="mt-6 rounded-2xl bg-cinza-claro p-4 text-center text-cinza-escuro dark:bg-cinza-medio dark:text-cinza-claro">Esta rifa já foi encerrada.</p>}
             </div>
           </div>
+
+          <section aria-label="Prêmios da rifa" className="mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 text-center text-xs sm:text-sm">
+            {event.prizes.map((prize, index) => (
+              <article key={prize.id} className="w-36 shrink-0 snap-start rounded-md bg-marca px-2 py-2 text-marca-clara sm:w-44 lg:w-52">
+                {prize.image && <img src={getEventPhotoUrl(prize.image)} alt={`Prêmio ${index + 1}: ${prize.name}`} className="mb-2 aspect-square w-full rounded-md object-cover" />}
+                <p>Prêmio {index + 1}: {prize.name}</p>
+                {prize.winningNumber && <p className="mt-1">Nº {formatNumber(prize.winningNumber, numberDigits)} — {prize.winnerName}</p>}
+              </article>
+            ))}
+          </section>
 
           {reservable && (
             <>
