@@ -107,7 +107,8 @@ export function Eventos() {
       showSuccess(
         action === 'publish' ? 'Evento publicado.'
           : action === 'end' ? 'Evento encerrado.'
-          : 'Evento removido.',
+          : event.status === 'draft' ? 'Rascunho removido.'
+          : 'Evento excluído.',
       )
     } catch (error) {
       setActionError(getEventErrorMessage(error, 'A ação não foi concluída.'))
@@ -201,8 +202,8 @@ export function Eventos() {
       )}
 
       {eventConfirmation && (
-        <Dialog ariaLabel={eventConfirmation.action === 'publish' ? 'Publicar evento' : eventConfirmation.action === 'end' ? 'Encerrar evento' : 'Remover evento'} onClose={() => setEventConfirmation(null)} className="w-full max-w-[46rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised sm:p-12">
-          <h2 className="text-4xl font-medium text-marca">{eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.event.status === 'draft' ? 'Remover Rascunho' : 'Remover Evento'}</h2>
+        <Dialog ariaLabel={eventConfirmation.action === 'publish' ? 'Publicar evento' : eventConfirmation.action === 'end' ? 'Encerrar evento' : eventConfirmation.event.status === 'draft' ? 'Remover rascunho' : 'Excluir evento'} onClose={() => setEventConfirmation(null)} className="w-full max-w-[46rem] rounded-3xl bg-surface-raised p-8 text-on-surface-raised sm:p-12">
+          <h2 className="text-4xl font-medium text-marca">{eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.event.status === 'draft' ? 'Remover Rascunho' : 'Excluir Evento'}</h2>
           <h3 className="mt-6 text-3xl font-medium">{eventConfirmation.event.title}</h3>
           {eventConfirmation.action === 'end' && <p className="mt-3 text-lg">Novas reservas deixarão de ser aceitas. Os dados e a gestão das reservas serão mantidos.</p>}
           {eventConfirmation.action === 'publish' && <p className="mt-3 text-lg">Confirme que as informações foram verificadas. O evento ficará disponível ao público.</p>}
@@ -211,11 +212,11 @@ export function Eventos() {
             && events.filter((event) => event.status !== 'draft').length >= 4
             && <p className="mt-3 text-lg">Este será o quinto evento ativado. O evento mais antigo será enviado ao e-mail de exportação e excluído antes da publicação. Se o envio falhar, nenhuma alteração será feita.</p>}
           {eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'draft' && <p className="mt-3 text-lg">O rascunho e todos os dados associados serão apagados.</p>}
-          {eventConfirmation.action === 'remove' && eventConfirmation.event.status === 'archived' && <p className="mt-3 text-lg">A exportação será enviada automaticamente ao e-mail configurado antes da exclusão. Se o envio falhar, nada será removido.</p>}
+          {eventConfirmation.action === 'remove' && eventConfirmation.event.status !== 'draft' && <p className="mt-3 text-lg">A exportação será enviada automaticamente ao e-mail configurado antes da exclusão definitiva. Se o envio falhar, nada será removido.</p>}
           {actionError && <p role="alert" className="mt-4 text-sm font-medium text-marca">{actionError}</p>}
           <div className="mt-10 flex gap-4">
             <Action onClick={() => setEventConfirmation(null)} size="small" variant="secondary-adaptive" className="w-32 shrink-0">Cancelar</Action>
-            <Action onClick={() => void confirmEventAction()} disabled={isConfirming} icon={eventConfirmation.action === 'end' ? 'white-flag-solid' : eventConfirmation.action === 'publish' ? 'check-circle-solid' : 'trash-solid'} size="small" variant="primary-adaptive" className="min-w-0 flex-1">{isConfirming ? 'Processando...' : eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : 'Remover Evento'}</Action>
+            <Action onClick={() => void confirmEventAction()} disabled={isConfirming} icon={eventConfirmation.action === 'end' ? 'white-flag-solid' : eventConfirmation.action === 'publish' ? 'check-circle-solid' : 'trash-solid'} size="small" variant="primary-adaptive" className="min-w-0 flex-1">{isConfirming ? 'Processando...' : eventConfirmation.action === 'publish' ? 'Publicar Evento' : eventConfirmation.action === 'end' ? 'Encerrar Evento' : eventConfirmation.event.status === 'draft' ? 'Remover Rascunho' : 'Excluir Evento'}</Action>
           </div>
         </Dialog>
       )}
