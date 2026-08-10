@@ -1,6 +1,6 @@
 # PROGRESS.md
 
-- Privacidade do sorteio corrigida (2026-08-09): o evento público exibe apenas os números ganhadores e deixa de consultar/expor `winner_name`; nomes continuam disponíveis somente na tabela e nas telas administrativas. Validação aprovada com lint, builds, reset integral, `db lint`, 223 pgTAP e 106 E2E; 11 casos foram ignorados intencionalmente.
+- Privacidade do sorteio corrigida no frontend hospedado (2026-08-09): o público exibe/consulta apenas números e o admin preserva os nomes. Migration da view validada localmente, mas aplicação remota permanece pendente após o CLI travar antes do SQL; backup completo salvo em `Documents/Backups/abrigo_da_marcia_web/20260809-223251`. Validação: lint, builds, reset, `db lint`, 223 pgTAP e 106 E2E; 11 casos ignorados intencionalmente.
 - Refinamentos visuais da rifa (2026-08-09): ganhadores continuam no topo e agora usam marca clara/escura; prêmios públicos formam um carrossel horizontal responsivo. Validação aprovada com lint, builds e 103 E2E; 11 casos foram ignorados intencionalmente pela matriz.
 - Entrega integrada das correções de 2026-08-09 validada: lint, builds, reset integral das migrations, `db lint`, 223 pgTAP e 103 E2E aprovados; 11 casos foram ignorados intencionalmente pela matriz de projetos.
 - Contato das reservas simplificado (2026-08-09): celular com DDD é o padrão público e exige número móvel; “Não tenho celular” troca para e-mail e “Colocar celular” reverte sem switch. Validação aprovada com lint/builds e E2E público em desktop/Chromium/WebKit mobile.
