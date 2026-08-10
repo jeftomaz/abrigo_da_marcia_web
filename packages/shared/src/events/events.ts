@@ -810,11 +810,13 @@ async function invokeEventFunction(name: 'activate-event' | 'delete-archived-eve
 }
 
 async function deleteEvent({ event }: { event: FundraisingEvent }) {
-  if (event.status === 'ended' || event.status === 'archived') {
+  if (event.status === 'archived') {
     await invokeEventFunction('delete-archived-event', event.id)
-  } else {
+  } else if (event.status === 'draft') {
     const { error } = await supabase.from('eventos').delete().eq('id', event.id)
     if (error) throw error
+  } else {
+    throw new Error('Encerre e oculte o evento antes de excluí-lo.')
   }
   await removeStoredPhotos([
     ...event.gallery,
