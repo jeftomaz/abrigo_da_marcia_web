@@ -404,7 +404,7 @@ function composeEvents(
           name: required(prize.name, 'Prêmio sem nome.'),
           image: required(prize.photo, 'Prêmio sem foto.'),
           winningNumber: prize.winning_number ?? undefined,
-          winnerName: prize.winner_name ?? undefined,
+          winnerName: 'winner_name' in prize ? prize.winner_name ?? undefined : undefined,
           drawnAt: prize.drawn_at ?? undefined,
         })),
       paymentKey: 'pix_key' in row ? row.pix_key ?? '' : '',
@@ -433,7 +433,7 @@ async function loadEventRelationRows(publicOnly: boolean): Promise<EventRelation
         supabase.from('produto_variacoes_public').select('*'),
         supabase.from('produto_variacao_opcoes_public').select('*'),
         supabase.from('rifas_public').select('*'),
-        supabase.from('rifa_premios_public').select('*'),
+        supabase.from('rifa_premios_public').select('id,event_id,name,photo,display_order,winning_number,drawn_at'),
       ])
     : await Promise.all([
         supabase.from('eventos').select('*'),

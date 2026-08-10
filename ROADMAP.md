@@ -18,7 +18,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 - `doing` Configurar `abrigodamarcia.com.br`: build adaptativo e runbook prontos; faltam DNS avançado, domínio no Pages, URLs de Auth, HTTPS e smoke após a propagação.
 - `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
-- `todo` Aplicar no hospedado as migrations de `20260809120000` a `20260809140000`, que expõem o limite efetivo, criam o código administrativo e exigem ao menos dois nomes nas reservas.
+- `todo` Aplicar no hospedado as migrations de `20260809120000` a `20260809150000`, que expõem o limite efetivo, criam o código administrativo, exigem ao menos dois nomes nas reservas e removem o nome do ganhador da view pública.
 - `done` Definir `ADMIN_ALLOWED_ORIGINS`, publicar `activate-event` e `delete-archived-event` e validar CORS permitido/negado no hospedado.
 - `todo` Conferir `RESEND_API_KEY`/`RESEND_FROM_EMAIL` antes do smoke de exportação.
 - `doing` Concluir o smoke hospedado com fixtures temporárias: views/RLS, Storage, convite + TOTP/AAL2, reservas, expiração via cron, sorteio, exportação e preservação em falhas; remover contas, registros e arquivos de teste ao final.
@@ -45,6 +45,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `done` Após o sorteio da rifa, levar as reservas ganhadoras ao topo da gestão e destacá-las visualmente para os admins.
 - `done` Tornar o celular o contato principal das reservas e substituir o switch por ações textuais reversíveis entre celular e e-mail.
 - `done` Aplicar a paleta da marca ao destaque dos ganhadores e exibir os prêmios da rifa em carrossel horizontal no evento público.
+- `done` Exibir ao público somente os números sorteados e manter os nomes dos ganhadores restritos ao admin.
 
 ### P1 — Hardening (auditoria de 2026-07-25)
 

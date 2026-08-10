@@ -1072,7 +1072,6 @@ export type Database = {
           id: string | null
           name: string | null
           photo: string | null
-          winner_name: string | null
           winning_number: number | null
         }
         Relationships: [
