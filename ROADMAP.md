@@ -44,6 +44,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `done` Exigir ao menos dois nomes em reservas, com feedback imediato no público e proteção de banco para criação e edição administrativa.
 - `done` Após o sorteio da rifa, levar as reservas ganhadoras ao topo da gestão e destacá-las visualmente para os admins.
 - `done` Tornar o celular o contato principal das reservas e substituir o switch por ações textuais reversíveis entre celular e e-mail.
+- `done` Aplicar a paleta da marca ao destaque dos ganhadores e exibir os prêmios da rifa em carrossel horizontal no evento público.
 
 ### P1 — Hardening (auditoria de 2026-07-25)
 

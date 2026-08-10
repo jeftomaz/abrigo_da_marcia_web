@@ -122,6 +122,16 @@ test.describe('site público', () => {
     await page.getByRole('button', { name: `Reservar: ${RIFA_ATIVA}` }).click()
     const rifa = page.getByRole('dialog')
     await expect(rifa.getByRole('heading', { name: RIFA_ATIVA })).toBeVisible()
+    const prizes = rifa.getByRole('region', { name: 'Prêmios da rifa' })
+    const prizeCards = prizes.getByRole('article')
+    await expect(prizes).toHaveCSS('overflow-x', 'auto')
+    expect(await prizeCards.count()).toBeGreaterThan(1)
+    const prizePositions = await prizeCards.evaluateAll((cards) => cards.slice(0, 2).map((card) => {
+      const bounds = card.getBoundingClientRect()
+      return { left: bounds.left, top: bounds.top }
+    }))
+    expect(prizePositions[1].left).toBeGreaterThan(prizePositions[0].left)
+    expect(Math.abs(prizePositions[1].top - prizePositions[0].top)).toBeLessThanOrEqual(1)
 
     // A grade só renderiza depois que a disponibilidade chega do banco.
     await expect(rifa.getByText('Carregando números...')).toHaveCount(0)
