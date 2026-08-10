@@ -537,6 +537,7 @@ test.describe('admin', () => {
 
       const pendingReservation = page.locator('article').filter({ hasText: 'Fulano Pendente' })
       const referenceCode = executarSql("select reference_code from public.reservas where session_id = 'a1200000-0000-0000-0000-000000000001'")
+      expect(referenceCode).toMatch(/^[0-9A-F]{12}$/)
       await pendingReservation.getByRole('button', { name: `Copiar código da reserva ${referenceCode}` }).click()
       expect(await page.evaluate(() => sessionStorage.getItem('e2e-clipboard'))).toBe(referenceCode)
       await expect(pendingReservation.getByRole('status')).toHaveText('Código da reserva copiado.')
@@ -864,10 +865,24 @@ test.describe('admin', () => {
       [eventDialog.getByLabel('Tipo'), eventDialog.getByLabel('Título')],
       'Geral do formulário de Eventos em 320px',
     )
-    await expectAlignedTop(
-      [eventDialog.getByLabel('Data de início'), eventDialog.getByLabel('Data de fim'), eventDialog.getByLabel('Arrecadação (R$)')],
-      'Objetivos do formulário de Eventos em 320px',
-    )
+    const startDate = eventDialog.getByLabel('Data de início')
+    const endDate = eventDialog.getByLabel('Data de fim')
+    const fundraisingGoal = eventDialog.getByLabel('Arrecadação (R$)')
+    await expectNoOverlap(startDate, endDate, 'Datas do formulário de Eventos em 320px')
+    await expectNoOverlap(endDate, fundraisingGoal, 'Fim e arrecadação do formulário de Eventos em 320px')
+    await expect(eventDialog.getByLabel('Expiração da reserva')).toHaveValue('15')
+
+    const raffleTotal = eventDialog.getByLabel('Quantidade de números*')
+    const rafflePrice = eventDialog.getByLabel('Valor por número (R$)*')
+    await fundraisingGoal.fill('100000')
+    await raffleTotal.fill('100')
+    await expect(rafflePrice).toHaveValue('10,00')
+    await rafflePrice.fill('2000')
+    await expect(raffleTotal).toHaveValue('50')
+    await expect(fundraisingGoal).toHaveValue('1.000,00')
+    await raffleTotal.fill('40')
+    await expect(rafflePrice).toHaveValue('25,00')
+    await expect(fundraisingGoal).toHaveValue('1.000,00')
     await expectAlignedTop(
       [eventDialog.getByLabel('Quantidade de números*'), eventDialog.getByLabel('Valor por número (R$)*'), eventDialog.getByLabel('Máx. por reserva')],
       'Detalhes da rifa em 320px',
@@ -911,10 +926,8 @@ test.describe('admin', () => {
       [panelForm.getByRole('heading', { name: 'Imagens', exact: true }), panelForm.getByRole('heading', { name: 'Geral', exact: true })],
       'Seções iniciais do painel desktop de Eventos',
     )
-    await expectAlignedTop(
-      [panelForm.getByLabel('Data de início'), panelForm.getByLabel('Data de fim'), panelForm.getByLabel('Arrecadação (R$)')],
-      'Objetivos do painel desktop de Eventos',
-    )
+    await expectNoOverlap(panelForm.getByLabel('Data de início'), panelForm.getByLabel('Data de fim'), 'Datas do painel desktop de Eventos')
+    await expectNoOverlap(panelForm.getByLabel('Data de fim'), panelForm.getByLabel('Arrecadação (R$)'), 'Fim e arrecadação do painel desktop de Eventos')
     await expectAlignedTop(
       [panelForm.getByLabel('Chave PIX'), panelForm.getByLabel('Cidade do recebedor')],
       'Pagamento do painel desktop de Eventos',

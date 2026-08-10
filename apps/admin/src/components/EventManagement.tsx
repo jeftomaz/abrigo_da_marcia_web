@@ -202,8 +202,14 @@ export function EventManagement({ event, layout, onSaveReservation, onUpdateRese
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <h4 className="min-w-0 line-clamp-2 text-xl leading-tight font-medium desk:text-sm">{reservation.name}</h4>
                   {isWinner && <span className="rounded-md bg-marca-escura px-2 py-1 text-xs font-medium text-marca-clara">Ganhador</span>}
-                  <button type="button" onClick={() => void copyReferenceCode(reservation.referenceCode)} aria-label={`Copiar código da reserva ${reservation.referenceCode}`} title={copiedReferenceCode === reservation.referenceCode ? 'Código copiado' : 'Copiar código da reserva'} className={`shrink-0 rounded-md border px-2 py-1 font-mono text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca ${isWinner ? 'border-marca-escura text-marca-escura' : copiedReferenceCode === reservation.referenceCode ? 'border-status-verde text-status-verde-on-surface' : 'border-cinza-medio text-cinza-medio dark:border-cinza-claro dark:text-cinza-claro'}`}>#{reservation.referenceCode}</button>
-                  {copiedReferenceCode === reservation.referenceCode && <span role="status" className="sr-only">Código da reserva copiado.</span>}
+                  {reservation.referenceCode ? (
+                    <>
+                      <button type="button" onClick={() => void copyReferenceCode(reservation.referenceCode)} aria-label={`Copiar código da reserva ${reservation.referenceCode}`} title={copiedReferenceCode === reservation.referenceCode ? 'Código copiado' : 'Copiar código da reserva'} className={`shrink-0 rounded-md border px-2 py-1 font-mono text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca ${isWinner ? 'border-marca-escura text-marca-escura' : copiedReferenceCode === reservation.referenceCode ? 'border-status-verde text-status-verde-on-surface' : 'border-cinza-medio text-cinza-medio dark:border-cinza-claro dark:text-cinza-claro'}`}>#{reservation.referenceCode}</button>
+                      {copiedReferenceCode === reservation.referenceCode && <span role="status" className="sr-only">Código da reserva copiado.</span>}
+                    </>
+                  ) : (
+                    <span role="status" className="text-xs font-medium text-marca">Código indisponível</span>
+                  )}
                 </div>
                 <p className={`mt-2 truncate text-sm desk:text-xs ${isWinner ? 'text-marca-escura' : 'text-cinza-medio dark:text-cinza-claro'}`}>{formatReservationContact(reservation.contact)}</p><p className="mt-1 text-xs">Expira: {new Date(reservation.expiresAt).toLocaleString('pt-BR')}</p>
               </div>

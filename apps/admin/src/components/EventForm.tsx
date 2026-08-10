@@ -110,8 +110,8 @@ function isPositiveInteger(value: string) {
   return /^\d+$/.test(value) && Number(value) > 0
 }
 
-// Meta = quantidade × valor por número. Editar um dos três recalcula outro quando há dados
-// suficientes, preferindo recalcular a meta ao mexer em quantidade/valor.
+// Meta = quantidade × valor por número. A meta nunca é recalculada: quantidade e valor
+// se equilibram entre si, e editar a meta recalcula o campo derivável.
 function recalculateRaffleField(
   edited: 'goal' | 'price' | 'total',
   values: { goal: string; price: string; total: string },
@@ -123,9 +123,6 @@ function recalculateRaffleField(
   const hasPrice = priceCents > 0
   const hasTotal = isPositiveInteger(values.total)
 
-  if ((edited === 'total' || edited === 'price') && hasTotal && hasPrice) {
-    return { fundraisingGoal: formatCentsForInput(total * priceCents) }
-  }
   if (edited === 'total' && hasGoal && hasTotal) {
     return { raffleNumberPrice: formatCentsForInput(Math.round(goalCents / total)) }
   }
@@ -226,6 +223,14 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
       postPaymentInstructions: current.postPaymentInstructions || eventSettings.defaultPostPaymentInstructions,
     }))
   }, [event, eventSettings, siteSettings])
+
+  useEffect(() => {
+    const defaultMinutes = eventSettings?.defaultReservationTtlMinutes
+    if (!Number.isInteger(defaultMinutes) || !defaultMinutes || defaultMinutes < 1) return
+    setDraft((current) => current.reservationTtlMinutes
+      ? current
+      : { ...current, reservationTtlMinutes: String(defaultMinutes) })
+  }, [eventSettings])
 
   const setField = <Key extends keyof typeof draft>(key: Key, value: (typeof draft)[Key]) => {
     setSaveError('')
@@ -329,7 +334,10 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
     if (draft.maxItemsPerReservation && !isPositiveInteger(draft.maxItemsPerReservation)) {
       return { fieldId: `${formId}-max-items`, message: 'O máximo por reserva deve ser um número inteiro maior que zero.' }
     }
-    if (draft.reservationTtlMinutes && (!isPositiveInteger(draft.reservationTtlMinutes) || Number(draft.reservationTtlMinutes) < 1)) {
+    if (!draft.reservationTtlMinutes) {
+      return { fieldId: `${formId}-ttl`, message: 'Informe o tempo de expiração ou defina um valor padrão em Configurações.' }
+    }
+    if (!isPositiveInteger(draft.reservationTtlMinutes) || Number(draft.reservationTtlMinutes) < 1) {
       return { fieldId: `${formId}-ttl`, message: 'O tempo de expiração deve corresponder a pelo menos 1 minuto.' }
     }
     if (photos.length === 0) return { fieldId: `${formId}-gallery`, message: 'Adicione ao menos uma imagem à galeria de divulgação do evento.' }
@@ -637,8 +645,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const objectivesSection = (
     <section className={sectionClasses}>
       <h3 className={sectionTitleClasses}>Objetivos</h3>
-      <div className={`mt-3 grid items-end gap-3 ${isPanel ? 'grid-cols-6' : 'grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]'}`}>
-        <FormField className={isPanel ? 'col-span-2' : ''} htmlFor={`${formId}-start-date`} label="Data de início">
+      <div className={`mt-3 grid items-end gap-3 ${isPanel ? 'grid-cols-1' : 'grid-cols-1 min-[48rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]'}`}>
+        <FormField htmlFor={`${formId}-start-date`} label="Data de início">
           <TextField
             id={`${formId}-start-date`}
             type="date"
@@ -648,7 +656,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             className={fieldClasses}
           />
         </FormField>
-        <FormField className={isPanel ? 'col-span-2' : ''} htmlFor={`${formId}-end-date`} label="Data de fim">
+        <FormField htmlFor={`${formId}-end-date`} label="Data de fim">
           <TextField
             id={`${formId}-end-date`}
             type="date"
@@ -658,7 +666,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             className={fieldClasses}
           />
         </FormField>
-        <FormField className={isPanel ? 'col-span-2' : ''} htmlFor={`${formId}-goal`} label="Arrecadação (R$)">
+        <FormField htmlFor={`${formId}-goal`} label="Arrecadação (R$)">
           <TextField
             id={`${formId}-goal`}
             inputMode="decimal"
@@ -669,7 +677,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             className={fieldClasses}
           />
         </FormField>
-        <div className={`${isPanel ? 'col-span-6' : 'col-span-3'} grid grid-cols-2 items-start gap-3`}>
+        <div className="col-span-full grid grid-cols-1 items-start gap-3 min-[48rem]:grid-cols-2">
           {draft.kind === 'product' && (
             <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
               <TextField
@@ -699,7 +707,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                   const hours = Number(value.replace(',', '.'))
                   setField('reservationTtlMinutes', value && Number.isFinite(hours) ? String(Math.round(hours * 60)) : '')
                 }}
-                placeholder="Padrão"
+                placeholder="Informe o tempo"
+                required
                 className={fieldClasses}
               />
               <div className="mt-1 flex items-center justify-end gap-1">
@@ -721,6 +730,11 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                   <span className="hidden min-[24rem]:inline">Horas</span>
                 </span>
               </div>
+              {!draft.reservationTtlMinutes && eventSettings && (
+                <p className="mt-1 text-xs text-marca">
+                  Nenhum tempo padrão foi encontrado. Preencha este campo.
+                </p>
+              )}
             </div>
           </FormField>
         </div>
