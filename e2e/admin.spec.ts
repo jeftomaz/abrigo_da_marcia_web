@@ -577,7 +577,19 @@ test.describe('admin', () => {
       await entrar(page)
       await page.goto(`${ADMIN_URL}/#/eventos/a1000000-0000-0000-0000-000000000001/sorteio`)
       await page.getByRole('button', { name: 'Sortear pela esfera', exact: true }).click()
+      const shortageWarning = page.getByRole('dialog', { name: 'Reservas insuficientes para o sorteio' })
+      await expect(shortageWarning).toContainText('Há 1 reserva paga ainda elegível para 2 prêmios não sorteados.')
+      await shortageWarning.getByRole('button', { name: 'Iniciar sorteio' }).click()
       await expect(page.getByText('Maria Compradora', { exact: true })).toBeVisible()
+
+      await page.reload()
+      await expect(page.getByText('Sorteio', { exact: true })).toBeVisible()
+      await page.getByRole('button', { name: 'Sortear', exact: true }).click()
+      const noEligibleReservationWarning = page.getByRole('dialog', { name: 'Reservas insuficientes para o sorteio' })
+      await expect(noEligibleReservationWarning).toContainText('Há 0 reservas pagas ainda elegíveis para 1 prêmio não sorteado.')
+      await expect(noEligibleReservationWarning.getByRole('button', { name: 'Iniciar sorteio' })).toHaveCount(0)
+      expect(executarSql("select count(*) from public.rifa_premios where event_id = 'a1000000-0000-0000-0000-000000000001' and winning_number is not null")).toBe('1')
+      await noEligibleReservationWarning.getByRole('button', { name: 'Entendi' }).click()
 
       await page.getByRole('link', { name: 'Voltar' }).click()
       const raffleCard = page.locator('article').filter({ hasText: 'Rifa de Inverno' })
@@ -601,29 +613,28 @@ test.describe('admin', () => {
     }
   })
 
-  test('alerta antes do sorteio ao tocar a esfera quando faltam números pagos', async ({ page }, testInfo) => {
+  test('alerta antes do sorteio quando há menos reservas pagas do que prêmios', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile-chromium', 'O gesto mobile é coberto uma vez.')
-    executarSql(`insert into public.rifa_premios (id, event_id, name, photo, display_order) values
-      ('e2100000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'Prêmio extra E2E 1', 'eventos/rifa-teste/premio-1.jpg', 3),
-      ('e2100000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000001', 'Prêmio extra E2E 2', 'eventos/rifa-teste/premio-2.jpg', 4)
-      on conflict (id) do nothing`)
+    executarSql(`
+      update public.rifa_premios set winning_number = null, winner_name = null, drawn_at = null
+      where event_id = 'a1000000-0000-0000-0000-000000000001';
+      update public.reservas set status = 'pendente'
+      where session_id = 'a1200000-0000-0000-0000-000000000001';
+      update public.reservas set status = 'paga'
+      where session_id = 'a1200000-0000-0000-0000-000000000002';
+    `)
+    await entrar(page)
+    await page.goto(`${ADMIN_URL}/#/eventos`)
+    const raffleCard = page.locator('article').filter({ hasText: 'Rifa de Inverno' })
+    await raffleCard.getByRole('button', { name: 'Sortear' }).click()
+    await expect(page.getByText('Sorteio', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: 'Sortear pela esfera', exact: true }).tap()
 
-    try {
-      await entrar(page)
-      await page.goto(`${ADMIN_URL}/#/eventos`)
-      const raffleCard = page.locator('article').filter({ hasText: 'Rifa de Inverno' })
-      await raffleCard.getByRole('button', { name: 'Sortear' }).click()
-      await expect(page.getByText('Sorteio', { exact: true })).toBeVisible()
-      await page.getByRole('button', { name: 'Sortear pela esfera', exact: true }).tap()
-
-      const warning = page.getByRole('dialog', { name: 'Reservas insuficientes para o sorteio' })
-      await expect(warning.getByRole('heading', { name: 'Reservas pagas insuficientes' })).toBeVisible()
-      await expect(warning).toContainText('números pagos ainda elegíveis')
-      await expect(warning.getByRole('button', { name: 'Iniciar sorteio' })).toBeVisible()
-      expect(executarSql("select count(*) from public.rifa_premios where event_id = 'a1000000-0000-0000-0000-000000000001' and winning_number is not null")).toBe('0')
-    } finally {
-      executarSql("delete from public.rifa_premios where id in ('e2100000-0000-0000-0000-000000000001', 'e2100000-0000-0000-0000-000000000002')")
-    }
+    const warning = page.getByRole('dialog', { name: 'Reservas insuficientes para o sorteio' })
+    await expect(warning.getByRole('heading', { name: 'Reservas pagas insuficientes' })).toBeVisible()
+    await expect(warning).toContainText('Há 1 reserva paga ainda elegível para 2 prêmios não sorteados.')
+    await expect(warning.getByRole('button', { name: 'Iniciar sorteio' })).toBeVisible()
+    expect(executarSql("select count(*) from public.rifa_premios where event_id = 'a1000000-0000-0000-0000-000000000001' and winning_number is not null")).toBe('0')
   })
 
   test('mantém o botão de sorteio no primeiro viewport mobile', async ({ page }, testInfo) => {
