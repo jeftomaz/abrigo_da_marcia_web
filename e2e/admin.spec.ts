@@ -502,6 +502,22 @@ test.describe('admin', () => {
     await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
   })
 
+  test('oferece exclusão auditada para evento encerrado', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'O fluxo visual é coberto uma vez.')
+    await entrar(page)
+    await page.goto(`${ADMIN_URL}/#/eventos`)
+
+    const endedEvent = page.locator('article').filter({ hasText: 'Bazar de Inverno' })
+    await endedEvent.getByRole('button', { name: 'Excluir' }).click()
+
+    const confirmation = page.getByRole('dialog', { name: 'Excluir evento' })
+    await expect(confirmation.getByRole('heading', { name: 'Excluir Evento' })).toBeVisible()
+    await expect(confirmation).toContainText('A exportação será enviada automaticamente ao e-mail configurado antes da exclusão definitiva.')
+    await expect(confirmation.getByRole('button', { name: 'Excluir Evento' })).toBeVisible()
+    await confirmation.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(confirmation).toBeHidden()
+  })
+
   test('confirma pagamento por status ou após salvar o comprovante', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'O fluxo funcional é coberto uma vez.')
     await page.addInitScript(() => {

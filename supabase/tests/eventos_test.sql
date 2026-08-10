@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(96);
+select plan(100);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -73,6 +73,49 @@ select throws_ok($$
   select public.activate_event('40000000-0000-0000-0000-000000000002');
 $$, 'P0001', 'Informe chave, recebedor e cidade do Pix antes de publicar.', 'explica publicação bloqueada por Pix ausente');
 delete from public.eventos where id = '40000000-0000-0000-0000-000000000002';
+
+insert into public.eventos (
+  id, name, description, type, photos, start_date, end_date,
+  fundraising_goal_cents, pix_key, pix_receiver, pix_city,
+  post_payment_instructions, data_verified_at
+) values (
+  '40000000-0000-0000-0000-000000000003', 'Evento encerrado removível', 'Validação da exclusão manual auditada.',
+  'produtos', '{eventos/removivel.jpg}', current_date - 1, current_date + 1,
+  100000, 'chave-teste@example.com', 'Abrigo (teste)', 'Ribeirao Preto', 'Envie o comprovante.', now()
+);
+insert into public.produtos (
+  event_id, name, description, photos, unit_price_cents, display_order
+) values (
+  '40000000-0000-0000-0000-000000000003', 'Produto removível', 'Catálogo para ativação.',
+  '{eventos/produto-removivel.jpg}', 1000, 1
+);
+select public.activate_event('40000000-0000-0000-0000-000000000003');
+update public.eventos set status = 'encerrado'
+where id = '40000000-0000-0000-0000-000000000003';
+
+select throws_ok(
+  $$delete from public.eventos where id = '40000000-0000-0000-0000-000000000003'$$,
+  'P0001', 'Somente rascunhos podem ser removidos diretamente.',
+  'impede excluir evento encerrado sem o fluxo auditado'
+);
+update public.event_settings set event_export_email = 'abrigo@example.com' where singleton;
+select lives_ok(
+  $$select public.delete_archived_event('40000000-0000-0000-0000-000000000003', now())$$,
+  'permite excluir evento encerrado após a exportação'
+);
+select is(
+  (select count(*) from public.eventos where id = '40000000-0000-0000-0000-000000000003'),
+  0::bigint,
+  'remove o evento encerrado e seus dados associados'
+);
+select is(
+  (select count(*) from public.event_deletion_audit
+    where event_id = '40000000-0000-0000-0000-000000000003'
+      and export_email = 'abrigo@example.com'),
+  1::bigint,
+  'audita a exclusão manual do evento encerrado'
+);
+update public.event_settings set event_export_email = null where singleton;
 
 select lives_ok($$
   insert into public.eventos (

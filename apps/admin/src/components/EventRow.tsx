@@ -136,6 +136,17 @@ export function EventRow({
             Reativar
           </Action>
         )}
+        {event.status === 'ended' && (
+          <Action
+            size="small"
+            variant="neutral-adaptive"
+            icon="trash-solid"
+            className={`${actionClasses} ${event.kind === 'raffle' ? 'col-span-2 row-start-3' : 'col-start-1 row-start-2'}`}
+            onClick={onRemove}
+          >
+            Excluir
+          </Action>
+        )}
         {event.status === 'archived' && (
           <Action
             size="small"

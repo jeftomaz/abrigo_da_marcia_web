@@ -810,7 +810,7 @@ async function invokeEventFunction(name: 'activate-event' | 'delete-archived-eve
 }
 
 async function deleteEvent({ event }: { event: FundraisingEvent }) {
-  if (event.status === 'archived') {
+  if (event.status === 'ended' || event.status === 'archived') {
     await invokeEventFunction('delete-archived-event', event.id)
   } else {
     const { error } = await supabase.from('eventos').delete().eq('id', event.id)
