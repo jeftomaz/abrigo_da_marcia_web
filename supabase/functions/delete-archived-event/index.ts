@@ -14,8 +14,8 @@ Deno.serve((request) => handleAdminRequest(request, 'delete-archived-event', asy
   const eventId = typeof body?.eventId === 'string' ? body.eventId : ''
   if (!eventId) throw new AdminFunctionError('VALIDATION_ERROR', 'Evento não informado.', 422)
   const eventExport = await loadEventExport(service, eventId)
-  if (eventExport.event.status !== 'arquivado') {
-    throw new AdminFunctionError('VALIDATION_ERROR', 'Somente eventos arquivados podem ser excluídos.', 422)
+  if (!['encerrado', 'arquivado'].includes(eventExport.event.status)) {
+    throw new AdminFunctionError('VALIDATION_ERROR', 'Somente eventos encerrados ou arquivados podem ser excluídos.', 422)
   }
   const sentAt = await sendEventExport(eventExport)
   const { error: deleteError } = await supabase.rpc('delete_archived_event', { p_event_id: eventId, p_export_sent_at: sentAt })

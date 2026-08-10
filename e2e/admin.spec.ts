@@ -327,21 +327,6 @@ test.describe('admin', () => {
     })
     expect(missing.status()).toBe(404)
     expect(await missing.json()).toMatchObject({ code: 'NOT_FOUND' })
-
-    const endedDeletion = await request.post(`${apiUrl}/functions/v1/delete-archived-event`, {
-      headers: {
-        apikey: publishableKey,
-        Authorization: `Bearer ${credenciais.accessToken}`,
-        Origin: ADMIN_URL,
-        'x-client-info': 'abrigo-e2e',
-      },
-      data: { eventId: 'b1000000-0000-0000-0000-000000000001' },
-    })
-    expect(endedDeletion.status()).toBe(422)
-    expect(await endedDeletion.json()).toMatchObject({
-      code: 'VALIDATION_ERROR',
-      message: 'Somente eventos arquivados podem ser excluídos.',
-    })
   })
 
   test('conclui o cadastro de um administrador convidado', async ({ page, request }) => {
@@ -517,36 +502,20 @@ test.describe('admin', () => {
     await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
   })
 
-  test('exige ocultar o evento encerrado antes da exclusão auditada', async ({ page }, testInfo) => {
+  test('oferece exclusão auditada para evento encerrado', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'O fluxo visual é coberto uma vez.')
-    try {
-      await entrar(page)
-      await page.goto(`${ADMIN_URL}/#/eventos`)
+    await entrar(page)
+    await page.goto(`${ADMIN_URL}/#/eventos`)
 
-      const endedEvent = page.locator('article').filter({ hasText: 'Bazar de Inverno' })
-      await expect(endedEvent.getByRole('button', { name: 'Excluir' })).toHaveCount(0)
-      await endedEvent.getByRole('button', { name: 'Ocultar' }).click()
+    const endedEvent = page.locator('article').filter({ hasText: 'Bazar de Inverno' })
+    await endedEvent.getByRole('button', { name: 'Excluir' }).click()
 
-      const archiveConfirmation = page.getByRole('dialog', { name: 'Ocultar evento' })
-      await expect(archiveConfirmation.getByRole('heading', { name: 'Ocultar Evento' })).toBeVisible()
-      await expect(archiveConfirmation).toContainText('O evento deixará de aparecer no histórico público')
-      await archiveConfirmation.getByRole('button', { name: 'Ocultar Evento' }).click()
-
-      await expect(endedEvent.getByText('Arquivado', { exact: true })).toBeVisible()
-      await endedEvent.getByRole('button', { name: 'Excluir' }).click()
-      const deleteConfirmation = page.getByRole('dialog', { name: 'Excluir evento' })
-      await expect(deleteConfirmation).toContainText('A exportação será enviada automaticamente ao e-mail configurado antes da exclusão definitiva.')
-      await expect(deleteConfirmation.getByRole('button', { name: 'Excluir Evento' })).toBeVisible()
-      await deleteConfirmation.getByRole('button', { name: 'Cancelar' }).click()
-      await expect(deleteConfirmation).toBeHidden()
-    } finally {
-      executarSql(`
-        set session_replication_role = replica;
-        update public.eventos set status = 'encerrado', archived_at = null
-        where id = 'b1000000-0000-0000-0000-000000000001';
-        set session_replication_role = origin;
-      `)
-    }
+    const confirmation = page.getByRole('dialog', { name: 'Excluir evento' })
+    await expect(confirmation.getByRole('heading', { name: 'Excluir Evento' })).toBeVisible()
+    await expect(confirmation).toContainText('A exportação será enviada automaticamente ao e-mail configurado antes da exclusão definitiva.')
+    await expect(confirmation.getByRole('button', { name: 'Excluir Evento' })).toBeVisible()
+    await confirmation.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(confirmation).toBeHidden()
   })
 
   test('confirma pagamento por status ou após salvar o comprovante', async ({ page }, testInfo) => {
@@ -712,6 +681,15 @@ test.describe('admin', () => {
 
   test('preserva os dados e informa o erro ao criar uma rifa', async ({ page }) => {
     const raffleName = 'Rifa E2E com falha'
+    let releaseUpload: () => void = () => undefined
+    let reportUploadStarted: () => void = () => undefined
+    const uploadGate = new Promise<void>((resolve) => { releaseUpload = resolve })
+    const uploadStarted = new Promise<void>((resolve) => { reportUploadStarted = resolve })
+    await page.route('**/storage/v1/object/dog-photos/**', async (route) => {
+      reportUploadStarted()
+      await uploadGate
+      await route.continue()
+    })
     await page.route('**/rest/v1/eventos*', async (route) => {
       if (route.request().method() !== 'POST') {
         await route.continue()
@@ -738,6 +716,7 @@ test.describe('admin', () => {
     await form.getByLabel('Título').fill(raffleName)
     await form.getByLabel('Descrição').fill('Rifa preenchida para validar a preservação do formulário.')
     await form.getByLabel('Data de fim').fill(new Date(Date.now() + 86_400_000).toISOString().slice(0, 10))
+    await form.getByLabel('Arrecadação (R$)').fill('1000')
     await form.getByLabel('Quantidade de números*').fill('100')
     await form.getByLabel('Valor por número (R$)*').fill('1000')
     await form.getByLabel('Chave PIX').fill('pix-e2e@example.com')
@@ -760,6 +739,12 @@ test.describe('admin', () => {
     await saveButton.click()
     const confirmation = page.getByRole('dialog', { name: 'Confirmar verificação' })
     await confirmation.getByRole('button', { name: 'Confirmar' }).click()
+    try {
+      await uploadStarted
+      await expect(form.getByRole('button', { name: 'Enviando...' })).toBeDisabled()
+    } finally {
+      releaseUpload()
+    }
 
     await expect(form.getByRole('alert')).toContainText('Não foi possível salvar o evento: Falha E2E ao criar a rifa.')
     await expect(form).toBeVisible()
@@ -866,9 +851,27 @@ test.describe('admin', () => {
     await page.setViewportSize({ width: 320, height: 844 })
     await entrar(page)
     await expect(page.getByRole('heading', { name: 'Cães Cadastrados' })).toBeVisible()
-    const navigationBox = await page.getByRole('navigation').boundingBox()
+    const navigationBox = await page.getByRole('navigation', { name: 'Navegação administrativa' }).boundingBox()
     expect(navigationBox?.x).toBe(0)
     expect(navigationBox?.width).toBe(320)
+    expect(navigationBox ? navigationBox.y + navigationBox.height : 0).toBeCloseTo(844, 0)
+    const mobileNavigation = page.getByRole('navigation', { name: 'Navegação administrativa' })
+    expect(await mobileNavigation.evaluate((element) => {
+      const styles = getComputedStyle(element)
+      return { gap: styles.columnGap, paddingLeft: styles.paddingLeft, paddingRight: styles.paddingRight }
+    })).toEqual({ gap: '24px', paddingLeft: '24px', paddingRight: '24px' })
+    const mobileTab = mobileNavigation.getByRole('link', { name: 'Cães', exact: true })
+    expect((await mobileTab.boundingBox())?.height).toBe(48)
+    expect(await mobileTab.evaluate((element) => {
+      const styles = getComputedStyle(element)
+      return { fontSize: styles.fontSize, paddingLeft: styles.paddingLeft, paddingRight: styles.paddingRight }
+    })).toEqual({ fontSize: '16px', paddingLeft: '28px', paddingRight: '28px' })
+
+    await page.setViewportSize({ width: 1024, height: 844 })
+    const desktopNavigation = page.getByRole('navigation', { name: 'Navegação administrativa' })
+    expect((await desktopNavigation.boundingBox())?.y).toBe(16)
+    expect(await desktopNavigation.evaluate((element) => getComputedStyle(element).columnGap)).toBe('40px')
+    expect((await desktopNavigation.getByRole('link', { name: 'Cães', exact: true }).boundingBox())?.height).toBe(48)
 
     for (const width of [320, 375, 430]) {
       await page.setViewportSize({ width, height: 844 })

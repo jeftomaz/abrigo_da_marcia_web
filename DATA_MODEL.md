@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260805130000`, com `20260809120000`–`20260810140000` pendentes de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
+Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260805130000`, com `20260809120000`–`20260810130000` pendentes de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
 
 ## Imagens no Storage
 
@@ -317,7 +317,7 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `default_max_raffle_numbers` | `integer` | not null; `> 0`; máximo padrão de números por reserva de rifa |
 | `default_max_product_units` | `integer` | not null; `> 0`; máximo padrão de unidades, somando todos os produtos da reserva |
 | `default_reservation_ttl` | `interval` | not null; mínimo de 1 minuto e somente minutos inteiros; prazo padrão de expiração |
-| `event_export_email` | `text` | nullable até ser configurado; obrigatório antes de publicar o quinto evento ou excluir evento arquivado |
+| `event_export_email` | `text` | nullable até ser configurado; obrigatório antes de publicar o quinto evento ou excluir evento encerrado/arquivado legado |
 | `default_post_payment_instructions` | `text` | nullable; instrução preenchida em novos eventos |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
@@ -347,9 +347,9 @@ Configuração singleton editável pelo admin. Os limites são por reserva, não
 | `created_at` | `timestamptz` | not null; default `now()` |
 | `updated_at` | `timestamptz` | not null; atualizado automaticamente |
 
-Índice unique parcial em `status = 'ativo'` garante um único evento ativo. Triggers permitem arquivar somente eventos encerrados, impedem ativação direta e limitam a quatro os eventos com status diferente de `rascunho`. A ativação rejeita `draft_payload`, exige todos os dados gerais/Pix, foto e configuração específica do tipo. Valores monetários permanecem padronizados em centavos e o TTL em minutos inteiros convertidos para `interval`.
+Índice unique parcial em `status = 'ativo'` garante um único evento ativo. Trigger adicional impede arquivamento novo, ativação direta e mais de quatro eventos com status diferente de `rascunho`. A ativação rejeita `draft_payload`, exige todos os dados gerais/Pix, foto e configuração específica do tipo. Valores monetários permanecem padronizados em centavos e o TTL em minutos inteiros convertidos para `interval`.
 
-Rascunhos não entram no teto e podem ser excluídos diretamente. Na remoção manual, o evento segue `ativo → encerrado → arquivado`; o arquivamento o oculta das views públicas e somente então a Edge Function `delete-archived-event` exporta e exclui o domínio. Ao publicar um novo rascunho quando já existem quatro eventos não rascunhos, a Edge Function autenticada `activate-event` usa `service_role` somente para montar a exportação completa do menor `activated_at`, envia JSON estruturado + CSV das reservas ao `event_settings.event_export_email` via Resend e chama `activate_event`. Sob lock transacional, a RPC confirma destinatário/evento/horário, audita, apaga o domínio antigo por cascade e ativa o novo. Falhas de envio preservam os eventos. Fotos não são anexadas; seus caminhos constam no JSON e os objetos são removidos do Storage após a transação.
+Rascunhos não entram no teto e podem ser excluídos diretamente. Eventos ativados permanecem como `ativo|encerrado`: ao publicar um novo rascunho quando já existem quatro, a Edge Function autenticada `activate-event` usa `service_role` somente para montar a exportação completa do menor `activated_at`, envia JSON estruturado + CSV das reservas ao `event_settings.event_export_email` via Resend e chama `activate_event`. Sob lock transacional, a RPC confirma destinatário/evento/horário, audita, apaga o domínio antigo por cascade e ativa o novo. Falha no envio preserva os quatro eventos e o rascunho. Fotos não são anexadas; seus caminhos constam no JSON e os objetos são removidos do Storage após a transação. A Edge Function `delete-archived-event`, cujo nome é preservado por compatibilidade, oferece o mesmo fluxo de exportação e exclusão auditada para eventos encerrados e arquivados legados.
 
 ### `event_deletion_audit`
 
@@ -366,7 +366,7 @@ Auditoria mínima preservada após a exclusão, sem os dados operacionais do eve
 | `export_sent_at` | `timestamptz` | not null; instante em que o envio da cópia foi confirmado |
 | `deleted_at` | `timestamptz` | not null; default `now()` |
 
-Exclusões automáticas usam `activate_event`, recebendo da Edge Function o usuário previamente validado; exclusões manuais aceitam somente eventos arquivados, usam `delete_archived_event` e registram `auth.uid()`. Ambas exigem e-mail configurado e horário de envio confirmado e apagam evento, reservas e itens na mesma transação.
+Exclusões automáticas usam `activate_event`, recebendo da Edge Function o usuário previamente validado; exclusões manuais de encerrados ou arquivados legados usam `delete_archived_event` e registram `auth.uid()`. Ambas exigem e-mail configurado e horário de envio confirmado e apagam evento, reservas e itens na mesma transação.
 
 ### `rifas`
 

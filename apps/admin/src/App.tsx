@@ -13,7 +13,7 @@ const RaffleDraw = lazy(() => import('./pages/RaffleDraw').then((m) => ({ defaul
 
 function AdminShell() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col pb-20 lg:pb-0">
       <AdminHeader />
       <Outlet />
     </div>

@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(103);
+select plan(100);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -99,35 +99,21 @@ select throws_ok(
   'impede excluir evento encerrado sem o fluxo auditado'
 );
 update public.event_settings set event_export_email = 'abrigo@example.com' where singleton;
-select throws_ok(
-  $$select public.delete_archived_event('40000000-0000-0000-0000-000000000003', now())$$,
-  'P0001', 'Somente eventos arquivados podem usar a exclusão auditada.',
-  'impede excluir evento encerrado pelo fluxo auditado'
-);
-select lives_ok(
-  $$update public.eventos set status = 'arquivado' where id = '40000000-0000-0000-0000-000000000003'$$,
-  'permite ocultar o evento encerrado'
-);
-select is(
-  (select status from public.eventos where id = '40000000-0000-0000-0000-000000000003'),
-  'arquivado'::public.evento_status,
-  'arquiva o evento antes da exclusão'
-);
 select lives_ok(
   $$select public.delete_archived_event('40000000-0000-0000-0000-000000000003', now())$$,
-  'permite excluir evento arquivado após a exportação'
+  'permite excluir evento encerrado após a exportação'
 );
 select is(
   (select count(*) from public.eventos where id = '40000000-0000-0000-0000-000000000003'),
   0::bigint,
-  'remove o evento arquivado e seus dados associados'
+  'remove o evento encerrado e seus dados associados'
 );
 select is(
   (select count(*) from public.event_deletion_audit
     where event_id = '40000000-0000-0000-0000-000000000003'
       and export_email = 'abrigo@example.com'),
   1::bigint,
-  'audita a exclusão manual do evento arquivado'
+  'audita a exclusão manual do evento encerrado'
 );
 update public.event_settings set event_export_email = null where singleton;
 
