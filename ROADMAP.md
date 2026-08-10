@@ -28,6 +28,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 ### P0 — Correções operacionais e mobile
 
+- `done` Corrigir o cadastro de Eventos: impedir sobreposição dos Objetivos, exibir e exigir o prazo de reserva configurado, manter a meta fixa no equilíbrio da rifa e compactar o card Pix para preservar a ação de fechar.
 - `done` CORS de `activate-event`/`delete-archived-event` corrigido e coberto por E2E: aceita os cabeçalhos do SDK e rejeita origens não permitidas; implantação é acompanhada no P0 de produção.
 - `done` Erros administrativos padronizados: contrato `{ code, message, requestId }`, status HTTP coerente, log estruturado sem dados sensíveis e tradução compartilhada no client para rede/CORS, sessão/MFA, validação, conflito, banco, Storage e Resend; diálogos e rascunhos permanecem íntegros na falha.
 - `done` Corrigir as toolbars mobile de Cães e Histórias para reservar uma linha ao título e impedir colisão com filtro/ação; aplicar `text-marca` aos títulos principais de Cães, Histórias, Eventos e Configurações.

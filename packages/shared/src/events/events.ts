@@ -848,7 +848,7 @@ async function listReservations(eventId: string) {
     contact: row.customer_contact ?? '',
     status: RESERVATION_STATUS_FROM_DB[row.status],
     receiptSaved: row.receipt_saved,
-    referenceCode: row.reference_code,
+    referenceCode: row.reference_code ?? '',
     totalCents: row.total_cents,
     expiresAt: row.expires_at,
     numbers: numberRows.filter((number) => number.reservation_id === row.id).map((number) => number.number).sort((a, b) => a - b),

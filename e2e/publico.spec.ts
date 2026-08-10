@@ -191,6 +191,12 @@ test.describe('site público', () => {
     await expect(confirmacao).toBeVisible()
     await expect(confirmacao.getByRole('img', { name: /QR Code do Pix/i })).toBeVisible()
     await expect(confirmacao.getByRole('button', { name: 'Copiar código PIX' })).toBeVisible()
+    const closeButton = confirmacao.getByRole('button', { name: 'Fechar' })
+    const closeBox = await closeButton.boundingBox()
+    const viewport = page.viewportSize()
+    expect(closeBox, 'botão Fechar do Pix invisível').not.toBeNull()
+    expect(viewport, 'viewport indisponível').not.toBeNull()
+    if (closeBox && viewport) expect(closeBox.y + closeBox.height).toBeLessThanOrEqual(viewport.height)
 
     // O contato é normalizado por trigger: o E2E confirma o efeito no banco, não só na tela.
     const persistida = executarSql(

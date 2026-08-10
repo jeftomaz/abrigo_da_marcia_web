@@ -178,14 +178,14 @@ export function PixConfirmationDialog({
     <Dialog
       ariaLabelledBy={titleId}
       onClose={onClose}
-      className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface-raised p-7 text-left text-on-surface-raised sm:p-10"
+      className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-surface-raised p-5 text-left text-on-surface-raised sm:p-8"
     >
       <h2 id={titleId} className="text-3xl font-medium text-marca sm:text-4xl">
         {title}
       </h2>
       {children}
-      {postPaymentInstructions && <p className="mt-5 text-sm">{postPaymentInstructions}</p>}
-      <div className="mt-7 flex flex-col items-center">
+      {postPaymentInstructions && <p className="mt-3 text-sm">{postPaymentInstructions}</p>}
+      <div className="mt-4 flex flex-col items-center">
         <div className="bg-white p-2">
           {/* Sem title/role o SVG não tem nome acessível e o leitor de tela não anuncia
               o QR — quem não enxerga precisa saber que o botão de copiar é a alternativa. */}
@@ -193,21 +193,21 @@ export function PixConfirmationDialog({
             value={pixCode}
             title="QR Code do Pix. Use o botão abaixo para copiar o código."
             role="img"
-            className="size-48 sm:size-56"
+            className="size-40 sm:size-48"
             marginSize={0}
           />
         </div>
-        <Action onClick={copyPixCode} className="mt-3 w-full max-w-56 py-2" size="small">
+        <Action onClick={copyPixCode} className="mt-2 w-full max-w-56 py-2" size="small">
           {pixCopied ? 'Código copiado' : 'Copiar código PIX'}
         </Action>
       </div>
       {expiresAt && (
-        <p className="mt-6 text-xs">
+        <p className="mt-3 text-xs">
           Pague até {new Date(expiresAt).toLocaleString('pt-BR')}. Depois desse horário, a
           reserva pendente expira e os itens voltam a ficar disponíveis.
         </p>
       )}
-      <div className="mt-8 flex justify-center">
+      <div className="mt-3 flex justify-center">
         <Action onClick={onClose} size="compact" variant="secondary-adaptive">
           Fechar
         </Action>
