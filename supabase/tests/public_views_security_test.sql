@@ -71,7 +71,7 @@ select is(
     "produto_variacoes_public": "id,product_id,name,display_order",
     "produtos_public": "id,event_id,name,description,photos,unit_price_cents,discount_min_quantity,discount_unit_price_cents,measurement_table,measurement_image,display_order",
     "rifa_numeros_public": "event_id,number,available",
-    "rifa_premios_public": "id,event_id,name,photo,display_order,winning_number,winner_name,drawn_at",
+    "rifa_premios_public": "id,event_id,name,photo,display_order,winning_number,drawn_at",
     "rifas_public": "event_id,total_numbers,number_price_cents",
     "site_settings_public": "adoption_form_url,volunteer_form_url,pix_key,pix_receiver,pix_city,recurring_donation_urls",
     "social_links_public": "network,url,display_order"

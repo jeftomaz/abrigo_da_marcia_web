@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260805130000`, com `20260809120000` pendente de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
+Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260805130000`, com `20260809120000`–`20260809150000` pendentes de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
 
 ## Imagens no Storage
 
@@ -390,8 +390,10 @@ Prêmios ordenados de uma rifa. Uma rifa precisa ter ao menos um prêmio antes d
 | `photo` | `text` | not null; caminho da imagem comprimida no Storage |
 | `display_order` | `smallint` | not null; `>= 1`; unique dentro da rifa |
 | `winning_number` | `integer` | nullable; entre `1` e `rifas.total_numbers`; deve pertencer a uma reserva paga da rifa |
-| `winner_name` | `text` | nullable; snapshot exibido após o resultado; preenchido junto com `winning_number` |
+| `winner_name` | `text` | nullable; snapshot exibido somente no admin; preenchido junto com `winning_number` |
 | `drawn_at` | `timestamptz` | nullable; preenchido junto com o resultado |
+
+`rifa_premios_public` expõe o resultado somente por `winning_number` e `drawn_at`; `winner_name` permanece restrito à tabela administrativa.
 
 ### `produtos`
 

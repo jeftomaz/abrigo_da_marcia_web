@@ -198,4 +198,26 @@ test.describe('site público', () => {
     )
     expect(persistida).toBe('pendente|+5516987654321')
   })
+
+  test('exibe somente o número sorteado e mantém o nome do ganhador privado', async ({ page }) => {
+    executarSql(`update public.rifa_premios
+      set winning_number = 20, winner_name = 'Maria Compradora', drawn_at = now()
+      where id = 'a1100000-0000-0000-0000-000000000001'`)
+
+    try {
+      const prizesResponsePromise = page.waitForResponse((response) => response.url().includes('/rest/v1/rifa_premios_public'))
+      await page.goto('/eventos')
+      const prizesPayload = await (await prizesResponsePromise).json() as Record<string, unknown>[]
+      expect(prizesPayload.every((prize) => !('winner_name' in prize))).toBe(true)
+
+      await page.getByRole('button', { name: `Reservar: ${RIFA_ATIVA}` }).click()
+      const firstPrize = page.getByRole('region', { name: 'Prêmios da rifa' }).getByRole('article').first()
+      await expect(firstPrize).toContainText('Nº 20')
+      await expect(firstPrize).not.toContainText('Maria Compradora')
+    } finally {
+      executarSql(`update public.rifa_premios
+        set winning_number = null, winner_name = null, drawn_at = null
+        where id = 'a1100000-0000-0000-0000-000000000001'`)
+    }
+  })
 })

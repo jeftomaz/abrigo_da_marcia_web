@@ -145,7 +145,7 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
               <article key={prize.id} className="w-36 shrink-0 snap-start rounded-md bg-marca px-2 py-2 text-marca-clara sm:w-44 lg:w-52">
                 {prize.image && <img src={getEventPhotoUrl(prize.image)} alt={`Prêmio ${index + 1}: ${prize.name}`} className="mb-2 aspect-square w-full rounded-md object-cover" />}
                 <p>Prêmio {index + 1}: {prize.name}</p>
-                {prize.winningNumber && <p className="mt-1">Nº {formatNumber(prize.winningNumber, numberDigits)} — {prize.winnerName}</p>}
+                {prize.winningNumber && <p className="mt-1">Nº {formatNumber(prize.winningNumber, numberDigits)}</p>}
               </article>
             ))}
           </section>
