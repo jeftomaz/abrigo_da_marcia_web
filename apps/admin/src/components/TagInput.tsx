@@ -23,7 +23,7 @@ export function TagInput({ id, onChange, placeholder, tags }: TagInputProps) {
   }
 
   return (
-    <div className="flex min-h-10 w-full flex-wrap items-center gap-2 rounded-lg border-2 border-cinza-medio bg-transparent px-2 py-1 text-current focus-within:border-marca dark:border-cinza-claro">
+    <div className="flex min-h-10 min-w-0 w-full flex-wrap items-center gap-2 rounded-lg border-2 border-cinza-medio bg-transparent px-2 py-1 text-current focus-within:border-marca dark:border-cinza-claro">
       {tags.map((tag) => (
         <span key={tag.id} className="flex items-center gap-1 rounded-full bg-marca px-3 py-1 text-sm text-marca-clara">
           {tag.name}

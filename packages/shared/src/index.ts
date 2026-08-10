@@ -61,6 +61,7 @@ export {
   normalizeReservationContact,
 } from './events/reservationContact'
 export type { ReservationContactType } from './events/reservationContact'
+export { getReservationNameError } from './events/reservationName'
 export {
   formatCentsForInput,
   formatCurrencyInput,

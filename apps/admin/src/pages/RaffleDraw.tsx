@@ -72,6 +72,7 @@ export function RaffleDraw() {
   const pendingPrizeCount = prizes.filter((prize) => !prizeWinner(prize)).length
   const eligibleNumberCount = Math.max(0, paidNumberCount - drawnNumberCount)
   const hasPrizeShortage = eligibleNumberCount < pendingPrizeCount
+  const drawActionLabel = isDrawing ? 'Sorteando...' : winner && nextPrize ? 'Próximo Sorteio' : winner ? 'Sortear novamente' : 'Sortear'
 
   const selectPrize = (prize: RafflePrize) => {
     if (isDrawing) return
@@ -128,12 +129,12 @@ export function RaffleDraw() {
 
   const prizeList = (
     <section aria-label="Prêmios">
-      <h2 className="mb-4 text-center text-3xl font-medium desk:text-left">Prêmios</h2>
+      <h2 className="mb-3 text-center text-3xl font-medium desk:mb-4 desk:text-left">Prêmios</h2>
       <div className="flex gap-3 overflow-x-auto pb-2 desk:flex-col desk:overflow-visible">
         {prizes.map((prize, index) => {
           const isCurrent = prize.id === currentPrizeId
           const complete = Boolean(prizeWinner(prize))
-          return <button key={prize.id} type="button" disabled={isDrawing} onClick={() => selectPrize(prize)} aria-pressed={isCurrent} className={`flex min-h-20 min-w-64 items-center justify-between gap-3 rounded-2xl px-5 py-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:opacity-50 desk:min-w-0 ${isCurrent ? 'bg-marca-escura text-marca-clara' : complete ? 'bg-marca-clara text-marca' : 'bg-marca-clara/70 text-marca-escura'}`}><span className="min-w-0"><strong className="block truncate text-2xl font-medium">{prize.name}</strong><span className="text-sm">Prêmio {index + 1}{complete ? ' · Realizado' : ''}</span></span><span aria-hidden="true" className="text-4xl">›</span></button>
+          return <button key={prize.id} type="button" disabled={isDrawing} onClick={() => selectPrize(prize)} aria-pressed={isCurrent} className={`flex min-h-16 min-w-52 items-center justify-between gap-3 rounded-2xl px-4 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara disabled:opacity-50 desk:min-h-20 desk:min-w-0 desk:px-5 desk:py-3 ${isCurrent ? 'bg-marca-escura text-marca-clara' : complete ? 'bg-marca-clara text-marca' : 'bg-marca-clara/70 text-marca-escura'}`}><span className="min-w-0"><strong className="block truncate text-xl font-medium desk:text-2xl">{prize.name}</strong><span className="text-xs desk:text-sm">Prêmio {index + 1}{complete ? ' · Realizado' : ''}</span></span><span aria-hidden="true" className="text-3xl desk:text-4xl">›</span></button>
         })}
       </div>
     </section>
@@ -141,16 +142,16 @@ export function RaffleDraw() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-marca text-marca-clara">
-      <div className="mx-auto grid min-h-screen w-full max-w-[160rem] gap-8 px-4 py-5 sm:px-8 sm:py-8 desk:grid-cols-[20rem_minmax(0,1fr)] desk:gap-12">
-        <aside className="min-w-0"><Action to="/eventos" icon="arrow-left-circle-solid" size="small" variant="primary-on-brand" className="min-h-12 px-5 py-2 text-lg">Voltar</Action><h1 className="mt-8 text-5xl leading-none font-medium sm:text-6xl desk:text-5xl">{event.title}</h1><p className="mt-2 text-4xl leading-none">Sorteio</p><div className="mt-8 hidden desk:block">{prizeList}</div></aside>
+      <div className="mx-auto grid min-h-screen w-full max-w-[160rem] gap-4 px-4 py-5 sm:px-8 sm:py-8 desk:grid-cols-[20rem_minmax(0,1fr)] desk:gap-12">
+        <aside className="min-w-0"><Action to="/eventos" icon="arrow-left-circle-solid" size="small" variant="primary-on-brand" className="min-h-12 text-lg">Voltar</Action><h1 className="mt-4 text-4xl leading-none font-medium sm:text-5xl desk:mt-8 desk:text-5xl">{event.title}</h1><p className="mt-2 text-3xl leading-none desk:text-4xl">Sorteio</p><div className="mt-8 hidden desk:block">{prizeList}</div></aside>
         <section className="flex min-w-0 flex-col items-center text-center desk:pr-80">
-          <div data-drawing={isDrawing} className="raffle-draw-ball flex aspect-[9/10] w-full max-w-[34rem] items-center justify-center rounded-full bg-white text-marca desk:aspect-square"><strong key={displayNumber ?? 'waiting'} className={`raffle-draw-number block leading-none font-medium ${displayNumber === null ? 'text-[9rem] opacity-35' : 'text-[clamp(8rem,32vw,15rem)] desk:text-[12rem]'}`}>{displayNumber === null ? '?' : String(displayNumber).padStart(numberDigits, '0')}</strong></div>
-          <div aria-live="polite" className="mt-10 min-h-48 w-full">
-            {winner ? <div className="raffle-draw-result"><p className="text-3xl">Ganhador</p><p className="mt-2 text-4xl leading-tight font-medium sm:text-5xl">{winner.name}</p><p className="mt-10 text-2xl">Prêmio</p><p className="mt-2 text-3xl leading-tight font-medium sm:text-4xl">{currentPrize?.name}</p></div> : !canDraw ? <p className="pt-12 text-3xl font-medium">Sorteio sem resultado registrado</p> : null}
+          <button type="button" onClick={handleDrawAction} disabled={!canDraw || isDrawing} aria-label={canDraw ? `${drawActionLabel} pela esfera` : 'Sorteio indisponível'} data-drawing={isDrawing} className="raffle-draw-ball flex aspect-square w-[min(76vw,24rem)] cursor-pointer items-center justify-center rounded-full bg-white text-marca focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-marca-clara disabled:cursor-not-allowed desk:w-full desk:max-w-[34rem]"><strong key={displayNumber ?? 'waiting'} className={`raffle-draw-number block leading-none font-medium ${displayNumber === null ? 'text-[7rem] opacity-35 desk:text-[9rem]' : 'text-[clamp(7rem,30vw,12rem)] desk:text-[12rem]'}`}>{displayNumber === null ? '?' : String(displayNumber).padStart(numberDigits, '0')}</strong></button>
+          <div aria-live="polite" className="mt-5 w-full desk:mt-10">
+            {winner ? <div className="raffle-draw-result"><p className="text-2xl desk:text-3xl">Ganhador</p><p className="mt-1 text-3xl leading-tight font-medium sm:text-4xl desk:mt-2 desk:text-5xl">{winner.name}</p><p className="mt-5 text-xl desk:mt-10 desk:text-2xl">Prêmio</p><p className="mt-1 text-2xl leading-tight font-medium sm:text-3xl desk:mt-2 desk:text-4xl">{currentPrize?.name}</p></div> : !canDraw ? <p className="pt-4 text-2xl font-medium desk:pt-12 desk:text-3xl">Sorteio sem resultado registrado</p> : null}
             {drawError && <p role="alert" className="mt-4 text-xl font-medium">{drawError}</p>}
           </div>
-          {canDraw && <Action onClick={handleDrawAction} disabled={isDrawing} icon="dice-five" size="small" variant="secondary-on-brand" className="mt-2 min-h-12 px-7 text-base">{isDrawing ? 'Sorteando...' : winner && nextPrize ? 'Próximo Sorteio' : winner ? 'Sortear novamente' : 'Sortear'}</Action>}
-          <div className="mt-10 w-full desk:hidden">{prizeList}</div>
+          {canDraw && <Action onClick={handleDrawAction} disabled={isDrawing} icon="dice-five" size="small" variant="secondary-on-brand" className="mt-4 min-h-12 text-base desk:mt-2">{drawActionLabel}</Action>}
+          <div className="mt-6 w-full desk:hidden">{prizeList}</div>
         </section>
       </div>
       {showShortageWarning && (

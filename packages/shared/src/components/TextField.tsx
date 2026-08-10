@@ -6,7 +6,7 @@ type TextFieldProps =
   | ({ as: 'textarea' } & TextareaHTMLAttributes<HTMLTextAreaElement>)
 
 const BASE_CLASSES =
-  'w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 transition-colors enabled:hover:border-cinza-escuro focus-visible:border-marca disabled:cursor-not-allowed disabled:opacity-40 dark:border-cinza-claro dark:placeholder:text-cinza-claro/50 dark:enabled:hover:border-cinza-claro/70'
+  'min-w-0 w-full rounded-lg border-2 border-cinza-medio bg-transparent text-current outline-none placeholder:text-cinza-medio/50 transition-colors enabled:hover:border-cinza-escuro focus-visible:border-marca disabled:cursor-not-allowed disabled:opacity-40 dark:border-cinza-claro dark:placeholder:text-cinza-claro/50 dark:enabled:hover:border-cinza-claro/70'
 
 export function TextField(props: TextFieldProps) {
   const { as = 'input', className = '', ...rest } = props

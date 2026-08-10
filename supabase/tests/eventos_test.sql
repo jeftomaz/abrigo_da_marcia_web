@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(89);
+select plan(96);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -34,6 +34,8 @@ select ok(public.is_valid_reservation_contact('(11) 2345-6789'), 'aceita telefon
 select ok(not public.is_valid_reservation_contact('(00) 00000-0000'), 'rejeita telefone fictício');
 select ok(not public.is_valid_reservation_contact('João da Silva'), 'rejeita nome no campo de contato');
 select ok(not public.is_valid_reservation_contact('pessoa@gmail'), 'rejeita e-mail sem domínio completo');
+select ok(not public.is_valid_reservation_name('Mario'), 'rejeita reserva com apenas um nome');
+select ok(public.is_valid_reservation_name('Mario Jose'), 'aceita reserva com pelo menos dois nomes');
 select is(
   public.normalize_reservation_contact('(11) 91234-5678'),
   '+5511912345678',
@@ -108,6 +110,14 @@ select throws_ok($$
   select * from public.reserve_raffle_numbers(
     '10000000-0000-0000-0000-000000000001',
     '12000000-0000-0000-0000-000000000002',
+    'Mario', 'mario@example.com', array[9]
+  )
+$$, 'P0001', 'Informe pelo menos dois nomes.', 'valida o nome completo dentro da reserva no banco');
+
+select throws_ok($$
+  select * from public.reserve_raffle_numbers(
+    '10000000-0000-0000-0000-000000000001',
+    '12000000-0000-0000-0000-000000000002',
     'Pessoa inválida', 'nome no lugar do contato', array[10]
   )
 $$, 'P0001', 'Informe um telefone com DDD válido ou um e-mail completo.', 'valida contato também dentro da reserva no banco');
@@ -121,6 +131,29 @@ select is(
   2000::bigint,
   'calcula o total da rifa no servidor'
 );
+
+select matches(
+  (select reference_code from public.reservas where session_id = '12000000-0000-0000-0000-000000000001'),
+  '^[0-9A-F]{12}$',
+  'gera um código hexadecimal administrativo para a reserva'
+);
+select throws_ok($$
+  update public.reservas set customer_name = 'Mario'
+  where session_id = '12000000-0000-0000-0000-000000000001'
+$$, 'P0001', 'Informe pelo menos dois nomes.', 'impede reduzir uma reserva existente para apenas um nome');
+select throws_ok($$
+  insert into public.reservas (event_id, session_id, customer_name, customer_contact, total_cents, expires_at, reference_code)
+  values (
+    '10000000-0000-0000-0000-000000000001', '12000000-0000-0000-0000-000000000002',
+    'Código inválido', 'invalido@example.com', 1000, now() + interval '1 hour', 'CODIGO-INVALIDO'
+  )
+$$, '23514', null, 'rejeita código de reserva fora do formato hexadecimal');
+select throws_ok($$
+  insert into public.reservas (event_id, session_id, customer_name, customer_contact, total_cents, expires_at, reference_code)
+  select event_id, '12000000-0000-0000-0000-000000000002', 'Código repetido', 'repetido@example.com',
+    1000, now() + interval '1 hour', reference_code
+  from public.reservas where session_id = '12000000-0000-0000-0000-000000000001'
+$$, '23505', null, 'mantém o código de reserva único');
 
 select throws_ok($$
   select * from public.reserve_raffle_numbers(

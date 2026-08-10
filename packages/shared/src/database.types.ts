@@ -635,6 +635,7 @@ export type Database = {
           paid_at: string | null
           personal_data_deleted_at: string | null
           receipt_saved: boolean
+          reference_code: string
           session_id: string
           status: Database["public"]["Enums"]["reserva_status"]
           total_cents: number
@@ -654,6 +655,7 @@ export type Database = {
           paid_at?: string | null
           personal_data_deleted_at?: string | null
           receipt_saved?: boolean
+          reference_code?: string
           session_id: string
           status?: Database["public"]["Enums"]["reserva_status"]
           total_cents: number
@@ -673,6 +675,7 @@ export type Database = {
           paid_at?: string | null
           personal_data_deleted_at?: string | null
           receipt_saved?: boolean
+          reference_code?: string
           session_id?: string
           status?: Database["public"]["Enums"]["reserva_status"]
           total_cents?: number
@@ -1208,6 +1211,10 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_valid_measurement_table: { Args: { value: Json }; Returns: boolean }
       is_valid_reservation_contact: {
+        Args: { value: string }
+        Returns: boolean
+      }
+      is_valid_reservation_name: {
         Args: { value: string }
         Returns: boolean
       }

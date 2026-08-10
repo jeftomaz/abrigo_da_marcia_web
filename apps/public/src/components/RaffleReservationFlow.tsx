@@ -25,11 +25,11 @@ function RaffleReservationSummary({ numbers, total }: { numbers: string; total: 
       <dl className="mt-3 grid gap-3">
         <div>
           <dt className="text-sm">Números escolhidos</dt>
-          <dd className="mt-1 text-2xl leading-tight font-medium sm:text-3xl">{numbers}</dd>
+          <dd className="mt-1 text-raffle-numbers leading-tight font-medium">{numbers}</dd>
         </div>
         <div>
           <dt className="text-sm">Valor da rifa</dt>
-          <dd className="mt-1 text-3xl leading-none font-medium text-marca sm:text-4xl">{formatCurrency(total)}</dd>
+          <dd className="mt-1 text-raffle-value leading-none font-medium text-marca">{formatCurrency(total)}</dd>
         </div>
       </dl>
     </section>
@@ -56,6 +56,7 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
   const availableCount = numberStates.filter((number) => number.available).length
   const reservedCount = Math.max(0, totalNumbers - availableCount)
   const total = selectedNumbers.length * numberPrice
+  const maxItemsReached = Number.isFinite(maxItems) && selectedNumbers.length >= maxItems
   const displayedBarNumbers = selectedNumbers.length ? selectedNumbers : barNumbers
   const displayedBarLabel = displayedBarNumbers.map((number) => formatNumber(number, numberDigits)).join(', ')
   const barHasHiddenNumbers = displayedBarNumbers.length > VISIBLE_NUMBER_LIMIT
@@ -164,6 +165,13 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
 
               <section className="mx-auto mt-6 max-w-2xl pb-4" aria-labelledby={`${titleId}-numbers`}>
                 <h3 id={`${titleId}-numbers`} className="text-center text-2xl font-medium">Escolha seus números</h3>
+                {Number.isFinite(maxItems) && (
+                  <p role="status" aria-live="polite" className={`mt-3 rounded-xl px-4 py-3 text-center text-sm ${maxItemsReached ? 'bg-marca-clara font-medium text-marca-escura' : ''}`}>
+                    {maxItemsReached
+                      ? `Você atingiu o limite de ${maxItems} números por reserva. Desmarque um número para escolher outro.`
+                      : `Selecione até ${maxItems} números por reserva.`}
+                  </p>
+                )}
                 {numbersQuery.isLoading ? <p role="status" className="mt-5 text-center">Carregando números...</p> : numbersQuery.error ? <p role="alert" className="mt-5 text-center text-marca">Não foi possível carregar os números disponíveis.</p> : (
                   <div className="mt-5 grid grid-cols-5 gap-2 sm:grid-cols-8 sm:gap-3 lg:grid-cols-10">
                     {numberStates.map(({ number, available }) => {
@@ -184,7 +192,6 @@ export function RaffleReservationFlow({ event, onClose }: RaffleReservationFlowP
                     })}
                   </div>
                 )}
-                {Number.isFinite(maxItems) && <p className="mt-3 text-center text-sm">Limite de {maxItems} números por reserva.</p>}
               </section>
             </>
           )}

@@ -1,4 +1,4 @@
-export type ReservationContactType = 'email' | 'phone'
+export type ReservationContactType = 'email' | 'mobile' | 'phone'
 
 const BRAZIL_AREA_CODES = new Set([
   '11', '12', '13', '14', '15', '16', '17', '18', '19',
@@ -22,9 +22,10 @@ function brazilNationalDigits(value: string) {
     : digits
 }
 
-function phoneError(value: string) {
+function phoneError(value: string, mobileOnly = false) {
   const national = brazilNationalDigits(value)
-  if (national.length !== 10 && national.length !== 11) return 'Informe um telefone com DDD.'
+  if (mobileOnly && national.length !== 11) return 'Informe um celular com DDD.'
+  if (!mobileOnly && national.length !== 10 && national.length !== 11) return 'Informe um telefone com DDD.'
   if (!BRAZIL_AREA_CODES.has(national.slice(0, 2))) return 'Informe um DDD válido.'
   const subscriber = national.slice(2)
   if ([...subscriber].every((digit) => digit === subscriber[0])) return 'Este número parece fictício.'
@@ -54,12 +55,15 @@ function emailError(value: string) {
 }
 
 export function getReservationContactError(type: ReservationContactType, value: string) {
-  if (!value.trim()) return type === 'phone' ? 'Informe um telefone para contato.' : 'Informe um e-mail para contato.'
-  return type === 'phone' ? phoneError(value) : emailError(value)
+  if (!value.trim()) {
+    if (type === 'email') return 'Informe um e-mail para contato.'
+    return type === 'mobile' ? 'Informe um celular para contato.' : 'Informe um telefone para contato.'
+  }
+  return type === 'email' ? emailError(value) : phoneError(value, type === 'mobile')
 }
 
 export function normalizeReservationContact(type: ReservationContactType, value: string) {
-  if (type === 'phone') return `+55${brazilNationalDigits(value)}`
+  if (type !== 'email') return `+55${brazilNationalDigits(value)}`
   const email = value.trim()
   const atIndex = email.lastIndexOf('@')
   return `${email.slice(0, atIndex)}@${email.slice(atIndex + 1).toLocaleLowerCase('en-US')}`

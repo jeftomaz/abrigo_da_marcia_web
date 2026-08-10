@@ -18,6 +18,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 - `doing` Configurar `abrigodamarcia.com.br`: build adaptativo e runbook prontos; faltam DNS avançado, domínio no Pages, URLs de Auth, HTTPS e smoke após a propagação.
 - `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
+- `todo` Aplicar no hospedado as migrations de `20260809120000` a `20260809140000`, que expõem o limite efetivo, criam o código administrativo e exigem ao menos dois nomes nas reservas.
 - `done` Definir `ADMIN_ALLOWED_ORIGINS`, publicar `activate-event` e `delete-archived-event` e validar CORS permitido/negado no hospedado.
 - `todo` Conferir `RESEND_API_KEY`/`RESEND_FROM_EMAIL` antes do smoke de exportação.
 - `doing` Concluir o smoke hospedado com fixtures temporárias: views/RLS, Storage, convite + TOTP/AAL2, reservas, expiração via cron, sorteio, exportação e preservação em falhas; remover contas, registros e arquivos de teste ao final.
@@ -31,13 +32,18 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `done` Erros administrativos padronizados: contrato `{ code, message, requestId }`, status HTTP coerente, log estruturado sem dados sensíveis e tradução compartilhada no client para rede/CORS, sessão/MFA, validação, conflito, banco, Storage e Resend; diálogos e rascunhos permanecem íntegros na falha.
 - `done` Corrigir as toolbars mobile de Cães e Histórias para reservar uma linha ao título e impedir colisão com filtro/ação; aplicar `text-marca` aos títulos principais de Cães, Histórias, Eventos e Configurações.
 - `done` Compactar os cards mobile de Cães e Histórias, mantendo foto/nome e ações lado a lado entre 320–430 px sem remover controles ou autoria.
-- `done` Exibir Data de início/fim e os demais Objetivos de Eventos em uma coluna nas larguras estreitas, preservando duas colunas a partir de `sm` e o desktop.
+- `done` Organizar os Objetivos de Eventos conforme os mockups: datas e arrecadação na mesma linha, regras adicionais abaixo e nenhum transbordamento entre 320 px e o desktop.
 - `done` Auditar os demais grids de duas colunas em 320–430 px sem alterar o desktop.
 - `done` Incluir o admin nos projetos E2E mobile Chromium/WebKit, cobrindo ausência de overflow/sobreposição e publicação de evento com sucesso, falha HTTP, falha de rede/CORS, sessão expirada e falha de exportação.
 - `done` Remover as margens laterais dos menus roláveis no mobile e reduzir a ênfase do botão de fechar no diálogo Pix.
 - `done` Implementar “Esqueci a senha” e troca de senha em Configurações, ambos com confirmação TOTP antes da nova senha.
 - `done` Exibir os requisitos da senha em tempo real; ampliar números/valor na conferência da rifa; destacar Reservas abertas, oferecer a pasta de comprovantes na confirmação de pagamento e alertar quando faltarem números pagos para os prêmios.
 - `done` Validar recuperação/troca de senha no E2E local; a repetição hospedada permanece incluída no smoke de produção.
+- `done` Levar a navegação pública para a base no mobile, confirmar logout e pagamento após comprovante, oferecer colagem do TOTP e destacar o limite de números da rifa.
+- `done` Centralizar a pasta de comprovantes por evento, identificar reservas por código hexadecimal copiável e compactar o sorteio mobile; a esfera inteira também aciona o sorteio por clique, toque ou teclado.
+- `done` Exigir ao menos dois nomes em reservas, com feedback imediato no público e proteção de banco para criação e edição administrativa.
+- `done` Após o sorteio da rifa, levar as reservas ganhadoras ao topo da gestão e destacá-las visualmente para os admins.
+- `done` Tornar o celular o contato principal das reservas e substituir o switch por ações textuais reversíveis entre celular e e-mail.
 
 ### P1 — Hardening (auditoria de 2026-07-25)
 

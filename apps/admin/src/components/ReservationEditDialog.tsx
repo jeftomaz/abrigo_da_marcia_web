@@ -6,6 +6,7 @@ import {
   formatBrazilPhoneInput,
   getAdminErrorMessage,
   getReservationContactError,
+  getReservationNameError,
   normalizeReservationContact,
 } from '@abrigo/shared'
 import type { ReservationContactType } from '@abrigo/shared'
@@ -22,6 +23,8 @@ type ProductItemDraft = {
   options: Record<string, string>
   productId: string
 }
+
+type EditableReservationContactType = Exclude<ReservationContactType, 'mobile'>
 
 type ReservationEditDialogProps = {
   event: FundraisingEvent
@@ -51,7 +54,7 @@ export function ReservationEditDialog({
   reservation,
   reservations,
 }: ReservationEditDialogProps) {
-  const initialContactType: ReservationContactType = reservation.contact.includes('@') ? 'email' : 'phone'
+  const initialContactType: EditableReservationContactType = reservation.contact.includes('@') ? 'email' : 'phone'
   const [name, setName] = useState(reservation.name)
   const [contactType, setContactType] = useState(initialContactType)
   const [contact, setContact] = useState(
@@ -88,7 +91,8 @@ export function ReservationEditDialog({
 
   const submit = async () => {
     const normalizedName = name.trim()
-    if (!normalizedName) return setError('Informe o nome do cliente.')
+    const nameError = getReservationNameError(normalizedName)
+    if (nameError) return setError(nameError)
     const contactError = getReservationContactError(contactType, contact)
     if (contactError) return setError(contactError)
     if (event.kind === 'raffle' && numbers.length === 0) return setError('Selecione ao menos um número.')
@@ -133,7 +137,7 @@ export function ReservationEditDialog({
         <div>
           <span className="font-medium">Contato</span>
           <div className="mt-1 grid grid-cols-[7rem_minmax(0,1fr)] gap-2">
-            <TextField as="select" value={contactType} onChange={(changeEvent) => { setContactType(changeEvent.target.value as ReservationContactType); setContact('') }} disabled={isSaving || isTerminal} className="px-2 py-2">
+            <TextField as="select" value={contactType} onChange={(changeEvent) => { setContactType(changeEvent.target.value as EditableReservationContactType); setContact('') }} disabled={isSaving || isTerminal} className="px-2 py-2">
               <option value="phone">Telefone</option>
               <option value="email">E-mail</option>
             </TextField>

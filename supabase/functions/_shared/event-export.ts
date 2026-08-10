@@ -165,9 +165,10 @@ export async function loadEventExport(supabase: AdminClient, eventId: string) {
     },
   }
   const csvRows = [
-    ['ID', 'Nome', 'Contato', 'Status', 'Total', 'Comprovante salvo', 'Expira em', 'Pago em', 'Cancelado em', 'Entregue em', 'Criado em'],
+    ['ID', 'Código', 'Nome', 'Contato', 'Status', 'Total', 'Comprovante salvo', 'Expira em', 'Pago em', 'Cancelado em', 'Entregue em', 'Criado em'],
     ...reservations.map((row) => [
       row.id,
+      row.reference_code,
       row.customer_name,
       row.customer_contact,
       row.status,

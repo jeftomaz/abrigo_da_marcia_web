@@ -57,66 +57,72 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const renderNavItems = () => NAV_ITEMS.map((item) => {
+    const isActive = item.kind === 'route' && pathname === item.to
+    const usesPrimaryVariant = isLanding
+      ? theme === 'light'
+      : isActive === (theme === 'dark')
+    const variant = usesPrimaryVariant ? 'primary-on-brand' : 'secondary-on-brand'
+
+    return item.kind === 'route' ? (
+      <Action
+        key={item.label}
+        to={item.to}
+        variant={variant}
+        aria-current={isActive ? 'page' : undefined}
+        size="medium"
+        className="min-h-12 shrink-0"
+      >
+        {item.label}
+      </Action>
+    ) : (
+      <Action
+        key={item.label}
+        to={{ pathname: '/', hash: item.hash }}
+        variant={variant}
+        size="medium"
+        className="min-h-12 shrink-0"
+      >
+        {item.label}
+      </Action>
+    )
+  })
+
   return (
-    <header
-      onFocusCapture={() => setIsVisible(true)}
-      className={`sticky top-0 z-50 bg-marca transition-transform duration-300 motion-reduce:transition-none ${
-        isVisible ? 'translate-y-0' : '-translate-y-full'
-      }`}
-    >
-      <div className="mx-auto flex max-w-[1920px] flex-wrap items-center justify-between gap-10 px-6 py-4 lg:flex-nowrap lg:gap-6">
-        <Link
-          to="/"
-          aria-label="Ir para a página inicial"
-          className="shrink-0 rounded-lg text-on-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-marca-clara"
-        >
-          <Logo className="h-12 w-auto" />
-        </Link>
+    <>
+      <header
+        onFocusCapture={() => setIsVisible(true)}
+        className={`sticky top-0 z-50 bg-marca transition-transform duration-300 motion-reduce:transition-none ${
+          isVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="mx-auto flex max-w-[1920px] items-center justify-between gap-6 px-6 py-4">
+          <Link
+            to="/"
+            aria-label="Ir para a página inicial"
+            className="shrink-0 rounded-lg text-on-brand focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-marca-clara"
+          >
+            <Logo className="h-12 w-auto" />
+          </Link>
 
-        {/* `safe center` centraliza enquanto couber e volta a alinhar no início quando não cabe:
-            `center` puro transborda pelos dois lados e o começo da lista fica fora de alcance. */}
-        <nav ref={navRef} className="relative left-1/2 order-2 flex w-dvw shrink-0 -translate-x-1/2 gap-10 overflow-x-auto lg:static lg:w-auto lg:min-w-0 lg:shrink lg:translate-none lg:basis-auto lg:flex-1 lg:justify-safe-center">
-          {NAV_ITEMS.map((item) => {
-            const isActive = item.kind === 'route' && pathname === item.to
-            const usesPrimaryVariant = isLanding
-              ? theme === 'light'
-              : isActive === (theme === 'dark')
-            const variant = usesPrimaryVariant ? 'primary-on-brand' : 'secondary-on-brand'
+          <nav aria-label="Navegação principal" className="hidden min-w-0 shrink basis-auto flex-1 justify-safe-center gap-10 overflow-x-auto lg:flex">
+            {renderNavItems()}
+          </nav>
 
-            return item.kind === 'route' ? (
-              <Action
-                key={item.label}
-                to={item.to}
-                variant={variant}
-                aria-current={isActive ? 'page' : undefined}
-                size="medium"
-                className="min-h-12 shrink-0"
-              >
-                {item.label}
-              </Action>
-            ) : (
-              <Action
-                key={item.label}
-                to={{ pathname: '/', hash: item.hash }}
-                variant={variant}
-                size="medium"
-                className="min-h-12 shrink-0"
-              >
-                {item.label}
-              </Action>
-            )
-          })}
-        </nav>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
+            className="flex size-11 shrink-0 items-center justify-center rounded-full text-on-brand transition-colors hover:bg-marca-escura active:bg-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara"
+          >
+            <Icon name={theme === 'dark' ? 'half-moon' : 'sun-light'} className="h-8 w-8" />
+          </button>
+        </div>
+      </header>
 
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
-          className="order-1 flex size-11 shrink-0 items-center justify-center rounded-full text-on-brand transition-colors hover:bg-marca-escura active:bg-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara lg:order-3"
-        >
-          <Icon name={theme === 'dark' ? 'half-moon' : 'sun-light'} className="h-8 w-8" />
-        </button>
-      </div>
-    </header>
+      <nav ref={navRef} aria-label="Navegação mobile" className="fixed inset-x-0 bottom-0 z-50 flex gap-6 overflow-x-auto bg-marca px-6 py-3 shadow-lg lg:hidden">
+        {renderNavItems()}
+      </nav>
+    </>
   )
 }
