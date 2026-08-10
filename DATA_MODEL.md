@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260805130000`, com `20260809120000`–`20260809150000` pendentes de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
+Fonte de verdade do banco. O schema está materializado em `supabase/migrations/` e validado localmente; a produção hospedada `banco_site_abrigo` está validada até `20260805130000`, com `20260809120000`–`20260810120000` pendentes de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
 
 ## Imagens no Storage
 
@@ -530,7 +530,7 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 - Admin autenticado com `aal2` gerencia catálogo, confirma pagamento, cancela reserva e marca a entrega ao ganhador.
 - `pg_cron` encerra eventos fora do período, cancela reservas pendentes vencidas, libera seus números e limpa sessões antigas. Após 90 dias do encerramento, remove `customer_name` e `customer_contact`, preservando snapshots e totais.
 - No caminho de reserva, `reserve_raffle_numbers`/`reserve_product_items` chamam `expire_reservations_for_event(uuid)`, que libera apenas as reservas vencidas do próprio evento antes de checar disponibilidade; a varredura global e a limpeza de sessões/tentativas de IP ficam no cron `expire_event_reservations()`.
-- Cada número pago pode ganhar no máximo um prêmio por rifa; o índice e a RPC de sorteio aplicam a regra.
+- Cada reserva paga pode ganhar no máximo um prêmio por rifa; a RPC serializa os sorteios do evento e exclui todos os números das reservas já vencedoras. O índice também impede repetir exatamente o mesmo número.
 
 ## Auth e matriz de acesso administrativo
 

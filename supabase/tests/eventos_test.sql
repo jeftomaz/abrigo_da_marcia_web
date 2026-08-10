@@ -245,14 +245,16 @@ select lives_ok(
   $$select * from public.draw_raffle_prize('11000000-0000-0000-0000-000000000001')$$,
   'persiste o primeiro sorteio entre reservas pagas'
 );
-select lives_ok(
+select throws_ok(
   $$select * from public.draw_raffle_prize('11000000-0000-0000-0000-000000000002')$$,
-  'persiste o segundo sorteio entre reservas pagas'
+  'P0001', 'Não há reservas pagas elegíveis para este prêmio.',
+  'não permite que a mesma reserva ganhe outro prêmio da rifa'
 );
-select isnt(
-  (select winning_number from public.rifa_premios where id = '11000000-0000-0000-0000-000000000001'),
-  (select winning_number from public.rifa_premios where id = '11000000-0000-0000-0000-000000000002'),
-  'um número não ganha dois prêmios'
+select is(
+  (select count(*) from public.rifa_premios
+    where event_id = '10000000-0000-0000-0000-000000000001' and winning_number is not null),
+  1::bigint,
+  'uma reserva ganha no máximo um prêmio por rifa'
 );
 select ok(
   (select bool_and(winning_number = any(array[1, 2])) from public.rifa_premios

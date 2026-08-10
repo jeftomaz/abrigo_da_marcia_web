@@ -67,11 +67,13 @@ export function RaffleDraw() {
   const totalNumbers = Math.max(1, Number(event.raffleTotalNumbers) || 1)
   const numberDigits = Math.max(2, String(totalNumbers).length)
   const canDraw = event.status === 'active'
-  const paidNumberCount = reservations.filter((reservation) => reservation.status === 'paid' || reservation.status === 'delivered').reduce((count, reservation) => count + reservation.numbers.length, 0)
-  const drawnNumberCount = new Set(prizes.flatMap((prize) => typeof prize.winningNumber === 'number' ? [prize.winningNumber] : [])).size
+  const paidReservations = reservations.filter((reservation) => reservation.status === 'paid' || reservation.status === 'delivered')
+  const winningNumbers = new Set(prizes.flatMap((prize) => typeof prize.winningNumber === 'number' ? [prize.winningNumber] : []))
+  const otherWinningNumbers = new Set(prizes.flatMap((prize) => prize.id !== currentPrizeId && typeof prize.winningNumber === 'number' ? [prize.winningNumber] : []))
   const pendingPrizeCount = prizes.filter((prize) => !prizeWinner(prize)).length
-  const eligibleNumberCount = Math.max(0, paidNumberCount - drawnNumberCount)
-  const hasPrizeShortage = eligibleNumberCount < pendingPrizeCount
+  const eligibleReservationCount = paidReservations.filter((reservation) => reservation.numbers.every((number) => !winningNumbers.has(number))).length
+  const eligibleForCurrentPrizeCount = paidReservations.filter((reservation) => reservation.numbers.every((number) => !otherWinningNumbers.has(number))).length
+  const hasPrizeShortage = eligibleReservationCount < pendingPrizeCount
   const drawActionLabel = isDrawing ? 'Sorteando...' : winner && nextPrize ? 'Próximo Sorteio' : winner ? 'Sortear novamente' : 'Sortear'
 
   const selectPrize = (prize: RafflePrize) => {
@@ -84,6 +86,7 @@ export function RaffleDraw() {
   }
 
   const revealWinner = (entry: DrawWinner) => {
+    shortageConfirmedRef.current = false
     setPrizes((current) => current.map((prize) => prize.id === currentPrizeId ? { ...prize, winnerName: entry.name, winningNumber: entry.number, drawnAt: new Date().toISOString() } : prize))
     setDisplayNumber(entry.number)
     setWinner(entry)
@@ -91,7 +94,7 @@ export function RaffleDraw() {
   }
 
   const runDraw = async () => {
-    if (!canDraw || !currentPrize || isDrawing || paidNumberCount === 0) return
+    if (!canDraw || !currentPrize || isDrawing || eligibleForCurrentPrizeCount === 0) return
     setDrawError('')
     setIsDrawing(true)
     setWinner(null)
@@ -110,6 +113,7 @@ export function RaffleDraw() {
       }
       animateNumber()
     } catch (error) {
+      shortageConfirmedRef.current = false
       setIsDrawing(false)
       setDrawError(getAdminErrorMessage(error, 'Não foi possível concluir o sorteio.'))
     }
@@ -158,18 +162,18 @@ export function RaffleDraw() {
         <Dialog ariaLabel="Reservas insuficientes para o sorteio" onClose={() => setShowShortageWarning(false)} className="w-full max-w-xl rounded-3xl bg-surface-raised p-8 text-left text-on-surface-raised sm:p-10">
           <h2 className="text-3xl font-medium text-marca">Reservas pagas insuficientes</h2>
           <p className="mt-4 text-lg">
-            Há {eligibleNumberCount} {eligibleNumberCount === 1 ? 'número pago ainda elegível' : 'números pagos ainda elegíveis'} para {pendingPrizeCount} {pendingPrizeCount === 1 ? 'prêmio não sorteado' : 'prêmios não sorteados'}.
+            Há {eligibleReservationCount} {eligibleReservationCount === 1 ? 'reserva paga ainda elegível' : 'reservas pagas ainda elegíveis'} para {pendingPrizeCount} {pendingPrizeCount === 1 ? 'prêmio não sorteado' : 'prêmios não sorteados'}.
           </p>
           <p className="mt-3">
-            {eligibleNumberCount === 0
-              ? 'O sorteio não pode começar enquanto nenhuma reserva estiver paga.'
+            {eligibleReservationCount === 0
+              ? 'O sorteio não pode continuar enquanto nenhuma reserva paga estiver elegível.'
               : 'Nem todos os prêmios poderão receber um número ganhador. Deseja iniciar mesmo assim?'}
           </p>
           <div className="mt-8 flex gap-4">
             <Action onClick={() => setShowShortageWarning(false)} size="small" variant="secondary-adaptive" className="min-w-0 flex-1">
-              {eligibleNumberCount === 0 ? 'Entendi' : 'Cancelar'}
+              {eligibleReservationCount === 0 ? 'Entendi' : 'Cancelar'}
             </Action>
-            {eligibleNumberCount > 0 && (
+            {eligibleReservationCount > 0 && (
               <Action onClick={() => { shortageConfirmedRef.current = true; setShowShortageWarning(false); void runDraw() }} size="small" variant="primary-adaptive" icon="dice-five" className="min-w-0 flex-1">
                 Iniciar sorteio
               </Action>
