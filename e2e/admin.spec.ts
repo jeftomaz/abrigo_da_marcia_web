@@ -327,6 +327,21 @@ test.describe('admin', () => {
     })
     expect(missing.status()).toBe(404)
     expect(await missing.json()).toMatchObject({ code: 'NOT_FOUND' })
+
+    const endedDeletion = await request.post(`${apiUrl}/functions/v1/delete-archived-event`, {
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${credenciais.accessToken}`,
+        Origin: ADMIN_URL,
+        'x-client-info': 'abrigo-e2e',
+      },
+      data: { eventId: 'b1000000-0000-0000-0000-000000000001' },
+    })
+    expect(endedDeletion.status()).toBe(422)
+    expect(await endedDeletion.json()).toMatchObject({
+      code: 'VALIDATION_ERROR',
+      message: 'Somente eventos arquivados podem ser excluídos.',
+    })
   })
 
   test('conclui o cadastro de um administrador convidado', async ({ page, request }) => {
@@ -502,20 +517,36 @@ test.describe('admin', () => {
     await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
   })
 
-  test('oferece exclusão auditada para evento encerrado', async ({ page }, testInfo) => {
+  test('exige arquivar o evento encerrado antes da exclusão auditada', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'O fluxo visual é coberto uma vez.')
-    await entrar(page)
-    await page.goto(`${ADMIN_URL}/#/eventos`)
+    try {
+      await entrar(page)
+      await page.goto(`${ADMIN_URL}/#/eventos`)
 
-    const endedEvent = page.locator('article').filter({ hasText: 'Bazar de Inverno' })
-    await endedEvent.getByRole('button', { name: 'Excluir' }).click()
+      const endedEvent = page.locator('article').filter({ hasText: 'Bazar de Inverno' })
+      await expect(endedEvent.getByRole('button', { name: 'Excluir' })).toHaveCount(0)
+      await endedEvent.getByRole('button', { name: 'Arquivar' }).click()
 
-    const confirmation = page.getByRole('dialog', { name: 'Excluir evento' })
-    await expect(confirmation.getByRole('heading', { name: 'Excluir Evento' })).toBeVisible()
-    await expect(confirmation).toContainText('A exportação será enviada automaticamente ao e-mail configurado antes da exclusão definitiva.')
-    await expect(confirmation.getByRole('button', { name: 'Excluir Evento' })).toBeVisible()
-    await confirmation.getByRole('button', { name: 'Cancelar' }).click()
-    await expect(confirmation).toBeHidden()
+      const archiveConfirmation = page.getByRole('dialog', { name: 'Arquivar evento' })
+      await expect(archiveConfirmation.getByRole('heading', { name: 'Arquivar Evento' })).toBeVisible()
+      await expect(archiveConfirmation).toContainText('O evento deixará de aparecer no histórico público')
+      await archiveConfirmation.getByRole('button', { name: 'Arquivar Evento' }).click()
+
+      await expect(endedEvent.getByText('Arquivado', { exact: true })).toBeVisible()
+      await endedEvent.getByRole('button', { name: 'Excluir' }).click()
+      const deleteConfirmation = page.getByRole('dialog', { name: 'Excluir evento' })
+      await expect(deleteConfirmation).toContainText('A exportação será enviada automaticamente ao e-mail configurado antes da exclusão definitiva.')
+      await expect(deleteConfirmation.getByRole('button', { name: 'Excluir Evento' })).toBeVisible()
+      await deleteConfirmation.getByRole('button', { name: 'Cancelar' }).click()
+      await expect(deleteConfirmation).toBeHidden()
+    } finally {
+      executarSql(`
+        set session_replication_role = replica;
+        update public.eventos set status = 'encerrado', archived_at = null
+        where id = 'b1000000-0000-0000-0000-000000000001';
+        set session_replication_role = origin;
+      `)
+    }
   })
 
   test('confirma pagamento por status ou após salvar o comprovante', async ({ page }, testInfo) => {

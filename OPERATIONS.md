@@ -110,7 +110,7 @@ O teto de 500.000 bytes por imagem é aplicado no client (`compressImage`) e no 
 
 ### Auditoria
 
-Exclusões automáticas do evento mais antigo e remoções manuais de eventos encerrados ou arquivados legados preservam registro mínimo, sem os dados operacionais:
+Exclusões automáticas do evento mais antigo e remoções manuais de eventos arquivados preservam registro mínimo, sem os dados operacionais:
 
 ```sql
 select event_name, export_email, export_sent_at, deleted_at

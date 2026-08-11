@@ -140,11 +140,11 @@ export function EventRow({
           <Action
             size="small"
             variant="neutral-adaptive"
-            icon="trash-solid"
+            icon="archive"
             className={`${actionClasses} ${event.kind === 'raffle' ? 'col-span-2 row-start-3' : 'col-start-1 row-start-2'}`}
-            onClick={onRemove}
+            onClick={() => onSetStatus('archived')}
           >
-            Excluir
+            Arquivar
           </Action>
         )}
         {event.status === 'archived' && (

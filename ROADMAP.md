@@ -18,9 +18,9 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 - `doing` Configurar `abrigodamarcia.com.br`: build adaptativo e runbook prontos; faltam DNS avançado, domínio no Pages, URLs de Auth, HTTPS e smoke após a propagação.
 - `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
-- `todo` Aplicar no hospedado as migrations de `20260809120000` a `20260810130000`, que expõem o limite efetivo, criam o código administrativo, exigem ao menos dois nomes nas reservas, removem o nome do ganhador da view pública, limitam cada reserva a um prêmio por rifa e permitem excluir eventos encerrados pelo fluxo auditado.
+- `todo` Aplicar no hospedado as migrations de `20260809120000` a `20260810140000`, que expõem o limite efetivo, criam o código administrativo, exigem ao menos dois nomes nas reservas, removem o nome do ganhador da view pública, limitam cada reserva a um prêmio por rifa e restauram o fluxo encerrado → arquivado → exclusão auditada.
 - `done` Definir `ADMIN_ALLOWED_ORIGINS`, publicar `activate-event` e `delete-archived-event` e validar CORS permitido/negado no hospedado.
-- `todo` Republicar `delete-archived-event` após a migration `20260810130000` para habilitar a exclusão manual de eventos encerrados.
+- `todo` Republicar `delete-archived-event` após a migration `20260810140000` para restringir a exclusão manual a eventos arquivados.
 - `todo` Conferir `RESEND_API_KEY`/`RESEND_FROM_EMAIL` antes do smoke de exportação.
 - `doing` Concluir o smoke hospedado com fixtures temporárias: views/RLS, Storage, convite + TOTP/AAL2, reservas, expiração via cron, sorteio, exportação e preservação em falhas; remover contas, registros e arquivos de teste ao final.
 - `todo` Verificar o domínio no Resend (SPF/DKIM), definir o remetente definitivo e validar a exportação por e-mail; até lá, o envio permanece restrito a `onboarding@resend.dev`.
@@ -43,7 +43,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `done` Remover as margens laterais dos menus roláveis no mobile e reduzir a ênfase do botão de fechar no diálogo Pix.
 - `done` Implementar “Esqueci a senha” e troca de senha em Configurações, ambos com confirmação TOTP antes da nova senha.
 - `done` Exibir os requisitos da senha em tempo real; ampliar números/valor na conferência da rifa; destacar Reservas abertas, oferecer a pasta de comprovantes na confirmação de pagamento, alertar quando faltarem reservas pagas para os prêmios e limitar cada reserva a um prêmio por rifa.
-- `done` Permitir excluir eventos encerrados no admin somente após exportação por e-mail e exclusão auditada; arquivados legados continuam compatíveis.
+- `done` Exigir no admin o fluxo ativo → encerrado → arquivado → excluído; a exportação por e-mail e a auditoria continuam obrigatórias na exclusão.
 - `done` Validar recuperação/troca de senha no E2E local; a repetição hospedada permanece incluída no smoke de produção.
 - `done` Levar a navegação pública e administrativa para a base no mobile, confirmar logout e pagamento após comprovante, oferecer colagem do TOTP e destacar o limite de números da rifa.
 - `done` Centralizar a pasta de comprovantes por evento, identificar reservas por código hexadecimal copiável e compactar o sorteio mobile; a esfera inteira também aciona o sorteio por clique, toque ou teclado.
