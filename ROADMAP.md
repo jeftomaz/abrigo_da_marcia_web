@@ -18,10 +18,10 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 - `doing` Configurar `abrigodamarcia.com.br`: build adaptativo e runbook prontos; faltam DNS avançado, domínio no Pages, URLs de Auth, HTTPS e smoke após a propagação.
 - `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
-- `todo` Aplicar no hospedado as migrations de `20260809120000` a `20260810140000`, que expõem o limite efetivo, criam o código administrativo, exigem ao menos dois nomes nas reservas, removem o nome do ganhador da view pública, limitam cada reserva a um prêmio por rifa e restauram o fluxo encerrado → arquivado → exclusão auditada.
+- `done` Aplicar no hospedado as migrations de `20260809120000` a `20260810214700`, que atualizam reservas/rifas, restauram o fluxo encerrado → arquivado → exclusão auditada e restringem a confirmação da exportação ao backend.
 - `done` Definir `ADMIN_ALLOWED_ORIGINS`, publicar `activate-event` e `delete-archived-event` e validar CORS permitido/negado no hospedado.
-- `todo` Republicar `delete-archived-event` após a migration `20260810140000` para restringir a exclusão manual a eventos arquivados.
-- `todo` Conferir `RESEND_API_KEY`/`RESEND_FROM_EMAIL` antes do smoke de exportação.
+- `done` Republicar `delete-archived-event`, validar CORS e confirmar a rejeição de chamadas sem sessão no hospedado.
+- `done` Conferir `RESEND_API_KEY`/`RESEND_FROM_EMAIL` antes do smoke de exportação.
 - `doing` Concluir o smoke hospedado com fixtures temporárias: views/RLS, Storage, convite + TOTP/AAL2, reservas, expiração via cron, sorteio, exportação e preservação em falhas; remover contas, registros e arquivos de teste ao final.
 - `todo` Verificar o domínio no Resend (SPF/DKIM), definir o remetente definitivo e validar a exportação por e-mail; até lá, o envio permanece restrito a `onboarding@resend.dev`.
 - `todo` Carregar pelo admin os dados reais na ordem: configurações/links/Pix, cães, histórias e eventos/fotos; `seed.sql` permanece exclusivamente fictício e fora da produção.

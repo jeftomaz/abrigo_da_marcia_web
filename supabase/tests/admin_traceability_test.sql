@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(37);
+select plan(39);
 
 select has_table('public', 'admin_profiles', 'materializa os perfis administrativos privados');
 select col_not_null('public', 'admin_profiles', 'display_name', 'exige nome ou apelido no perfil');
@@ -21,9 +21,17 @@ select is(
   'mantém o sorteio sob RLS do admin autenticado'
 );
 select is(
-  (select prosecdef from pg_proc where oid = 'public.delete_archived_event(uuid,timestamptz)'::regprocedure),
-  false,
-  'mantém a exclusão legada sob RLS do admin autenticado'
+  (select prosecdef from pg_proc where oid = 'public.delete_archived_event(uuid,timestamptz,text,uuid)'::regprocedure),
+  true,
+  'executa a exclusão auditada somente pelo backend'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.delete_archived_event(uuid,timestamptz,text,uuid)', 'execute'),
+  'impede admins de contornar a Edge Function na exclusão'
+);
+select ok(
+  has_function_privilege('service_role', 'public.delete_archived_event(uuid,timestamptz,text,uuid)', 'execute'),
+  'permite ao backend concluir a exclusão após o envio'
 );
 
 insert into auth.users (

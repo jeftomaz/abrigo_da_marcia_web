@@ -1182,7 +1182,12 @@ export type Database = {
       create_reservation_session: { Args: never; Returns: string }
       current_request_ip_hash: { Args: never; Returns: string }
       delete_archived_event: {
-        Args: { p_event_id: string; p_export_sent_at: string }
+        Args: {
+          p_deleted_by: string
+          p_event_id: string
+          p_export_email: string
+          p_export_sent_at: string
+        }
         Returns: undefined
       }
       draw_raffle_prize: {

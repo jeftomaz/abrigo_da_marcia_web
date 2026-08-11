@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema está materializado em `supabase/migrations/`; a produção hospedada `banco_site_abrigo` está validada até `20260805130000`, com `20260809120000`–`20260810140000` pendentes de publicação. O projeto legado `site-do-abrigo` permanece fora de uso.
+Fonte de verdade do banco. O schema está materializado em `supabase/migrations/`; a produção hospedada `banco_site_abrigo` está validada até `20260810214700`, sem migrations pendentes. O projeto legado `site-do-abrigo` permanece fora de uso.
 
 ## Imagens no Storage
 
@@ -152,6 +152,7 @@ erDiagram
     uuid id PK
     uuid event_id FK
     uuid session_id FK
+    text reference_code UK
     reserva_status status
     text customer_name "nullable após limpeza"
     text customer_contact "nullable após limpeza"
@@ -366,7 +367,7 @@ Auditoria mínima preservada após a exclusão, sem os dados operacionais do eve
 | `export_sent_at` | `timestamptz` | not null; instante em que o envio da cópia foi confirmado |
 | `deleted_at` | `timestamptz` | not null; default `now()` |
 
-Exclusões automáticas usam `activate_event`, recebendo da Edge Function o usuário previamente validado; exclusões manuais aceitam somente eventos arquivados, usam `delete_archived_event` e registram `auth.uid()`. Ambas exigem e-mail configurado e horário de envio confirmado e apagam evento, reservas e itens na mesma transação.
+Exclusões automáticas usam `activate_event`, recebendo da Edge Function o usuário previamente validado; exclusões manuais aceitam somente eventos arquivados e usam `delete_archived_event`, restrita ao `service_role`, com usuário, destinatário e horário de envio fornecidos pelo backend. A RPC rejeita destinatário divergente ou confirmação fora da janela de dez minutos. Ambas apagam evento, reservas e itens na mesma transação.
 
 ### `rifas`
 
@@ -543,5 +544,5 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 - `admin_profiles` permite leitura a admins, mas inserção/alteração somente do próprio perfil; todas as operações também exigem `aal2`.
 - `event_deletion_audit` permite somente `select` e `insert` a admin `aal2`; atualizações e exclusões não são concedidas.
 - `storage.objects` do bucket `dog-photos` permite `select`, `insert` e `delete` somente a admin `aal2`; leitura pública das imagens continua pelo bucket público.
-- `draw_raffle_prize` e `delete_archived_event` são `security invoker`, concedidas apenas a `authenticated`, portanto respeitam RLS e grants. `activate_event` é `security definer` com `search_path` fixo e execução exclusiva de `service_role`: a Edge Function valida admin + `aal2`, registra o usuário e usa essa RPC interna para confirmar envio, excluir e ativar sob advisory lock.
+- `draw_raffle_prize` é `security invoker`, concedida apenas a `authenticated`, portanto respeita RLS e grants. `activate_event` e `delete_archived_event` são `security definer` com `search_path` fixo e execução exclusiva de `service_role`: as Edge Functions validam admin + `aal2`, registram o usuário e usam essas RPCs internas para confirmar o envio antes de excluir; a ativação também usa advisory lock.
 - `anon` lê apenas views públicas e executa as RPCs públicas de criação de sessão/reserva. Não há mais policies locais de CRUD anônimo no `seed.sql`.

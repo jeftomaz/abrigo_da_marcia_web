@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(103);
+select plan(104);
 
 -- Encerra qualquer evento ativo do seed dentro desta transação (revertida no rollback final),
 -- já que só um evento pode ficar ativo por vez.
@@ -100,7 +100,9 @@ select throws_ok(
 );
 update public.event_settings set event_export_email = 'abrigo@example.com' where singleton;
 select throws_ok(
-  $$select public.delete_archived_event('40000000-0000-0000-0000-000000000003', now())$$,
+  $$select public.delete_archived_event(
+    '40000000-0000-0000-0000-000000000003', now(), 'abrigo@example.com', null
+  )$$,
   'P0001', 'Somente eventos arquivados podem usar a exclusão auditada.',
   'impede excluir evento encerrado pelo fluxo auditado'
 );
@@ -113,8 +115,25 @@ select is(
   'arquivado'::public.evento_status,
   'arquiva o evento antes da exclusão'
 );
+select throws_ok(
+  $$select public.delete_archived_event(
+    '40000000-0000-0000-0000-000000000003', now(), 'outro@example.com', null
+  )$$,
+  'P0001', 'O destinatário da cópia mudou durante a exclusão; envie novamente.',
+  'impede excluir após mudança do destinatário'
+);
+select throws_ok(
+  $$select public.delete_archived_event(
+    '40000000-0000-0000-0000-000000000003', now() - interval '11 minutes',
+    'abrigo@example.com', null
+  )$$,
+  'P0001', 'O envio da cópia não foi confirmado recentemente.',
+  'impede excluir com confirmação de envio antiga'
+);
 select lives_ok(
-  $$select public.delete_archived_event('40000000-0000-0000-0000-000000000003', now())$$,
+  $$select public.delete_archived_event(
+    '40000000-0000-0000-0000-000000000003', now(), 'abrigo@example.com', null
+  )$$,
   'permite excluir evento arquivado após a exportação'
 );
 select is(
@@ -560,11 +579,6 @@ insert into public.produtos (
 select public.activate_event('50000000-0000-0000-0000-000000000001');
 update public.eventos set status = 'encerrado'
 where id = '50000000-0000-0000-0000-000000000001';
-select lives_ok(
-  $$update public.eventos set status = 'arquivado'
-    where id = '50000000-0000-0000-0000-000000000001'$$,
-  'permite arquivar manualmente um evento encerrado'
-);
 select public.activate_event('60000000-0000-0000-0000-000000000001');
 update public.eventos set status = 'encerrado'
 where id = '60000000-0000-0000-0000-000000000001';
