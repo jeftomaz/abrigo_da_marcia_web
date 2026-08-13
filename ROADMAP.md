@@ -29,6 +29,7 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 
 ### P0 — Correções operacionais e mobile
 
+- `done` Alinhar tamanho e grade dos cards de Histórias na landing ao padrão dos cards de Adoção.
 - `done` Fixar nome e tags nos cards expandidos de Adoção e Histórias, limitando a rolagem à descrição e reduzindo sua tipografia no mobile.
 - `todo` Alinhar o QR Pix mobile ao contrato E2E: hoje renderiza com 160 px, abaixo dos 192 px esperados.
 - `done` Padronizar tamanho, espaçamento, alinhamento e breakpoint das abas nos headers público e administrativo.
