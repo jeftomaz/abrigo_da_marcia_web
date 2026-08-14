@@ -41,6 +41,13 @@ const IMAGE_ASPECT_CLASSES: Record<CompactCardImageAspect, string> = {
   square: 'aspect-square',
 }
 
+// No mobile o card vertical divide pouca largura com o vizinho: a imagem fica baixa
+// para sobrar altura às tags, ao título e à descrição; no desktop volta a proporção declarada.
+const VERTICAL_IMAGE_ASPECT_CLASSES: Record<CompactCardImageAspect, string> = {
+  landscape: 'aspect-3/2 lg:aspect-4/3',
+  square: 'aspect-3/2 lg:aspect-square',
+}
+
 export function CompactCard({
   action,
   className = '',
@@ -51,6 +58,12 @@ export function CompactCard({
   tags,
   title,
 }: CompactCardProps) {
+  const imageClassName = [
+    IMAGE_ORIENTATION_CLASSES[orientation],
+    orientation === 'vertical' ? VERTICAL_IMAGE_ASPECT_CLASSES[imageAspect] : '',
+    orientation === 'responsive' ? `${IMAGE_ASPECT_CLASSES[imageAspect]} lg:aspect-auto` : '',
+  ].join(' ')
+
   return (
     <article
       className={`relative flex overflow-hidden rounded-2xl bg-surface-raised text-on-surface-raised transition-transform duration-200 ease-out motion-safe:hover:-translate-y-1 motion-safe:focus-within:-translate-y-1 ${ORIENTATION_CLASSES[orientation]} ${className}`}
@@ -61,12 +74,12 @@ export function CompactCard({
           alt={image.alt}
           loading="lazy"
           decoding="async"
-          className={`${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
+          className={imageClassName}
         />
       ) : (
         <ImagePlaceholder
           label={`Sem foto de ${title}`}
-          className={`${IMAGE_ORIENTATION_CLASSES[orientation]} ${orientation !== 'horizontal' ? IMAGE_ASPECT_CLASSES[imageAspect] : ''} ${orientation === 'responsive' ? 'lg:aspect-auto' : ''}`}
+          className={imageClassName}
         />
       )}
 
