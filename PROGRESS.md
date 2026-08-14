@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Grade de Adoção e Histórias alargada no desktop (2026-08-14): o container das duas páginas passa a `max-w-4xl` e cabeçalho, filtros e contador seguem em `max-w-2xl` centralizados. Card cresce de 208 para 283 px a partir de `lg`; mobile inalterado.
 - Imagem dos cards verticais reduzida no mobile (2026-08-14): `CompactCard` vertical (Adoção, Histórias e os dois previews da landing) usa `aspect-3/2` abaixo de `lg` e mantém a proporção declarada no desktop, sobrando altura para tags, nome e descrição. A imagem passa de ~53% para ~34% da altura do card no mobile (medido em 393 px); cards de Eventos e Recaopensa (`responsive`/`horizontal`) não mudam.
 - Painel de Configurações ajustado (2026-08-13): a edição permanece junto ao header no desktop e ganha rolagem própria quando seu conteúdo excede a área visível. Lint e build do admin aprovados.
 - Cards públicos ajustados (2026-08-13): nomes e tags dos expandidos de Adoção e Histórias permanecem visíveis enquanto somente a descrição rola; a landing agora alinha a grade e o tamanho das Histórias aos cards de Adoção. Texto reduzido apenas no mobile; lint e build do público aprovados.

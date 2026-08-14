@@ -85,8 +85,8 @@ export function Adocao() {
 
   return (
     <main className="min-h-screen bg-cinza-claro px-10 pt-10 pb-20 text-cinza-escuro dark:bg-cinza-escuro dark:text-cinza-claro lg:px-6 lg:pt-4">
-      <div className="mx-auto max-w-2xl">
-        <header className="text-center">
+      <div className="mx-auto max-w-4xl">
+        <header className="mx-auto max-w-2xl text-center">
           <h1 className="text-5xl leading-tight font-medium text-marca lg:text-8xl">
             Adote um amigo
           </h1>
@@ -95,7 +95,7 @@ export function Adocao() {
           </p>
         </header>
 
-        <div className="mt-6 flex justify-center lg:mt-5">
+        <div className="mx-auto mt-6 flex max-w-2xl justify-center lg:mt-5">
           <Action
             onClick={() => setFiltersExpanded((expanded) => !expanded)}
             icon="filter-list-circle-solid"
@@ -111,7 +111,7 @@ export function Adocao() {
           <section
             id="dog-filters"
             aria-label="Filtros dos cães"
-            className="mt-3 rounded-3xl bg-surface-raised p-6 text-on-surface-raised lg:p-4"
+            className="mx-auto mt-3 max-w-2xl rounded-3xl bg-surface-raised p-6 text-on-surface-raised lg:p-4"
           >
             <div className="grid gap-4 lg:grid-cols-3 lg:gap-10">
               <SelectField id="gender" label="Gênero" value={gender} onChange={setGender} variant="filter">
@@ -148,7 +148,7 @@ export function Adocao() {
 
         {!isLoading && !error && (
           <div
-            className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm"
+            className="mx-auto mt-3 flex max-w-2xl flex-wrap items-center justify-between gap-3 text-sm"
             aria-live="polite"
           >
             <div className="flex flex-wrap gap-2">

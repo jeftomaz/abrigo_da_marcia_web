@@ -14,8 +14,8 @@ export function Historias() {
 
   return (
     <main className="min-h-screen bg-marca px-10 pt-10 pb-20 text-on-brand lg:px-6 lg:pt-4">
-      <div className="mx-auto max-w-2xl">
-        <header className="text-center">
+      <div className="mx-auto max-w-4xl">
+        <header className="mx-auto max-w-2xl text-center">
           <h1 className="text-5xl leading-tight font-medium lg:text-8xl">
             Os finais felizes
           </h1>
