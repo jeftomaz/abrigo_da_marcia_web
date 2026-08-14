@@ -147,7 +147,7 @@ export function Configuracoes() {
   ) : null
 
   return (
-    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-4 py-8 text-cinza-escuro sm:px-6 desk:py-4 dark:bg-cinza-escuro dark:text-cinza-claro">
+    <main className="flex-1 overflow-x-clip bg-cinza-claro px-4 py-8 text-cinza-escuro sm:px-6 desk:py-4 dark:bg-cinza-escuro dark:text-cinza-claro">
       <div className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-8 desk:items-start desk:gap-10 ${editor ? 'desk:max-w-[80rem] desk:grid-cols-[29rem_minmax(36rem,45rem)] desk:justify-between' : 'desk:max-w-[29rem]'}`}>
         <section aria-labelledby="settings-title" className="min-w-0">
           <h1 id="settings-title" className="text-4xl font-medium text-marca sm:text-5xl desk:text-4xl">Configurações</h1>
@@ -223,7 +223,11 @@ export function Configuracoes() {
           </div>
         </section>
 
-        {editorContent && isDesktop && <aside className="w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">{editorContent}</aside>}
+        {editorContent && isDesktop && (
+          <aside className="sticky top-20 max-h-[calc(100dvh-6rem)] w-full overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
+            {editorContent}
+          </aside>
+        )}
       </div>
 
       {editorContent && !isDesktop && (

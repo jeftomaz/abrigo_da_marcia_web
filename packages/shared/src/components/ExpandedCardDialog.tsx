@@ -65,10 +65,10 @@ const EXPANDED_IMAGE_CLASSES = {
 }
 
 const DESCRIPTION_CLASSES = {
-  adoption: 'text-justify text-lg leading-normal',
+  adoption: 'text-justify text-base leading-normal lg:text-lg',
   default: 'indent-8 text-justify',
   product: 'text-justify',
-  story: 'text-justify text-base leading-normal',
+  story: 'text-justify text-sm leading-normal lg:text-base',
 }
 
 export function ExpandedCardDialog({
@@ -186,20 +186,22 @@ export function ExpandedCardDialog({
 
       {children ?? (
         <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex flex-shrink-0 flex-col gap-4 p-6 pb-4 lg:p-10 lg:pb-4">
+            {tags && <div className="flex flex-wrap gap-2">{tags}</div>}
+
+            <h3 id={titleId} className="text-3xl font-medium text-marca lg:text-4xl">
+              {title}
+            </h3>
+          </div>
+
           {/* Região rolável precisa ser focalizável: sem tabindex, quem navega só por
               teclado não consegue rolar a descrição quando ela transborda no mobile. */}
           <div
             tabIndex={0}
             role="group"
             aria-labelledby={titleId}
-            className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-6 pb-0 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-marca lg:p-10 lg:pb-0"
+            className="min-h-0 flex-1 overflow-y-auto px-6 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-marca lg:px-10"
           >
-            {tags && <div className="flex flex-wrap gap-2">{tags}</div>}
-
-            <h3 id={titleId} className="text-3xl font-medium text-marca lg:text-4xl">
-              {title}
-            </h3>
-
             <p className={DESCRIPTION_CLASSES[variant]}>{description}</p>
           </div>
 
