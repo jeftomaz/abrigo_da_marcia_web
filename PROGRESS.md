@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Painel de Configurações ajustado (2026-08-13): a edição permanece junto ao header no desktop e ganha rolagem própria quando seu conteúdo excede a área visível. Lint e build do admin aprovados.
 - Cards públicos ajustados (2026-08-13): nomes e tags dos expandidos de Adoção e Histórias permanecem visíveis enquanto somente a descrição rola; a landing agora alinha a grade e o tamanho das Histórias aos cards de Adoção. Texto reduzido apenas no mobile; lint e build do público aprovados.
 - Banco hospedado e exclusão de eventos corrigidos (2026-08-10): backup completo em `Documents/Backups/abrigo_da_marcia_web/20260810-215528`; migrations alinhadas até `20260810214700` e `delete-archived-event` republicada. A mensagem que bloqueava o arquivamento foi removida e a exclusão agora exige backend, destinatário configurado e envio recente. Validação: lint/builds, reset, `db lint` local/remoto, 233 pgTAP, 2 E2E afetados e smoke CORS/auth hospedado.
 - Entrega das correções administrativas validada (2026-08-10): lint, builds, 38 migrations, `db lint`, 227 pgTAP e 104 E2E aprovados; 13 casos foram ignorados pela matriz. A suíte integral também revelou a divergência preexistente do QR Pix mobile, registrada no `ROADMAP.md`.
