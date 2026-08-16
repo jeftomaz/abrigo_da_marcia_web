@@ -38,7 +38,7 @@ Causa dos ajustes que quebravam recursos prontos: as regras de arquitetura vivia
   - Container query no `CompactCard` foi descartada: a premissa era que ele quebrava dentro do admin, mas `CompactCard`, `ExpandedCardDialog`, `FeatureSection`, `Header` e `SelectField` — todos os compartilhados com `lg:` — só são renderizados no público. O descasamento `lg`/`desk` é armadilha latente, não bug ativo; migrar seria mudança visual sem problema a resolver. Reabrir só se algum deles for para o admin.
 - `done` **Fase 4 — remover duplicação.** `CardGrid` substituiu as 4 cópias da grade (variantes `page` e `preview`); `Action` ganhou os tamanhos `admin-row`, `admin-row-event` e `admin-inline`, e `gap` saiu do `BASE_CLASSES` — era ele que obrigava o consumidor ao `!`. A grade pública e a proporção dos cards ganharam 8 testes E2E nas 4 superfícies. Catraca de `important` caiu de 58 para 27.
 - `todo` Dar variante a `OptionToggle` e `Logo` para zerar os 27 `!important` restantes: não são contrato do `Action` — `DogRow`/`StoryRow` sobrescrevem os botões internos do `OptionToggle` e `AdminHeader` sobrescreve o `fill` do SVG do `Logo`.
-- `todo` **Fase 5 — contrato de UI.** Criar `UI_CONTRACTS.md` com props, o que não se sobrescreve e breakpoint canônico de cada primitivo; mover para lá as decisões vinculantes soterradas no log do `PROGRESS.md`; dispensar `DATA_MODEL.md` em tarefa que não toca dados.
+- `done` **Fase 5 — contrato de UI.** `UI_CONTRACTS.md` reúne variantes, o que não se sobrescreve e as decisões vinculantes, que saíram do log do `PROGRESS.md`. `AGENTS.md` passa a pedir `DATA_MODEL.md` só em tarefa de dados e `UI_CONTRACTS.md` só em tarefa de interface.
 
 ### P0 — Correções operacionais e mobile
 
@@ -84,8 +84,8 @@ Causa dos ajustes que quebravam recursos prontos: as regras de arquitetura vivia
 - `done` Expor o metadado somente nas consultas admin e mostrar uma linha discreta por card; em configurações/redes sociais, usar a alteração mais recente do grupo.
 - `done` Cobrir onboarding/perfil, RLS, triggers, registros legados sem autor e fluxos automáticos com pgTAP e E2E; atualizar tipos gerados e `DATA_MODEL.md` na implementação.
 
-Decisões aceitas (não reabrir): timeout de sessão de 7 dias só no client (trade-off do plano Free — ver `PROJECT.md`); débito de contraste AA do coral `#f15a55` (identidade aprovada pelo Abrigo, travado pela suíte E2E nos tokens da marca).
+Decisões aceitas (não reabrir): timeout de sessão de 7 dias só no client (trade-off do plano Free — ver `PROJECT.md`). As decisões vinculantes de interface vivem em `UI_CONTRACTS.md`.
 
 ## Primitivos compartilhados
 
-`packages/shared/src/components`: `Action`, `BlobImage`, `CompactCard`, `Dialog`, `ExpandedCardDialog`, `FeatureSection`, `Header`, `Icon`, `ImageLightbox`, `ImagePlaceholder`, `Logo`, `SelectField`, `Switch`, `TextField`. Antes de criar um componente novo, generalizar um destes (ver `AGENTS.md`, prioridade 3).
+Catálogo, variantes e o que não se pode sobrescrever: `UI_CONTRACTS.md`. Antes de criar um componente, generalize um existente (`AGENTS.md`, prioridade 3).
