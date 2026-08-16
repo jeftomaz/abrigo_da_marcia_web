@@ -193,7 +193,7 @@ export function PixConfirmationDialog({
             value={pixCode}
             title="QR Code do Pix. Use o botão abaixo para copiar o código."
             role="img"
-            className="size-40 sm:size-48"
+            className="size-48"
             marginSize={0}
           />
         </div>

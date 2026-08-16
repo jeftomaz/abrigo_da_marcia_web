@@ -27,12 +27,22 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 - `todo` Carregar pelo admin os dados reais na ordem: configurações/links/Pix, cães, histórias e eventos/fotos; `seed.sql` permanece exclusivamente fictício e fora da produção.
 - `todo` Revisar produção em mobile/desktop, conferir links e Pix com uma operação pequena e gerar novo backup completo após a carga real.
 
+### P0 — Consistência estrutural (diagnóstico de 2026-08-16)
+
+Causa dos ajustes que quebravam recursos prontos: as regras de arquitetura viviam só em prosa, sem nada que falhasse quando violadas. Fases em ordem de alavancagem, uma branch cada.
+
+- `done` **Fase 1 — travas automáticas.** CI passou a rodar lint, build, pgTAP e E2E, e o deploy só publica com tudo verde; `scripts/check-classes.mjs` barra `!` em `className` e breakpoint arbitrário por catraca sobre a base herdada; suíte zerada (QR Pix).
+- `todo` **Fase 2 — tema único.** `@theme` está duplicado nos dois `index.css` e divergiu: o público define 15 tokens `--text-*` fluidos, o admin nenhum, então componente compartilhado renderiza tamanhos diferentes por app. Extrair `packages/shared/src/theme.css`. Muda a tipografia do admin — exige passada visual em 320/393/1024/1920 px.
+- `todo` **Fase 3 — escala de breakpoints.** Nomear os 4 pontos hoje arbitrários (`min-[22rem]` a `min-[48rem]`, 42 usos) e migrar `CompactCard` para container query, que hoje vira em `lg` (1024 px) dentro de um admin que vira em `desk` (1360 px). Zera a base de `breakpoint` no `check-classes`.
+- `todo` **Fase 4 — remover duplicação.** Grade de cards existe em 4 cópias divergentes (`Adocao`, `Historias` e os dois previews); extrair `CardGrid`. Substituir os `!important` de `DogRow`/`StoryRow`/`EventRow`/`AdminHeader` por um `ActionSize` real. Cobrir `CompactCard` e a grade pública no E2E, hoje sem asserção nenhuma. Zera a base de `important`.
+- `todo` **Fase 5 — contrato de UI.** Criar `UI_CONTRACTS.md` com props, o que não se sobrescreve e breakpoint canônico de cada primitivo; mover para lá as decisões vinculantes soterradas no log do `PROGRESS.md`; dispensar `DATA_MODEL.md` em tarefa que não toca dados.
+
 ### P0 — Correções operacionais e mobile
 
 - `done` Manter o painel de edição de Configurações junto ao header no desktop, com rolagem própria quando exceder a altura visível.
 - `done` Alinhar tamanho e grade dos cards de Histórias na landing ao padrão dos cards de Adoção.
 - `done` Fixar nome e tags nos cards expandidos de Adoção e Histórias, limitando a rolagem à descrição e reduzindo sua tipografia no mobile.
-- `todo` Alinhar o QR Pix mobile ao contrato E2E: hoje renderiza com 160 px, abaixo dos 192 px esperados.
+- `done` Alinhar o QR Pix mobile ao contrato E2E: passou a 192 px em qualquer largura.
 - `done` Padronizar tamanho, espaçamento, alinhamento e breakpoint das abas nos headers público e administrativo.
 - `done` Exibir feedback visual durante processamento e envio de imagens nos formulários administrativos de Cães, Histórias e Eventos.
 - `done` Corrigir o cadastro de Eventos: impedir sobreposição dos Objetivos, exibir e exigir o prazo de reserva configurado, manter a meta fixa no equilíbrio da rifa e compactar o card Pix para preservar a ação de fechar.

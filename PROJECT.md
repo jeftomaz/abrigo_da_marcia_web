@@ -14,7 +14,8 @@ Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin 
 - **Monorepo:** pnpm workspaces — `apps/public`, `apps/admin`, `packages/shared`.
 - **Dev local do banco:** `supabase start` (requer Docker) sobe o stack; `supabase db reset` aplica `supabase/migrations/` + `supabase/seed.sql`. Studio em `localhost:54323`.
 - **Bootstrap local removível:** `./scripts/dev-local.sh` inicia Supabase, público (`5173`) e admin (`5174`). O arquivo não participa de build/deploy.
-- **Testes:** `supabase test db` (pgTAP) e `pnpm e2e` (Playwright + axe, em `e2e/`). Os dois exigem `supabase start`; o E2E sobe os apps sozinho e força o Supabase local, ignorando o `.env` da raiz. Primeira execução: `npx playwright install chromium webkit`.
+- **Testes:** `pnpm verify` roda tudo na ordem do CI (lint → build → pgTAP → E2E); as partes isoladas são `pnpm lint`, `pnpm build`, `pnpm test:db` e `pnpm e2e`. pgTAP e E2E exigem `supabase start`; o E2E sobe os apps sozinho e força o Supabase local, ignorando o `.env` da raiz. Primeira execução: `npx playwright install chromium webkit`. **O E2E também exige `supabase functions serve` em outro terminal** — o edge runtime fica em "Stopped services" após o `supabase start`, e sem ele o teste de CORS das Edge Functions recebe 503 em vez de 403.
+- **CI:** `verify.yml` roda lint/build (rápido) e pgTAP/E2E (com Docker) em todo PR e push fora da `main`; `deploy-pages.yml` só publica com os dois verdes. Suíte vermelha bloqueia entrega — nenhum teste falhando é tolerado como pendência.
 - **Admin:** entrada exclusiva por convite, nome/apelido privado, definição de senha, TOTP obrigatório e RLS condicionada a `app_metadata.role = admin` + `aal2`. Cadastro público permanece desabilitado; convites são enviados pelo Dashboard ou Admin API.
 
 ## Regras específicas
