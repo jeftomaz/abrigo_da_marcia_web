@@ -31,13 +31,7 @@ const RULES = {
     // Todo ponto de corte precisa de nome em packages/shared/src/theme.css.
     pattern: /(?:min|max)-\[[0-9.]+(?:rem|px)\]:/g,
     message: 'breakpoint arbitrário — declare um `--breakpoint-*` nomeado no tema compartilhado',
-    baseline: {
-      'apps/admin/src/components/DogRow.tsx': 17,
-      'apps/admin/src/components/EventRow.tsx': 10,
-      'apps/admin/src/components/StoryRow.tsx': 8,
-      'apps/admin/src/components/EventForm.tsx': 6,
-      'apps/admin/src/components/PhotoGalleryField.tsx': 1,
-    },
+    baseline: {},
   },
 }
 

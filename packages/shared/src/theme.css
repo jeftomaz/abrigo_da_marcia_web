@@ -37,9 +37,14 @@
 
   /* Escala de breakpoints — fechada. Todo ponto de corte precisa de nome aqui;
      `min-[Xrem]:` solto no componente cria escala paralela e é barrado por
-     `scripts/check-classes.mjs`. `lg` é o limiar do público; `desk` é o do
-     admin, onde as três colunas (stats + lista + edição) cabem sem se espremer. */
-  --breakpoint-desk: 85rem;
+     `scripts/check-classes.mjs`. Os do Tailwind (`sm` 40rem, `md` 48rem,
+     `lg` 64rem…) continuam valendo: `lg` é o limiar do público.
+     Os abaixo existem porque o admin empilha muito conteúdo em telas estreitas,
+     e cada um marca onde um bloco específico passa a caber. */
+  --breakpoint-galeria: 22rem; /* 352px: a galeria compacta fecha 4 colunas fixas de 3.25rem. */
+  --breakpoint-linha: 24rem; /* 384px: a linha de Cães/Histórias troca a foto de 3rem pela de 4rem. */
+  --breakpoint-acoes: 28rem; /* 448px: as ações da linha de Eventos saem da 2ª fila e ganham coluna. */
+  --breakpoint-desk: 85rem; /* 1360px: no admin, stats + lista + edição cabem lado a lado. */
 
   --color-cinza-escuro: #262626;
   --color-cinza-medio: #404040;

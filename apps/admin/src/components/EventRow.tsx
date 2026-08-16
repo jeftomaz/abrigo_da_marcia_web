@@ -35,13 +35,13 @@ export function EventRow({
   onSetStatus,
 }: EventRowProps) {
   const status = STATUS[event.status]
-  const actionClasses = 'min-h-11 w-full min-w-0 !gap-2 !px-3 !py-2 !text-sm [&_svg]:size-5 min-[28rem]:!gap-1 min-[28rem]:!px-2 min-[28rem]:!text-xs min-[28rem]:[&_svg]:size-4 sm:!gap-2 sm:!px-3 sm:!text-sm sm:[&_svg]:size-5 desk:!gap-1.5 desk:!px-2 desk:!text-sm desk:[&_svg]:size-5'
+  const actionClasses = 'min-h-11 w-full min-w-0 !gap-2 !px-3 !py-2 !text-sm [&_svg]:size-5 acoes:!gap-1 acoes:!px-2 acoes:!text-xs acoes:[&_svg]:size-4 sm:!gap-2 sm:!px-3 sm:!text-sm sm:[&_svg]:size-5 desk:!gap-1.5 desk:!px-2 desk:!text-sm desk:[&_svg]:size-5'
 
   return (
     <AdminListRow
       audit={event.audit}
       isEditing={isEditing || isManaging}
-      className="grid min-w-0 grid-cols-[5rem_minmax(0,1fr)] items-start gap-4 rounded-3xl p-4 min-[28rem]:grid-cols-[5rem_minmax(0,1fr)_12rem] min-[28rem]:items-center min-[28rem]:gap-3 sm:grid-cols-[6rem_minmax(0,1fr)_17rem] sm:gap-4 sm:p-6 desk:grid-cols-[5rem_minmax(0,1fr)_12.5rem] desk:gap-3 desk:rounded-2xl desk:p-4"
+      className="grid min-w-0 grid-cols-[5rem_minmax(0,1fr)] items-start gap-4 rounded-3xl p-4 acoes:grid-cols-[5rem_minmax(0,1fr)_12rem] acoes:items-center acoes:gap-3 sm:grid-cols-[6rem_minmax(0,1fr)_17rem] sm:gap-4 sm:p-6 desk:grid-cols-[5rem_minmax(0,1fr)_12.5rem] desk:gap-3 desk:rounded-2xl desk:p-4"
     >
       <div className="flex w-20 shrink-0 flex-col gap-2 sm:w-24 desk:w-20">
         <div className="relative size-20 overflow-hidden rounded-xl sm:size-24 desk:size-20">
@@ -58,7 +58,7 @@ export function EventRow({
 
       <p className="min-w-0 self-center text-base leading-tight font-medium sm:text-lg desk:text-base">{event.title || 'Evento sem título'}</p>
 
-      <div className="col-span-2 grid min-w-0 grid-cols-2 gap-2 min-[28rem]:col-span-1 min-[28rem]:col-start-3 min-[28rem]:row-start-1">
+      <div className="col-span-2 grid min-w-0 grid-cols-2 gap-2 acoes:col-span-1 acoes:col-start-3 acoes:row-start-1">
         {event.status !== 'draft' && (
           <Action
             size="small"

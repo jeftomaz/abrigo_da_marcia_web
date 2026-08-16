@@ -20,17 +20,17 @@ const STATUS_TONE: Record<DogStatus, StatusTone> = {
 }
 
 const ACTION_CLASSES =
-  'min-h-11 w-full min-w-0 !gap-0.5 !px-1 !py-2 !text-xs [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate min-[24rem]:!gap-1 min-[24rem]:!px-2 min-[24rem]:!text-sm min-[24rem]:[&_svg]:size-4'
+  'min-h-11 w-full min-w-0 !gap-0.5 !px-1 !py-2 !text-xs [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate linha:!gap-1 linha:!px-2 linha:!text-sm linha:[&_svg]:size-4'
 
 export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetStatus }: DogRowProps) {
   return (
     <AdminListRow
       audit={dog.audit}
       isEditing={isEditing}
-      className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)_9.25rem] items-center gap-2 rounded-2xl p-3 min-[24rem]:grid-cols-[4rem_minmax(0,1fr)_11.5rem] min-[24rem]:gap-3 desk:grid-cols-[4rem_minmax(0,1fr)_13.5rem]"
+      className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)_9.25rem] items-center gap-2 rounded-2xl p-3 linha:grid-cols-[4rem_minmax(0,1fr)_11.5rem] linha:gap-3 desk:grid-cols-[4rem_minmax(0,1fr)_13.5rem]"
     >
-      <div className="flex w-12 shrink-0 flex-col items-start gap-2 min-[24rem]:relative min-[24rem]:block min-[24rem]:w-16">
-        <div className="relative size-12 overflow-hidden rounded-xl min-[24rem]:size-16">
+      <div className="flex w-12 shrink-0 flex-col items-start gap-2 linha:relative linha:block linha:w-16">
+        <div className="relative size-12 overflow-hidden rounded-xl linha:size-16">
           {dog.photos[0] ? (
             <img
               src={getDogPhotoUrl(dog.photos[0])}
@@ -41,13 +41,13 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetS
             <ImagePlaceholder label={`Sem foto de ${dog.name}`} className="h-full w-full" />
           )}
         </div>
-        <StatusBadge tone={STATUS_TONE[dog.status]} size="sm" className="min-[24rem]:absolute min-[24rem]:-bottom-2 min-[24rem]:left-0">
+        <StatusBadge tone={STATUS_TONE[dog.status]} size="sm" className="linha:absolute linha:-bottom-2 linha:left-0">
           {STATUS_LABELS[dog.status]}
         </StatusBadge>
       </div>
 
       <div className="flex min-w-0 flex-col items-start gap-2 self-center">
-        <p className="min-w-0 text-base leading-tight font-medium min-[24rem]:text-lg">{dog.name}</p>
+        <p className="min-w-0 text-base leading-tight font-medium linha:text-lg">{dog.name}</p>
         <Action
           onClick={() => onSetFeatured(!dog.featured)}
           size="small"
@@ -63,7 +63,7 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetS
 
       <div className="col-start-3 row-start-1 grid min-w-0 grid-cols-2 items-stretch gap-2">
         <OptionToggle
-          className="h-full w-full min-w-0 [&>button]:!gap-0.5 [&>button]:!px-1 [&_svg]:!size-3 min-[24rem]:[&>button]:!gap-2 min-[24rem]:[&>button]:!px-2 min-[24rem]:[&_svg]:!size-3.5"
+          className="h-full w-full min-w-0 [&>button]:!gap-0.5 [&>button]:!px-1 [&_svg]:!size-3 linha:[&>button]:!gap-2 linha:[&>button]:!px-2 linha:[&_svg]:!size-3.5"
           size="compact"
           first={{
             label: 'Adotado',
