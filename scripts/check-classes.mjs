@@ -19,11 +19,13 @@ const RULES = {
     // espaçamento? Adicione um `ActionSize`.
     pattern: /![a-z][a-z0-9]*-[a-z0-9./[\]-]+/g,
     message: 'classe com `!` sobrepondo componente compartilhado — use uma variant/size do próprio componente',
+    // O que resta não é contrato de `Action`, e sim de outros dois componentes:
+    // `OptionToggle` (DogRow/StoryRow) e `Logo` (AdminHeader, que sobrescreve o `fill`
+    // do SVG). Sair de vez daqui exige dar variante a esses dois.
     baseline: {
-      'apps/admin/src/components/DogRow.tsx': 17,
-      'apps/admin/src/components/StoryRow.tsx': 16,
-      'apps/admin/src/components/EventRow.tsx': 13,
       'apps/admin/src/components/AdminHeader.tsx': 12,
+      'apps/admin/src/components/StoryRow.tsx': 9,
+      'apps/admin/src/components/DogRow.tsx': 6,
     },
   },
   breakpoint: {

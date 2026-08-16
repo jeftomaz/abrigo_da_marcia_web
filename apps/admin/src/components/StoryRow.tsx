@@ -12,7 +12,7 @@ type StoryRowProps = {
 }
 
 const ACTION_CLASSES =
-  'min-h-11 w-full min-w-0 !gap-0.5 !px-1 !py-2 !text-xs [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate linha:!gap-1 linha:!px-2 linha:!text-sm linha:[&_svg]:size-4'
+  'min-h-11 w-full min-w-0 [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate linha:[&_svg]:size-4'
 
 export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story }: StoryRowProps) {
   return (
@@ -45,7 +45,7 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
       <div className="col-start-3 row-start-1 grid min-w-0 grid-cols-2 items-stretch gap-2">
         <Action
           onClick={onTogglePublished}
-          size="small"
+          size="admin-row"
           variant={story.published ? 'neutral-inverted' : 'neutral-adaptive'}
           icon="check-circle-solid"
           aria-pressed={story.published}
@@ -59,7 +59,7 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
         </Action>
         <Action
           onClick={onEdit}
-          size="small"
+          size="admin-row"
           variant={isEditing ? 'secondary-adaptive' : 'neutral-adaptive'}
           icon="edit-pencil"
           aria-pressed={isEditing}
@@ -69,7 +69,7 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
         </Action>
         <Action
           onClick={onRemove}
-          size="small"
+          size="admin-row"
           variant="neutral-adaptive"
           icon="trash-solid"
           className={`${ACTION_CLASSES} col-start-2 row-start-2`}

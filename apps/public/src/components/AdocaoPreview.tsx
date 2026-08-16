@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   Action,
+  CardGrid,
   CompactCard,
   ExpandedCardDialog,
   FeatureSection,
@@ -71,7 +72,7 @@ export function AdocaoPreview() {
         Nossos cães estão em busca de um lar cheio de amor e carinho!
       </p>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <CardGrid label="Cães em destaque para adoção" variant="preview">
         {dogs.map((dog) => {
           const cover = dog.photos[0]
           return (
@@ -91,7 +92,7 @@ export function AdocaoPreview() {
             />
           )
         })}
-      </div>
+      </CardGrid>
 
       {isLoading && <p role="status" className="mt-8 text-center">Carregando cães...</p>}
       {error && <p role="alert" className="mt-8 text-center">Não foi possível carregar os cães.</p>}

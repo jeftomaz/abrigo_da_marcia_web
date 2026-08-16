@@ -20,7 +20,7 @@ const STATUS_TONE: Record<DogStatus, StatusTone> = {
 }
 
 const ACTION_CLASSES =
-  'min-h-11 w-full min-w-0 !gap-0.5 !px-1 !py-2 !text-xs [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate linha:!gap-1 linha:!px-2 linha:!text-sm linha:[&_svg]:size-4'
+  'min-h-11 w-full min-w-0 [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate linha:[&_svg]:size-4'
 
 export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetStatus }: DogRowProps) {
   return (
@@ -50,12 +50,12 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetS
         <p className="min-w-0 text-base leading-tight font-medium linha:text-lg">{dog.name}</p>
         <Action
           onClick={() => onSetFeatured(!dog.featured)}
-          size="small"
+          size="admin-inline"
           variant={dog.featured ? 'secondary-adaptive' : 'neutral-adaptive'}
           icon="star"
           aria-pressed={dog.featured}
           aria-label={dog.featured ? `Remover ${dog.name} do destaque do catálogo` : `Destacar ${dog.name} no catálogo`}
-          className="min-h-9 max-w-full min-w-0 !gap-1 !px-2 !py-1.5 !text-xs [&_svg]:size-4 [&_span]:min-w-0 [&_span]:truncate"
+          className="min-h-9 max-w-full min-w-0 [&_svg]:size-4 [&_span]:min-w-0 [&_span]:truncate"
         >
           {dog.featured ? 'Em destaque' : 'Destacar'}
         </Action>
@@ -86,7 +86,7 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetS
         <div className="flex min-w-0 flex-col gap-2">
           <Action
             onClick={onEdit}
-            size="small"
+            size="admin-row"
             variant={isEditing ? 'secondary-adaptive' : 'neutral-adaptive'}
             icon="edit-pencil"
             aria-pressed={isEditing}
@@ -96,7 +96,7 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetS
           </Action>
           <Action
             onClick={onRemove}
-            size="small"
+            size="admin-row"
             variant="neutral-adaptive"
             icon="trash-solid"
             className={ACTION_CLASSES}

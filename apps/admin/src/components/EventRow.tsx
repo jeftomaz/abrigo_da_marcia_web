@@ -35,7 +35,7 @@ export function EventRow({
   onSetStatus,
 }: EventRowProps) {
   const status = STATUS[event.status]
-  const actionClasses = 'min-h-11 w-full min-w-0 !gap-2 !px-3 !py-2 !text-sm [&_svg]:size-5 acoes:!gap-1 acoes:!px-2 acoes:!text-xs acoes:[&_svg]:size-4 sm:!gap-2 sm:!px-3 sm:!text-sm sm:[&_svg]:size-5 desk:!gap-1.5 desk:!px-2 desk:!text-sm desk:[&_svg]:size-5'
+  const actionClasses = 'min-h-11 w-full min-w-0 [&_svg]:size-5 acoes:[&_svg]:size-4 sm:[&_svg]:size-5 desk:[&_svg]:size-5'
 
   return (
     <AdminListRow
@@ -61,7 +61,7 @@ export function EventRow({
       <div className="col-span-2 grid min-w-0 grid-cols-2 gap-2 acoes:col-span-1 acoes:col-start-3 acoes:row-start-1">
         {event.status !== 'draft' && (
           <Action
-            size="small"
+            size="admin-row-event"
             variant={isManaging ? 'secondary-adaptive' : 'neutral-adaptive'}
             icon="book-solid"
             aria-pressed={isManaging}
@@ -73,7 +73,7 @@ export function EventRow({
         )}
         {event.status === 'draft' && (
           <Action
-            size="small"
+            size="admin-row-event"
             variant="neutral-adaptive"
             icon="check-circle-solid"
             className={`${actionClasses} col-start-1 row-start-1`}
@@ -83,7 +83,7 @@ export function EventRow({
           </Action>
         )}
         <Action
-          size="small"
+          size="admin-row-event"
           variant={isEditing ? 'secondary-adaptive' : 'neutral-adaptive'}
           icon="edit-pencil"
           aria-pressed={isEditing}
@@ -94,7 +94,7 @@ export function EventRow({
         </Action>
         {event.kind === 'raffle' && (event.status === 'active' || event.status === 'ended') && (
           <Action
-            size="small"
+            size="admin-row-event"
             variant="neutral-adaptive"
             icon="dice-five"
             className={`${actionClasses} col-start-1 row-start-2`}
@@ -105,7 +105,7 @@ export function EventRow({
         )}
         {event.status === 'active' && (
           <Action
-            size="small"
+            size="admin-row-event"
             variant="neutral-adaptive"
             icon="white-flag-solid"
             className={`${actionClasses} col-start-2 row-start-2`}
@@ -116,7 +116,7 @@ export function EventRow({
         )}
         {event.status === 'draft' && (
           <Action
-            size="small"
+            size="admin-row-event"
             variant="neutral-adaptive"
             icon="trash-solid"
             className={`${actionClasses} col-start-2 row-start-2`}
@@ -127,7 +127,7 @@ export function EventRow({
         )}
         {event.status === 'ended' && (
           <Action
-            size="small"
+            size="admin-row-event"
             variant="neutral-adaptive"
             icon="refresh-circle"
             className={`${actionClasses} col-start-2 row-start-2`}
@@ -138,7 +138,7 @@ export function EventRow({
         )}
         {event.status === 'ended' && (
           <Action
-            size="small"
+            size="admin-row-event"
             variant="neutral-adaptive"
             icon="archive"
             className={`${actionClasses} ${event.kind === 'raffle' ? 'col-span-2 row-start-3' : 'col-start-1 row-start-2'}`}
@@ -149,7 +149,7 @@ export function EventRow({
         )}
         {event.status === 'archived' && (
           <Action
-            size="small"
+            size="admin-row-event"
             variant="neutral-adaptive"
             icon="trash-solid"
             className={`${actionClasses} col-start-2 row-start-2`}

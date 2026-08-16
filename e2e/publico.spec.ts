@@ -66,6 +66,71 @@ test.describe('site público', () => {
     }
   })
 
+  // A grade de cards vivia copiada nestas quatro superfícies e as cópias divergiam a
+  // cada ajuste. Agora todas vêm de `CardGrid`: o teste percorre as quatro para que
+  // uma mudança na variante não passe despercebida em nenhuma delas.
+  const GRADES_DE_CARD = [
+    { nome: 'Adoção', url: '/adocao', regiao: 'Cães disponíveis', gap: { mobile: '20px', desktop: '24px' } },
+    { nome: 'Histórias', url: '/historias', regiao: 'Histórias de adoção', gap: { mobile: '20px', desktop: '24px' } },
+    { nome: 'landing/Adoção', url: '/', regiao: 'Cães em destaque para adoção', gap: { mobile: '16px', desktop: '16px' } },
+    { nome: 'landing/Histórias', url: '/', regiao: 'Histórias de adoção em destaque', gap: { mobile: '16px', desktop: '16px' } },
+  ]
+
+  for (const grade of GRADES_DE_CARD) {
+    test(`grade de cards de ${grade.nome} mantém 2 colunas no mobile e 3 no desktop`, async ({ page }) => {
+      await page.goto(grade.url)
+      const regiao = page.getByRole('region', { name: grade.regiao })
+      await expect(regiao).toBeVisible()
+
+      const medir = () =>
+        regiao.evaluate((element) => {
+          const styles = getComputedStyle(element)
+          return {
+            colunas: styles.gridTemplateColumns.split(' ').length,
+            gap: styles.rowGap,
+          }
+        })
+
+      await page.setViewportSize({ width: 393, height: 844 })
+      expect(await medir(), `${grade.nome} no mobile`).toEqual({ colunas: 2, gap: grade.gap.mobile })
+
+      await page.setViewportSize({ width: 1280, height: 900 })
+      expect(await medir(), `${grade.nome} no desktop`).toEqual({ colunas: 3, gap: grade.gap.desktop })
+    })
+  }
+
+  // Trava a proporção da imagem do card vertical, ajustada de ida e volta várias vezes
+  // sem nunca ficar coberta. Hoje a proporção declarada em `imageAspect` vale igual no
+  // mobile e no desktop. Note que Histórias usa `landscape` na página e o padrão
+  // `square` na landing: a divergência é real e fica registrada aqui — se for
+  // uniformizada algum dia, que seja por decisão, não por acidente.
+  const PROPORCOES_DE_CARD = [
+    { nome: 'Adoção', url: '/adocao', regiao: 'Cães disponíveis', proporcao: 1 / 1 },
+    { nome: 'Histórias', url: '/historias', regiao: 'Histórias de adoção', proporcao: 4 / 3 },
+    { nome: 'landing/Adoção', url: '/', regiao: 'Cães em destaque para adoção', proporcao: 1 / 1 },
+    { nome: 'landing/Histórias', url: '/', regiao: 'Histórias de adoção em destaque', proporcao: 1 / 1 },
+  ]
+
+  for (const card of PROPORCOES_DE_CARD) {
+    test(`imagem do card de ${card.nome} mantém a proporção declarada no mobile e no desktop`, async ({ page }) => {
+      await page.goto(card.url)
+      // `img` quando há foto, `role=img` quando o card cai no ImagePlaceholder.
+      const imagem = page.getByRole('region', { name: card.regiao }).locator('img, [role="img"]').first()
+      await expect(imagem).toBeVisible()
+
+      const proporcao = async () => {
+        const caixa = await imagem.boundingBox()
+        return (caixa?.width ?? 0) / (caixa?.height ?? 1)
+      }
+
+      await page.setViewportSize({ width: 393, height: 844 })
+      expect(await proporcao(), `${card.nome} no mobile`).toBeCloseTo(card.proporcao, 1)
+
+      await page.setViewportSize({ width: 1280, height: 900 })
+      expect(await proporcao(), `${card.nome} no desktop`).toBeCloseTo(card.proporcao, 1)
+    })
+  }
+
   test('abre o card expandido de um cão e fecha pelo teclado', async ({ page }) => {
     await page.goto('/adocao')
     await page.getByRole('button', { name: `Conhecer ${CAES_DISPONIVEIS[0]}` }).click()
