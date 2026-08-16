@@ -5,7 +5,10 @@
     "dev": "pnpm --filter public dev",
     "dev:admin": "pnpm --filter admin dev",
     "build": "pnpm -r build",
-    "e2e": "playwright test"
+    "lint": "pnpm -r lint && node scripts/check-classes.mjs",
+    "test:db": "supabase test db",
+    "e2e": "playwright test",
+    "verify": "pnpm lint && pnpm build && pnpm test:db && pnpm e2e"
   },
   "packageManager": "pnpm@9.15.0",
   "devDependencies": {
