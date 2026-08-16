@@ -22,6 +22,7 @@ type ActionSize =
   | 'admin-inline'
   | 'admin-row'
   | 'admin-row-event'
+  | 'card'
   | 'compact'
   | 'default'
   | 'medium'
@@ -56,10 +57,10 @@ type AnchorActionProps = CommonActionProps &
 
 type ActionProps = ButtonActionProps | RouteActionProps | AnchorActionProps
 
-// `gap` mora em `SIZE_CLASSES`, não aqui: com os dois no mesmo lugar da folha de estilo,
-// o `gap-2` da base vencia o `gap-0.5` do tamanho e obrigava o consumidor ao `!`.
+// `gap` e `whitespace` moram em `SIZE_CLASSES`, não aqui: com os dois no mesmo lugar da
+// folha de estilo, o valor da base vencia o do tamanho e obrigava o consumidor ao `!`.
 const BASE_CLASSES =
-  'inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-full text-center font-medium transition-colors'
+  'inline-flex cursor-pointer items-center justify-center rounded-full text-center font-medium transition-colors'
 
 // Sistema dos mockups "Botão Hover"/"Botão Status" (fonte de verdade): cada variante
 // carrega o ciclo completo (rest → hover → clicado/active → foco → desativado) só com
@@ -105,10 +106,15 @@ const VARIANT_CLASSES: Record<ActionVariant, string> = {
 // ordem na folha de estilo, não a ordem no atributo — `px-16` de `default` vence um `px-7`
 // passado por fora. Precisou de outro espaçamento? Adicione um tamanho.
 const SIZE_CLASSES: Record<ActionSize, string> = {
-  compact: 'gap-2 px-10 py-1 text-base',
-  default: 'gap-2 px-16 py-2',
-  medium: 'gap-2 px-7 py-3 text-base',
-  small: 'gap-2 px-6 py-4 text-sm',
+  compact: 'gap-2 whitespace-nowrap px-10 py-1 text-base',
+  default: 'gap-2 whitespace-nowrap px-16 py-2',
+  medium: 'gap-2 whitespace-nowrap px-7 py-3 text-base',
+  small: 'gap-2 whitespace-nowrap px-6 py-4 text-sm',
+  // Ação dentro de card de catálogo: a ~150px de card sobram ~125px de botão, e os 80px
+  // de padding do `compact` não deixavam espaço para a palavra — o rótulo vazava a
+  // pílula. Aqui o padding é curto e o texto pode quebrar em duas linhas, mantendo o
+  // corpo legível em vez de encolher a fonte.
+  card: 'gap-1 px-3 py-1.5 text-base leading-tight text-balance whitespace-normal',
   // Os três abaixo são as ações dentro das linhas do admin, onde a largura é escassa e
   // o espaçamento acompanha o breakpoint. Antes viviam no className do consumidor com
   // a marca de importante, necessária justamente porque className não vence

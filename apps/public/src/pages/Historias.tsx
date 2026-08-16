@@ -40,11 +40,10 @@ export function Historias() {
                 action={
                   <Action
                     onClick={() => setSelectedStoryId(story.id)}
-                    size="small"
-                    className="px-1"
+                    size="card"
                     aria-label={`Conhecer a história de ${story.name}`}
                   >
-                    Conheça essa história
+                    Ler história
                   </Action>
                 }
               />

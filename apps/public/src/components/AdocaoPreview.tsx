@@ -37,7 +37,7 @@ export function AdocaoPreview() {
   const { data: siteSettings } = usePublicSiteSettings()
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
   const selectedDog = availableDogs.find((dog) => dog.id === selectedDogId) ?? null
-  const dogs = availableDogs.slice(0, 3)
+  const dogs = availableDogs.slice(0, 4)
 
   return (
     <FeatureSection
@@ -85,7 +85,7 @@ export function AdocaoPreview() {
                 <Tag key={tag}>{tag}</Tag>
               ))}
               action={
-                <Action onClick={() => setSelectedDogId(dog.id)} size="compact">
+                <Action onClick={() => setSelectedDogId(dog.id)} size="card">
                   Ler mais
                 </Action>
               }

@@ -6,7 +6,8 @@ Fonte dos tokens: `packages/shared/src/theme.css`. Componentes: `packages/shared
 
 ## Regras transversais
 
-1. **Token só do tema.** Cor, fonte, breakpoint e tamanho de texto vêm de `theme.css`, importado pelos dois apps. Nunca hardcode em componente. Cada `index.css` só pode conter o que é exclusivo daquele app.
+1. **Token só do tema.** Cor, fonte e breakpoint vêm de `theme.css`, importado pelos dois apps. Nunca hardcode em componente. Cada `index.css` só pode conter o que é exclusivo daquele app.
+   - **Exceção deliberada: a escala `--text-*` fica no público.** Ela não é uma escada de tamanhos, e sim pares mobile→desktop do mesmo elemento (`text-3xl lg:text-4xl`, `text-5xl lg:text-8xl`). Por isso `3xl` chega a 37,5px e `4xl` para em 36px — `3xl` é **sempre maior** que `4xl`. O admin usa os mesmos nomes como degraus independentes (`text-4xl desk:text-5xl` acima de `text-3xl desk:text-4xl`), em 7 arquivos. Unificar inverte essas hierarquias: no `StatCards`, a razão total/subcard ia de 1,20 para 0,77. Medido e revertido em 2026-08-16. Se algum dia a convergência voltar à mesa, a escala precisa primeiro virar monotônica de verdade.
 2. **Breakpoint só nomeado.** A escala é fechada: `galeria` (22rem), `linha` (24rem), `acoes` (28rem), os do Tailwind (`sm` 40rem, `md` 48rem, `lg` 64rem…) e `desk` (85rem). `min-[Xrem]:` solto é barrado por `scripts/check-classes.mjs`.
    - Público vira em `lg`. Admin vira em `desk`. **Componente compartilhado não decide breakpoint de viewport** — recebe por prop/variant.
 3. **`className` não sobrescreve o que o componente decide.** Quem decide é a ordem na folha de estilo, não a ordem no atributo: `px-16` de um tamanho vence um `px-7` passado por fora. Precisou de outro valor? **Acrescente uma variante ou tamanho ao componente.** Usar `!` para forçar é barrado pelo `check-classes` — foi assim que o contrato do `Action` acabou furado em quatro arquivos.
@@ -16,8 +17,8 @@ Fonte dos tokens: `packages/shared/src/theme.css`. Componentes: `packages/shared
 
 | Componente | Resolve | Variantes / props de forma | Não sobrescreva |
 |---|---|---|---|
-| `Action` | Todo botão, link e CTA | `variant`: `primary`/`secondary`/`neutral` × `-adaptive`/`-inverted`/`-on-brand`. `size`: `default`, `medium`, `small`, `compact`, `admin-row`, `admin-row-event`, `admin-inline` | **`gap`, `px`, `py`, `text-*`** — vivem em `SIZE_CLASSES`. Escolha a variante pela superfície **imediata** (contraste), não pelo tema da página |
-| `CardGrid` | Grade de cards do público | `variant`: `page` (`gap-5`/`lg:gap-6`) ou `preview` (`gap-4`). `label` vira o `aria-label` da região | **`gap` e `mt`** — foi a divergência entre 4 cópias que gerou retrabalho recorrente |
+| `Action` | Todo botão, link e CTA | `variant`: `primary`/`secondary`/`neutral` × `-adaptive`/`-inverted`/`-on-brand`. `size`: `default`, `medium`, `small`, `compact`, `card`, `admin-row`, `admin-row-event`, `admin-inline` | **`gap`, `whitespace`, `px`, `py`, `text-*`** — vivem em `SIZE_CLASSES`. Ação dentro de card usa `size="card"`: `compact` reserva 80px de padding e o rótulo vaza a pílula. Escolha a variante pela superfície **imediata** (contraste), não pelo tema da página |
+| `CardGrid` | Grade de cards do público | `variant`: `page` (grade em qualquer largura) ou `preview` (grade de 2 colunas no mobile, carrossel horizontal no desktop, com 4 cards). `label` vira o `aria-label` da região | **`gap`, `mt` e a largura dos filhos no carrossel** — foi a divergência entre 4 cópias que gerou retrabalho recorrente |
 | `CompactCard` | Card de catálogo/listagem | `orientation`: `vertical` (padrão), `horizontal`, `responsive`. `imageAspect`: `square` (padrão), `landscape` | Proporção da imagem e altura do card — use `imageAspect`/`orientation` |
 | `ExpandedCardDialog` | Card aberto em diálogo | `variant`: `default`, `adoption`, `story`, `product`. `images`, `expandableImages`, `tags`, `primaryAction`, `persistentClose` | Estrutura do cabeçalho: nome e tags ficam fixos, só a descrição rola |
 | `Dialog` | Base de qualquer diálogo | `ariaLabel` ou `ariaLabelledBy` (um dos dois é obrigatório), `onClose`, `persistentClose`, `active` | Foco, `Escape` e overlay — já tratados |
@@ -47,3 +48,5 @@ Não reabrir sem motivo novo. Vivem aqui, e não no log do `PROGRESS.md`, para n
 A área concentra o maior retrabalho do projeto e agora tem contrato travado por E2E (`e2e/publico.spec.ts`): colunas e espaçamento das 4 grades, e proporção da imagem em 393 e 1280 px. Se o teste falhar, a mudança é real — atualize o teste **por decisão**, não para fazer passar.
 
 Divergência conhecida e intencional: Histórias usa `landscape` na página e o padrão `square` na landing.
+
+O E2E também trava o rótulo do botão: nenhum pode exceder a própria pílula no mobile, e o corpo não pode cair abaixo de 16px. Encolher a fonte não é solução aceita — o texto quebra em duas linhas ou o rótulo encurta.

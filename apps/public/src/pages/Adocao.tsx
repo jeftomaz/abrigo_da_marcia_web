@@ -192,8 +192,7 @@ export function Adocao() {
                 action={
                   <Action
                     onClick={() => setSelectedDogId(dog.id)}
-                    size="compact"
-                    className="px-2"
+                    size="card"
                     aria-label={`Conhecer ${dog.name}`}
                   >
                     <span className="lg:hidden">Conhecer cão</span>

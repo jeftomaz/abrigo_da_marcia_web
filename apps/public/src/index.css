@@ -11,10 +11,13 @@
    * (`5xl`→`8xl`, `3xl`→`4xl`); mobile escala 360-1024px, desktop 1024-1920px
    * (1920px = largura máxima do container, `max-w-[1920px]`). Textos sem
    * distinção mobile/desktop (`2xl`, `sm`, `tag`) escalam num único intervalo
-   * contínuo de 360-1920px, sem salto. `tag` não cresce além do valor
-   * original (10px): as 3 badges "MODELO TAG" quebram linha dentro do card
-   * se crescerem, então o clamp só encolhe em telas pequenas. `care-*` usa
-   * progressão maior até `lg`; as classes `lg:` restauram a escala desktop.
+   * contínuo de 360-1920px, sem salto. `care-*` usa progressão maior até `lg`;
+   * as classes `lg:` restauram a escala desktop.
+   *
+   * `tag` é fixo em 10px, sem clamp: encolhendo, chegava a 8,5px no mobile —
+   * ilegível ao lado de um nome de 16px, e desproporcional dentro do card de
+   * Adoção. O clamp existia para as 3 badges caberem em uma linha, mas elas já
+   * quebram em duas de qualquer forma; duas linhas legíveis valem mais.
    */
   --text-5xl: clamp(3rem, 2.5934rem + 1.8072vw, 3.75rem);
   --text-8xl: clamp(4.8rem, 3.4286rem + 2.1429vw, 6rem);
@@ -22,7 +25,7 @@
   --text-4xl: clamp(1.8rem, 1.2857rem + 0.8036vw, 2.25rem);
   --text-2xl: clamp(1.275rem, 1.1712rem + 0.4615vw, 1.725rem);
   --text-sm: clamp(0.7438rem, 0.6832rem + 0.2692vw, 1.0063rem);
-  --text-tag: clamp(0.5313rem, 0.5096rem + 0.0962vw, 0.625rem);
+  --text-tag: 0.625rem;
   --text-footer-copy: clamp(0.875rem, 0.8462rem + 0.1282vw, 1rem);
   --text-footer-meta: clamp(0.75rem, 0.7212rem + 0.1282vw, 0.875rem);
   --text-raffle-numbers: clamp(1.5rem, 1.4135rem + 0.3846vw, 1.875rem);
