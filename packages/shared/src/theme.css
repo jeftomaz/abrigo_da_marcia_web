@@ -4,7 +4,15 @@
    renderizava tamanhos diferentes conforme o app que o hospedava.
 
    O que é genuinamente de um app só (cores de estado do admin, animações do
-   sorteio) continua no `index.css` dele. Token usado pelos dois vive aqui. */
+   sorteio) continua no `index.css` dele. Token usado pelos dois vive aqui.
+
+   NÃO traga para cá a escala `--text-*` do público. Ela não é uma escada de
+   tamanhos: `3xl`/`4xl` e `5xl`/`8xl` são pares mobile→desktop do MESMO
+   elemento, escritos como `text-3xl lg:text-4xl`, e por isso `3xl` chega a
+   37,5px enquanto `4xl` para em 36px. O admin usa os mesmos nomes como degraus
+   independentes (`text-4xl desk:text-5xl` no total contra `text-3xl
+   desk:text-4xl` no subcard, em 7 arquivos): herdar a escala inverte essas
+   hierarquias. Medido e revertido em 2026-08-16 — ver UI_CONTRACTS.md. */
 
 @custom-variant dark (&:where(.dark, .dark *));
 

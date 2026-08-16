@@ -67,16 +67,14 @@ test.describe('site público', () => {
   })
 
   // A grade de cards vivia copiada nestas quatro superfícies e as cópias divergiam a
-  // cada ajuste. Agora todas vêm de `CardGrid`: o teste percorre as quatro para que
-  // uma mudança na variante não passe despercebida em nenhuma delas.
-  const GRADES_DE_CARD = [
-    { nome: 'Adoção', url: '/adocao', regiao: 'Cães disponíveis', gap: { mobile: '20px', desktop: '24px' } },
-    { nome: 'Histórias', url: '/historias', regiao: 'Histórias de adoção', gap: { mobile: '20px', desktop: '24px' } },
-    { nome: 'landing/Adoção', url: '/', regiao: 'Cães em destaque para adoção', gap: { mobile: '16px', desktop: '16px' } },
-    { nome: 'landing/Histórias', url: '/', regiao: 'Histórias de adoção em destaque', gap: { mobile: '16px', desktop: '16px' } },
+  // cada ajuste. Agora todas vêm de `CardGrid`, em duas variantes com contratos
+  // diferentes: `page` é grade em qualquer largura; `preview` vira carrossel no desktop.
+  const GRADES_DE_PAGINA = [
+    { nome: 'Adoção', url: '/adocao', regiao: 'Cães disponíveis' },
+    { nome: 'Histórias', url: '/historias', regiao: 'Histórias de adoção' },
   ]
 
-  for (const grade of GRADES_DE_CARD) {
+  for (const grade of GRADES_DE_PAGINA) {
     test(`grade de cards de ${grade.nome} mantém 2 colunas no mobile e 3 no desktop`, async ({ page }) => {
       await page.goto(grade.url)
       const regiao = page.getByRole('region', { name: grade.regiao })
@@ -92,10 +90,94 @@ test.describe('site público', () => {
         })
 
       await page.setViewportSize({ width: 393, height: 844 })
-      expect(await medir(), `${grade.nome} no mobile`).toEqual({ colunas: 2, gap: grade.gap.mobile })
+      expect(await medir(), `${grade.nome} no mobile`).toEqual({ colunas: 2, gap: '20px' })
 
       await page.setViewportSize({ width: 1280, height: 900 })
-      expect(await medir(), `${grade.nome} no desktop`).toEqual({ colunas: 3, gap: grade.gap.desktop })
+      expect(await medir(), `${grade.nome} no desktop`).toEqual({ colunas: 3, gap: '24px' })
+    })
+  }
+
+  // Os previews mostram 4 cards: no mobile eles fecham as duas colunas, sem a lacuna
+  // que sobrava com 3; no desktop a grade dá lugar a um carrossel com 3 à vista.
+  const PREVIEWS_DA_LANDING = [
+    { nome: 'Adoção', regiao: 'Cães em destaque para adoção' },
+    { nome: 'Histórias', regiao: 'Histórias de adoção em destaque' },
+  ]
+
+  for (const preview of PREVIEWS_DA_LANDING) {
+    test(`preview de ${preview.nome} na landing é grade no mobile e carrossel no desktop`, async ({ page }) => {
+      await page.goto('/')
+      const regiao = page.getByRole('region', { name: preview.regiao })
+      await expect(regiao).toBeVisible()
+
+      await page.setViewportSize({ width: 393, height: 844 })
+      expect(
+        await regiao.evaluate((element) => {
+          const styles = getComputedStyle(element)
+          return {
+            display: styles.display,
+            colunas: styles.gridTemplateColumns.split(' ').length,
+            gap: styles.rowGap,
+          }
+        }),
+        `${preview.nome} no mobile`,
+      ).toEqual({ display: 'grid', colunas: 2, gap: '16px' })
+
+      await page.setViewportSize({ width: 1280, height: 900 })
+      expect(
+        await regiao.evaluate((element) => {
+          const styles = getComputedStyle(element)
+          return { display: styles.display, overflowX: styles.overflowX }
+        }),
+        `${preview.nome} no desktop`,
+      ).toEqual({ display: 'flex', overflowX: 'auto' })
+    })
+  }
+
+  // O seed publica 4 cães e só 1 história, então o limite de 4 e a rolagem do quarto
+  // card só podem ser exercidos pelo preview de Adoção.
+  test('preview de Adoção mostra 4 cães e reserva o quarto para a rolagem no desktop', async ({ page }) => {
+    await page.goto('/')
+    const regiao = page.getByRole('region', { name: 'Cães em destaque para adoção' })
+    await expect(regiao.locator('article')).toHaveCount(4)
+
+    await page.setViewportSize({ width: 393, height: 844 })
+    const mobile = await regiao.evaluate((el) => ({ rolagem: el.scrollWidth - el.clientWidth }))
+    expect(mobile.rolagem, 'no mobile os 4 cards cabem nas duas colunas, sem rolagem').toBe(0)
+
+    await page.setViewportSize({ width: 1280, height: 900 })
+    const desktop = await regiao.evaluate((el) => ({ rolagem: el.scrollWidth - el.clientWidth }))
+    expect(desktop.rolagem, 'no desktop o quarto card deveria exceder a área visível').toBeGreaterThan(0)
+  })
+
+  // O rótulo do botão já vazou a pílula no card de Histórias: `size="compact"` reservava
+  // 80px de padding num botão de 125px. O tamanho `card` encurta o padding e deixa o
+  // texto quebrar em duas linhas, então nenhum rótulo deve exceder o próprio botão.
+  const CARDS_COM_BOTAO = [
+    { nome: 'Adoção', url: '/adocao', regiao: 'Cães disponíveis' },
+    { nome: 'Histórias', url: '/historias', regiao: 'Histórias de adoção' },
+    { nome: 'landing/Adoção', url: '/', regiao: 'Cães em destaque para adoção' },
+    { nome: 'landing/Histórias', url: '/', regiao: 'Histórias de adoção em destaque' },
+  ]
+
+  for (const card of CARDS_COM_BOTAO) {
+    test(`rótulo do botão de ${card.nome} cabe dentro da pílula no mobile`, async ({ page }) => {
+      await page.setViewportSize({ width: 393, height: 844 })
+      await page.goto(card.url)
+      const botao = page.getByRole('region', { name: card.regiao }).locator('article button, article a[href]').first()
+      await expect(botao).toBeVisible()
+
+      const medida = await botao.evaluate((element) => ({
+        transbordo: element.scrollWidth - element.clientWidth,
+        corpo: parseFloat(getComputedStyle(element).fontSize),
+        dentroDoCard: element.getBoundingClientRect().width
+          <= (element.closest('article')?.getBoundingClientRect().width ?? 0),
+      }))
+
+      expect(medida.transbordo, `${card.nome}: o rótulo excede o botão`).toBeLessThanOrEqual(0)
+      expect(medida.dentroDoCard, `${card.nome}: o botão excede o card`).toBe(true)
+      // Encolher a fonte não é solução aceita: o texto quebra em duas linhas e mantém o corpo.
+      expect(medida.corpo, `${card.nome}: rótulo abaixo do corpo legível`).toBeGreaterThanOrEqual(16)
     })
   }
 

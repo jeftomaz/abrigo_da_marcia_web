@@ -6,7 +6,7 @@ type TagProps = {
 
 const SIZES = {
   dialog: 'px-3 py-1 text-base',
-  sm: 'px-2 py-0.5 text-tag',
+  sm: 'px-1.5 py-0.5 text-tag',
   md: 'px-4 py-1 text-xs',
 }
 

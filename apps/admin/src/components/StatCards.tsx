@@ -13,7 +13,9 @@ export function StatCards({ label, total, items = [] }: StatCardsProps) {
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex min-h-20 items-center justify-between rounded-xl bg-marca px-5 py-4 text-marca-clara desk:min-h-24 desk:rounded-2xl desk:px-6 desk:py-5">
         <span className="text-lg font-medium">{label}</span>
-        <span className="text-4xl font-medium desk:text-5xl">{total}</span>
+        {/* Mesmo tamanho dos subcards: o fundo de marca já destaca o total, e o degrau
+            de tamanho por cima deixava o número desproporcional ao lado dos demais. */}
+        <span className="text-3xl font-medium desk:text-4xl">{total}</span>
       </div>
       {items.length > 0 && (
         <div className="grid grid-cols-2 gap-4">

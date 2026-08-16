@@ -45,7 +45,7 @@ export function HistoriasPreview() {
       </p>
 
       <CardGrid label="Histórias de adoção em destaque" variant="preview">
-        {stories.slice(0, 3).map((story) => (
+        {stories.slice(0, 4).map((story) => (
           <CompactCard
             key={story.id}
             image={{ src: getStoryPhotoUrl(story.photos[0]), alt: story.name }}
@@ -54,9 +54,9 @@ export function HistoriasPreview() {
             action={
               <Action
                 onClick={() => setSelectedStoryId(story.id)}
-                size="compact"
+                size="card"
               >
-                Conheça essa história
+                Ler história
               </Action>
             }
           />
