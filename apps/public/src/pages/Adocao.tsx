@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Action,
+  CardGrid,
   CompactCard,
   ExpandedCardDialog,
   SelectField,
@@ -175,7 +176,7 @@ export function Adocao() {
         )}
 
         {!isLoading && !error && dogs.length > 0 && (
-          <section aria-label="Cães disponíveis" className="mt-10 grid grid-cols-2 gap-5 lg:mt-10 lg:grid-cols-3 lg:gap-6">
+          <CardGrid label="Cães disponíveis">
             {dogs.map((dog) => {
             const tags = getDogTags(dog)
             const cover = dog.photos[0]
@@ -202,7 +203,7 @@ export function Adocao() {
               />
             )
             })}
-          </section>
+          </CardGrid>
         )}
 
         {!isLoading && !error && dogs.length === 0 && (

@@ -26,6 +26,7 @@ Manter na raiz, sempre atualizados **na mesma entrega** que os altera (nunca "de
 | `ROADMAP.md` | Fases/páginas planejadas, ordem, status (`todo/doing/done`) | Lista curta |
 | `PROGRESS.md` | O que foi feito, decisões tomadas e pendências ativas | Log reverso (recente no topo), 1-3 linhas por entrada |
 | `DATA_MODEL.md` | Schema, relações, policies — fonte de verdade do banco | Tabelas/SQL resumido |
+| `UI_CONTRACTS.md` | Componentes compartilhados: variantes, o que não sobrescrever, decisões vinculantes de UI | Tabela + lista |
 | `PROJECT.md` | Contexto, stack e regras específicas do projeto | Seções curtas |
 
 Regras para esses arquivos:
@@ -34,7 +35,7 @@ Regras para esses arquivos:
 
 ## Fluxo de trabalho por tarefa
 
-1. Ler `PROJECT.md` + `ROADMAP.md` + `PROGRESS.md` (e `DATA_MODEL.md` se a tarefa toca dados).
+1. Ler `PROJECT.md` + `ROADMAP.md` + `PROGRESS.md`. Só leia `DATA_MODEL.md` se a tarefa toca dados e `UI_CONTRACTS.md` se toca interface — carregar os dois em toda tarefa custa contexto sem dar nada em troca.
 2. Confirmar entendimento se houver ambiguidade relevante; caso contrário, executar direto.
 3. Implementar o escopo pedido — nada além.
 4. Atualizar arquivos de acompanhamento afetados.

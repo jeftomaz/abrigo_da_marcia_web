@@ -1,0 +1,64 @@
+/* Fonte única dos tokens do design system, importada por apps/public e apps/admin.
+   Antes cada app repetia este bloco no seu `index.css` e os dois divergiram: só o
+   público tinha a escala tipográfica, então um componente de `packages/shared`
+   renderizava tamanhos diferentes conforme o app que o hospedava.
+
+   O que é genuinamente de um app só (cores de estado do admin, animações do
+   sorteio) continua no `index.css` dele. Token usado pelos dois vive aqui. */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Jost (SIL OFL) auto-hospedada — ver packages/shared/src/fonts/OFL.txt. Subset
+   latin cobre os acentos do português; sem requisição a fontes de terceiros. */
+@font-face {
+  font-family: "Jost";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/jost-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Jost";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/jost-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Jost";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/jost-600.woff2") format("woff2");
+}
+
+@theme {
+  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+
+  /* Escala de breakpoints — fechada. Todo ponto de corte precisa de nome aqui;
+     `min-[Xrem]:` solto no componente cria escala paralela e é barrado por
+     `scripts/check-classes.mjs`. Os do Tailwind (`sm` 40rem, `md` 48rem,
+     `lg` 64rem…) continuam valendo: `lg` é o limiar do público.
+     Os abaixo existem porque o admin empilha muito conteúdo em telas estreitas,
+     e cada um marca onde um bloco específico passa a caber. */
+  --breakpoint-galeria: 22rem; /* 352px: a galeria compacta fecha 4 colunas fixas de 3.25rem. */
+  --breakpoint-linha: 24rem; /* 384px: a linha de Cães/Histórias troca a foto de 3rem pela de 4rem. */
+  --breakpoint-acoes: 28rem; /* 448px: as ações da linha de Eventos saem da 2ª fila e ganham coluna. */
+  --breakpoint-desk: 85rem; /* 1360px: no admin, stats + lista + edição cabem lado a lado. */
+
+  --color-cinza-escuro: #262626;
+  --color-cinza-medio: #404040;
+  --color-cinza-claro: #e6e6e6;
+  --color-marca-escura: #8d0e0c;
+  --color-marca: #f15a55;
+  --color-marca-clara: #fbd1d0;
+  --color-on-brand: var(--color-marca-clara);
+  --color-surface-raised: #fff;
+  --color-on-surface-raised: var(--color-cinza-escuro);
+}
+
+.dark {
+  --color-on-brand: var(--color-marca-escura);
+  --color-surface-raised: #000;
+  --color-on-surface-raised: var(--color-cinza-claro);
+}

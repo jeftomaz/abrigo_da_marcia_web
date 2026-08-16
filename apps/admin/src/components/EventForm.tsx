@@ -661,7 +661,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
   const objectivesSection = (
     <section className={sectionClasses}>
       <h3 className={sectionTitleClasses}>Objetivos</h3>
-      <div className={`mt-3 grid items-end gap-3 ${isPanel ? 'grid-cols-1' : 'grid-cols-1 min-[48rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]'}`}>
+      <div className={`mt-3 grid items-end gap-3 ${isPanel ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]'}`}>
         <FormField htmlFor={`${formId}-start-date`} label="Data de início">
           <TextField
             id={`${formId}-start-date`}
@@ -693,7 +693,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
             className={fieldClasses}
           />
         </FormField>
-        <div className="col-span-full grid grid-cols-1 items-start gap-3 min-[48rem]:grid-cols-2">
+        <div className="col-span-full grid grid-cols-1 items-start gap-3 md:grid-cols-2">
           {draft.kind === 'product' && (
             <FormField htmlFor={`${formId}-max-items`} label="Máx. por reserva">
               <TextField
@@ -729,8 +729,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
               />
               <div className="mt-1 flex items-center justify-end gap-1">
                 <span className="whitespace-nowrap text-xs" aria-hidden="true">
-                  <span className="min-[24rem]:hidden">min</span>
-                  <span className="hidden min-[24rem]:inline">Minutos</span>
+                  <span className="linha:hidden">min</span>
+                  <span className="hidden linha:inline">Minutos</span>
                 </span>
                 <Switch
                   checked={expirationUnit === 'hours'}
@@ -742,8 +742,8 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                   className="origin-center scale-75"
                 />
                 <span className="whitespace-nowrap text-xs" aria-hidden="true">
-                  <span className="min-[24rem]:hidden">h</span>
-                  <span className="hidden min-[24rem]:inline">Horas</span>
+                  <span className="linha:hidden">h</span>
+                  <span className="hidden linha:inline">Horas</span>
                 </span>
               </div>
               {!draft.reservationTtlMinutes && eventSettings && (

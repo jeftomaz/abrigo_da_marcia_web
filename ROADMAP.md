@@ -32,10 +32,13 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 Causa dos ajustes que quebravam recursos prontos: as regras de arquitetura viviam só em prosa, sem nada que falhasse quando violadas. Fases em ordem de alavancagem, uma branch cada.
 
 - `done` **Fase 1 — travas automáticas.** CI passou a rodar lint, build, pgTAP e E2E, e o deploy só publica com tudo verde; `scripts/check-classes.mjs` barra `!` em `className` e breakpoint arbitrário por catraca sobre a base herdada; suíte zerada (QR Pix).
-- `todo` **Fase 2 — tema único.** `@theme` está duplicado nos dois `index.css` e divergiu: o público define 15 tokens `--text-*` fluidos, o admin nenhum, então componente compartilhado renderiza tamanhos diferentes por app. Extrair `packages/shared/src/theme.css`. Muda a tipografia do admin — exige passada visual em 320/393/1024/1920 px.
-- `todo` **Fase 3 — escala de breakpoints.** Nomear os 4 pontos hoje arbitrários (`min-[22rem]` a `min-[48rem]`, 42 usos) e migrar `CompactCard` para container query, que hoje vira em `lg` (1024 px) dentro de um admin que vira em `desk` (1360 px). Zera a base de `breakpoint` no `check-classes`.
-- `todo` **Fase 4 — remover duplicação.** Grade de cards existe em 4 cópias divergentes (`Adocao`, `Historias` e os dois previews); extrair `CardGrid`. Substituir os `!important` de `DogRow`/`StoryRow`/`EventRow`/`AdminHeader` por um `ActionSize` real. Cobrir `CompactCard` e a grade pública no E2E, hoje sem asserção nenhuma. Zera a base de `important`.
-- `todo` **Fase 5 — contrato de UI.** Criar `UI_CONTRACTS.md` com props, o que não se sobrescreve e breakpoint canônico de cada primitivo; mover para lá as decisões vinculantes soterradas no log do `PROGRESS.md`; dispensar `DATA_MODEL.md` em tarefa que não toca dados.
+- `done` **Fase 2a — tema compartilhado.** `packages/shared/src/theme.css` passou a ser a fonte única de fontes, cores e breakpoints; cada `index.css` ficou só com o que é exclusivo do app. Mudança visual zero, comprovada por diff do CSS gerado.
+- `todo` **Fase 2b — escala tipográfica no admin.** Os 15 tokens `--text-*` fluidos seguem só no público; o admin usa `text-sm` 93×, `text-3xl` 46× e `text-2xl` 29× caindo no padrão do Tailwind, fora da escala da marca. A divergência é ativa, não teórica: `Action` (21 arquivos do admin, 12 do público) define `text-sm` no `size="small"`, então o mesmo botão mede 14 px fixos no admin e 11,9–16,1 px fluidos no público. Mover para o tema compartilhado muda a tipografia do admin — exige passada visual em 320/393/1024/1920 px, claro e escuro.
+- `done` **Fase 3 — escala de breakpoints.** Os 4 pontos arbitrários viraram `galeria`/`linha`/`acoes` no tema, e `min-[48rem]` virou `md` (mesmo valor do Tailwind). Base de `breakpoint` no `check-classes` zerada: a escala agora é fechada. CSS gerado idêntico exceto pelos nomes das classes.
+  - Container query no `CompactCard` foi descartada: a premissa era que ele quebrava dentro do admin, mas `CompactCard`, `ExpandedCardDialog`, `FeatureSection`, `Header` e `SelectField` — todos os compartilhados com `lg:` — só são renderizados no público. O descasamento `lg`/`desk` é armadilha latente, não bug ativo; migrar seria mudança visual sem problema a resolver. Reabrir só se algum deles for para o admin.
+- `done` **Fase 4 — remover duplicação.** `CardGrid` substituiu as 4 cópias da grade (variantes `page` e `preview`); `Action` ganhou os tamanhos `admin-row`, `admin-row-event` e `admin-inline`, e `gap` saiu do `BASE_CLASSES` — era ele que obrigava o consumidor ao `!`. A grade pública e a proporção dos cards ganharam 8 testes E2E nas 4 superfícies. Catraca de `important` caiu de 58 para 27.
+- `todo` Dar variante a `OptionToggle` e `Logo` para zerar os 27 `!important` restantes: não são contrato do `Action` — `DogRow`/`StoryRow` sobrescrevem os botões internos do `OptionToggle` e `AdminHeader` sobrescreve o `fill` do SVG do `Logo`.
+- `done` **Fase 5 — contrato de UI.** `UI_CONTRACTS.md` reúne variantes, o que não se sobrescreve e as decisões vinculantes, que saíram do log do `PROGRESS.md`. `AGENTS.md` passa a pedir `DATA_MODEL.md` só em tarefa de dados e `UI_CONTRACTS.md` só em tarefa de interface.
 
 ### P0 — Correções operacionais e mobile
 
@@ -81,8 +84,8 @@ Causa dos ajustes que quebravam recursos prontos: as regras de arquitetura vivia
 - `done` Expor o metadado somente nas consultas admin e mostrar uma linha discreta por card; em configurações/redes sociais, usar a alteração mais recente do grupo.
 - `done` Cobrir onboarding/perfil, RLS, triggers, registros legados sem autor e fluxos automáticos com pgTAP e E2E; atualizar tipos gerados e `DATA_MODEL.md` na implementação.
 
-Decisões aceitas (não reabrir): timeout de sessão de 7 dias só no client (trade-off do plano Free — ver `PROJECT.md`); débito de contraste AA do coral `#f15a55` (identidade aprovada pelo Abrigo, travado pela suíte E2E nos tokens da marca).
+Decisões aceitas (não reabrir): timeout de sessão de 7 dias só no client (trade-off do plano Free — ver `PROJECT.md`). As decisões vinculantes de interface vivem em `UI_CONTRACTS.md`.
 
 ## Primitivos compartilhados
 
-`packages/shared/src/components`: `Action`, `BlobImage`, `CompactCard`, `Dialog`, `ExpandedCardDialog`, `FeatureSection`, `Header`, `Icon`, `ImageLightbox`, `ImagePlaceholder`, `Logo`, `SelectField`, `Switch`, `TextField`. Antes de criar um componente novo, generalizar um destes (ver `AGENTS.md`, prioridade 3).
+Catálogo, variantes e o que não se pode sobrescrever: `UI_CONTRACTS.md`. Antes de criar um componente, generalize um existente (`AGENTS.md`, prioridade 3).

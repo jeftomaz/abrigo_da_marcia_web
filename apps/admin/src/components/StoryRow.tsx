@@ -12,17 +12,17 @@ type StoryRowProps = {
 }
 
 const ACTION_CLASSES =
-  'min-h-11 w-full min-w-0 !gap-0.5 !px-1 !py-2 !text-xs [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate min-[24rem]:!gap-1 min-[24rem]:!px-2 min-[24rem]:!text-sm min-[24rem]:[&_svg]:size-4'
+  'min-h-11 w-full min-w-0 [&_svg]:size-3 [&_span]:min-w-0 [&_span]:truncate linha:[&_svg]:size-4'
 
 export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story }: StoryRowProps) {
   return (
     <AdminListRow
       audit={story.audit}
       isEditing={isEditing}
-      className="grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)_9.25rem] items-center gap-2 rounded-2xl p-3 min-[24rem]:grid-cols-[4rem_minmax(0,1fr)_11.5rem] min-[24rem]:gap-3 desk:grid-cols-[4rem_minmax(0,1fr)_13.5rem]"
+      className="grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)_9.25rem] items-center gap-2 rounded-2xl p-3 linha:grid-cols-[4rem_minmax(0,1fr)_11.5rem] linha:gap-3 desk:grid-cols-[4rem_minmax(0,1fr)_13.5rem]"
     >
       <div className="relative shrink-0">
-        <div className="size-14 overflow-hidden rounded-xl min-[24rem]:size-16">
+        <div className="size-14 overflow-hidden rounded-xl linha:size-16">
           {story.photos[0] ? (
             <img
               src={getStoryPhotoUrl(story.photos[0])}
@@ -40,12 +40,12 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
         )}
       </div>
 
-      <p className="min-w-0 flex-1 text-base leading-tight font-medium min-[24rem]:text-lg">{story.name}</p>
+      <p className="min-w-0 flex-1 text-base leading-tight font-medium linha:text-lg">{story.name}</p>
 
       <div className="col-start-3 row-start-1 grid min-w-0 grid-cols-2 items-stretch gap-2">
         <Action
           onClick={onTogglePublished}
-          size="small"
+          size="admin-row"
           variant={story.published ? 'neutral-inverted' : 'neutral-adaptive'}
           icon="check-circle-solid"
           aria-pressed={story.published}
@@ -59,7 +59,7 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
         </Action>
         <Action
           onClick={onEdit}
-          size="small"
+          size="admin-row"
           variant={isEditing ? 'secondary-adaptive' : 'neutral-adaptive'}
           icon="edit-pencil"
           aria-pressed={isEditing}
@@ -69,7 +69,7 @@ export function StoryRow({ isEditing, onEdit, onRemove, onTogglePublished, story
         </Action>
         <Action
           onClick={onRemove}
-          size="small"
+          size="admin-row"
           variant="neutral-adaptive"
           icon="trash-solid"
           className={`${ACTION_CLASSES} col-start-2 row-start-2`}

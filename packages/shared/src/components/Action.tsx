@@ -18,7 +18,14 @@ type ActionVariant =
   | 'neutral'
   | 'neutral-adaptive'
   | 'neutral-inverted'
-type ActionSize = 'compact' | 'default' | 'medium' | 'small'
+type ActionSize =
+  | 'admin-inline'
+  | 'admin-row'
+  | 'admin-row-event'
+  | 'compact'
+  | 'default'
+  | 'medium'
+  | 'small'
 
 type CommonActionProps = {
   children: ReactNode
@@ -49,8 +56,10 @@ type AnchorActionProps = CommonActionProps &
 
 type ActionProps = ButtonActionProps | RouteActionProps | AnchorActionProps
 
+// `gap` mora em `SIZE_CLASSES`, não aqui: com os dois no mesmo lugar da folha de estilo,
+// o `gap-2` da base vencia o `gap-0.5` do tamanho e obrigava o consumidor ao `!`.
 const BASE_CLASSES =
-  'inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full text-center font-medium transition-colors'
+  'inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-full text-center font-medium transition-colors'
 
 // Sistema dos mockups "Botão Hover"/"Botão Status" (fonte de verdade): cada variante
 // carrega o ciclo completo (rest → hover → clicado/active → foco → desativado) só com
@@ -96,10 +105,19 @@ const VARIANT_CLASSES: Record<ActionVariant, string> = {
 // ordem na folha de estilo, não a ordem no atributo — `px-16` de `default` vence um `px-7`
 // passado por fora. Precisou de outro espaçamento? Adicione um tamanho.
 const SIZE_CLASSES: Record<ActionSize, string> = {
-  compact: 'px-10 py-1 text-base',
-  default: 'px-16 py-2',
-  medium: 'px-7 py-3 text-base',
-  small: 'px-6 py-4 text-sm',
+  compact: 'gap-2 px-10 py-1 text-base',
+  default: 'gap-2 px-16 py-2',
+  medium: 'gap-2 px-7 py-3 text-base',
+  small: 'gap-2 px-6 py-4 text-sm',
+  // Os três abaixo são as ações dentro das linhas do admin, onde a largura é escassa e
+  // o espaçamento acompanha o breakpoint. Antes viviam no className do consumidor com
+  // a marca de importante, necessária justamente porque className não vence
+  // SIZE_CLASSES na folha de estilo — e o resultado era o contrato deste componente
+  // sendo furado em quatro arquivos.
+  'admin-row': 'gap-0.5 px-1 py-2 text-xs linha:gap-1 linha:px-2 linha:text-sm',
+  'admin-row-event':
+    'gap-2 px-3 py-2 text-sm acoes:gap-1 acoes:px-2 acoes:text-xs sm:gap-2 sm:px-3 sm:text-sm desk:gap-1.5 desk:px-2 desk:text-sm',
+  'admin-inline': 'gap-1 px-2 py-1.5 text-xs',
 }
 
 export function Action(props: ActionProps) {

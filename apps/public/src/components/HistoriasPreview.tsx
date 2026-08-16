@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   Action,
+  CardGrid,
   CompactCard,
   ExpandedCardDialog,
   FeatureSection,
@@ -43,7 +44,7 @@ export function HistoriasPreview() {
         e cheio de amor.
       </p>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <CardGrid label="Histórias de adoção em destaque" variant="preview">
         {stories.slice(0, 3).map((story) => (
           <CompactCard
             key={story.id}
@@ -60,7 +61,7 @@ export function HistoriasPreview() {
             }
           />
         ))}
-      </div>
+      </CardGrid>
 
       {isLoading && <p role="status" className="mt-8 text-center">Carregando histórias...</p>}
       {error && (

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   Action,
+  CardGrid,
   CompactCard,
   ExpandedCardDialog,
   getStoryPhotoUrl,
@@ -25,10 +26,7 @@ export function Historias() {
         </header>
 
         {!isLoading && !error && stories.length > 0 && (
-          <section
-            aria-label="Histórias de adoção"
-            className="mt-10 grid grid-cols-2 gap-5 lg:grid-cols-3 lg:gap-6"
-          >
+          <CardGrid label="Histórias de adoção">
             {stories.map((story) => (
               <CompactCard
                 key={story.id}
@@ -51,7 +49,7 @@ export function Historias() {
                 }
               />
             ))}
-          </section>
+          </CardGrid>
         )}
 
         {isLoading && <p role="status" className="mt-10 text-center text-2xl">Carregando histórias...</p>}
