@@ -95,17 +95,17 @@ export function ReservationCheckoutDialog({
         )}
         <div className="mt-5 flex items-center justify-between gap-4">
           <span className="font-medium">Contato</span>
-          <button
-            type="button"
+          <Action
             onClick={() => {
               setContactType(contactType === 'email' ? 'mobile' : 'email')
               setContact('')
               setContactTouched(false)
             }}
-            className="rounded text-sm font-medium text-marca-escura underline underline-offset-4 hover:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca dark:text-marca-clara"
+            size="link"
+            variant="ghost-adaptive"
           >
             {contactType === 'email' ? 'Colocar celular' : 'Não tenho celular'}
-          </button>
+          </Action>
         </div>
         <label htmlFor={`${titleId}-customer-contact`} className="mt-2 block">
           {contactType === 'email' ? 'E-mail' : 'Celular com DDD'}

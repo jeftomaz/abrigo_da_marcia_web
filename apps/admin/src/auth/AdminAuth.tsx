@@ -164,13 +164,14 @@ function Login({
             </button>
           </div>
         </label>
-        <button
-          type="button"
+        <Action
           onClick={() => setShowRecovery(true)}
-          className="mt-3 text-sm font-medium text-marca underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca"
+          size="link"
+          variant="ghost"
+          className="mt-3"
         >
           Esqueci a senha
-        </button>
+        </Action>
         {error && <p role="alert" className="mt-4 text-sm font-medium text-marca">{error}</p>}
         <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
           {isSubmitting ? 'Entrando...' : 'Entrar'}
