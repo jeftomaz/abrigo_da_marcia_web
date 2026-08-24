@@ -1,4 +1,5 @@
 export { ThemeProvider, useTheme } from './theme/ThemeProvider'
+export { ThemeToggle } from './components/ThemeToggle'
 export { Header } from './components/Header'
 export { Logo } from './components/Logo'
 export { Icon } from './components/Icon'

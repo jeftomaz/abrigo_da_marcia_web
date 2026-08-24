@@ -19,11 +19,11 @@ const RULES = {
     // espaçamento? Adicione um `ActionSize`.
     pattern: /![a-z][a-z0-9]*-[a-z0-9./[\]-]+/g,
     message: 'classe com `!` sobrepondo componente compartilhado — use uma variant/size do próprio componente',
-    // O que resta não é contrato de `Action`, e sim de outros dois componentes:
-    // `OptionToggle` (DogRow/StoryRow) e `Logo` (AdminHeader, que sobrescreve o `fill`
-    // do SVG). Sair de vez daqui exige dar variante a esses dois.
+    // O que resta é contrato de um componente só: `OptionToggle`, cujos botões internos
+    // `DogRow` e `StoryRow` sobrescrevem. Sair de vez daqui exige dar variante a ele.
+    // Os 12 do `AdminHeader` eram o botão de tema e sumiram quando o `fill` inline saiu
+    // dos SVGs de sol/lua — sem estilo inline para vencer, a classe basta.
     baseline: {
-      'apps/admin/src/components/AdminHeader.tsx': 12,
       'apps/admin/src/components/StoryRow.tsx': 9,
       'apps/admin/src/components/DogRow.tsx': 6,
     },

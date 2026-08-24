@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Action, Icon, Logo, useTheme } from '@abrigo/shared'
+import { Action, Logo, ThemeToggle } from '@abrigo/shared'
 import { useAdminAuth } from '../auth/AdminAuthContext'
 import { ConfirmationDialog } from './ConfirmationDialog'
 
@@ -16,15 +16,11 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Configurações', to: '/configuracoes' },
 ]
 
-const ADMIN_THEME_ICON_CLASSES =
-  'size-7 desk:size-10 [&_circle]:!fill-cinza-claro [&_path]:!fill-cinza-escuro hover:[&_circle]:!fill-cinza-medio hover:[&_path]:!fill-cinza-claro active:[&_circle]:!fill-cinza-escuro active:[&_path]:!fill-cinza-claro dark:[&_circle]:!fill-cinza-medio dark:[&_path]:!fill-cinza-claro dark:hover:[&_circle]:!fill-cinza-claro dark:hover:[&_path]:!fill-cinza-escuro dark:active:[&_circle]:!fill-cinza-escuro dark:active:[&_path]:!fill-cinza-claro'
-
 const NAV_ITEM_CLASSES = 'min-h-12 shrink-0'
 const DISABLED_NAV_ITEM_CLASSES =
   'disabled:opacity-100'
 
 export function AdminHeader() {
-  const { theme, toggleTheme } = useTheme()
   const { signOut } = useAdminAuth()
   const { pathname } = useLocation()
   const navRef = useRef<HTMLElement>(null)
@@ -80,17 +76,7 @@ export function AdminHeader() {
           </nav>
 
           <div className="order-1 flex shrink-0 items-center gap-3 lg:order-3 lg:gap-4">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
-              className="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio"
-            >
-              <Icon
-                name={theme === 'dark' ? 'half-moon' : 'sun-light'}
-                className={ADMIN_THEME_ICON_CLASSES}
-              />
-            </button>
+            <ThemeToggle variant="surface" />
             <Action
               onClick={() => setConfirmSignOut(true)}
               variant="neutral-adaptive"

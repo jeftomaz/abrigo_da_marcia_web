@@ -46,7 +46,7 @@ Quatro pontos onde o padrão do projeto não chegou e a duplicação é medida, 
 - `todo` **Bloco 3 — `AdminToolbar`.** Busca, filtro e ação são idênticos byte a byte entre `Caes.tsx` e `Historias.tsx`. `Eventos` não tem toolbar e fica fora. Não usar `SelectField` (tem `lg:`, e o admin vira em `desk`); o botão precisa de um `ActionSize` real — o `className="px-3"` de hoje é no-op contra o `px-6` do `small`.
 - `todo` **Bloco 4 — políticas de cache nomeadas.** 7 hooks repetem `refetchInterval: 5_000`; a landing monta 5 chaves e gera ~3.600 requisições/hora por aba, contra a restrição de custo zero. Separar `CACHE_ESTATICO` (cães, histórias, configurações, redes) de `CACHE_AO_VIVO` (números de rifa e reservas, onde os 5s servem à disputa de estoque).
 
-- `todo` Dar variante a `OptionToggle` e `Logo` para zerar os 27 `!important` restantes: não são contrato do `Action` — `DogRow`/`StoryRow` sobrescrevem os botões internos do `OptionToggle` e `AdminHeader` sobrescreve o `fill` do SVG do `Logo`.
+- `todo` Dar variante ao `OptionToggle` para zerar os 15 `!important` restantes: não são contrato do `Action` — `DogRow` (6) e `StoryRow` (9) sobrescrevem os botões internos do `OptionToggle`. O `Logo` saiu deste item: nunca foi a causa, seu SVG já usa `currentColor`.
 - `done` **Fase 5 — contrato de UI.** `UI_CONTRACTS.md` reúne variantes, o que não se sobrescreve e as decisões vinculantes, que saíram do log do `PROGRESS.md`. `AGENTS.md` passa a pedir `DATA_MODEL.md` só em tarefa de dados e `UI_CONTRACTS.md` só em tarefa de interface.
 
 ### P0 — Correções operacionais e mobile

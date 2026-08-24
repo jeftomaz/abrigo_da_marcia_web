@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Logo } from './Logo'
-import { Icon } from './Icon'
 import { Action } from './Action'
+import { ThemeToggle } from './ThemeToggle'
 import { useTheme } from '../theme/ThemeProvider'
 
 const SCROLL_DIRECTION_THRESHOLD = 8
@@ -21,7 +21,7 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 export function Header() {
-  const { theme, toggleTheme } = useTheme()
+  const { theme } = useTheme()
   const { pathname } = useLocation()
   const isLanding = pathname === '/'
   const [isVisible, setIsVisible] = useState(true)
@@ -109,14 +109,7 @@ export function Header() {
             {renderNavItems()}
           </nav>
 
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={theme === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'}
-            className="flex size-11 shrink-0 items-center justify-center rounded-full text-on-brand transition-colors hover:bg-marca-escura active:bg-marca-clara focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-clara"
-          >
-            <Icon name={theme === 'dark' ? 'half-moon' : 'sun-light'} className="h-8 w-8" />
-          </button>
+          <ThemeToggle variant="on-brand" />
         </div>
       </header>
 
