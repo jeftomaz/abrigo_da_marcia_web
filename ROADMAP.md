@@ -10,9 +10,19 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 4. Histórias (público + admin) — `done`
 5. Eventos/arrecadação (público + admin + reservas) — `done`
 6. Configurações admin — `done`
-7. Publicação, produção e hardening — `doing` **← atual**
+7. Publicação, produção e hardening — `doing`
+8. Cuidados e prontuários dos cães (admin) — `doing` **← atual**
 
 ## Pendências abertas
+
+### P0 — Cuidados e prontuários dos cães
+
+Executar antes da carga real dos cães para que o painel seja a fonte única dos dados desde o início.
+
+- `done` **Bloco 1 — fundação privada.** Catálogo flexível de itens, programas para todos/cães selecionados, atribuições individuais, registros realizados, automação para cães atuais/futuros, autoria, RLS + MFA e pgTAP.
+- `todo` **Bloco 2 — aba Cuidados.** Nova rota administrativa com Agenda, Programas e busca por cão; cadastro de itens no próprio fluxo, sem listas fechadas no client.
+- `todo` **Bloco 3 — integração com Cães.** Abrir o prontuário a partir da gestão atual e registrar adoções, devoluções e demais mudanças de status em transação, sem alterar `caes_public`.
+- `todo` **Bloco 4 — impressão.** Carteirinha A4 sem notas internas e prontuário administrativo completo, com cobertura E2E mobile/desktop.
 
 ### P0 — Publicação e produção
 
