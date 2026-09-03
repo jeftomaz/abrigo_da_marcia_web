@@ -18,6 +18,8 @@ type ActionVariant =
   | 'neutral'
   | 'neutral-adaptive'
   | 'neutral-inverted'
+  | 'ghost'
+  | 'ghost-adaptive'
 type ActionSize =
   | 'admin-inline'
   | 'admin-row'
@@ -25,11 +27,14 @@ type ActionSize =
   | 'card'
   | 'compact'
   | 'default'
+  | 'link'
+  | 'link-small'
   | 'medium'
   | 'small'
 
 type CommonActionProps = {
-  children: ReactNode
+  /** Ausente só em ação sem rótulo, que então precisa de `aria-label` para ter nome acessível. */
+  children?: ReactNode
   className?: string
   icon?: string
   iconPosition?: 'start' | 'end'
@@ -76,6 +81,11 @@ const BASE_CLASSES =
 //                              escuro, legível sobre qualquer superfície (card branco
 //                              ou preto). `neutral-adaptive` acompanha o tema e
 //                              `neutral-inverted` é a metade escura (Invertido).
+//   `ghost`                  = sem fundo: só texto sublinhado. Para a ação terciária que
+//                              não disputa atenção com a pílula ao lado ("Esqueci a
+//                              senha", "Não tenho celular", "Remover"). O sublinhado é
+//                              permanente, e não no hover, para a ação continuar
+//                              identificável sem ponteiro.
 // Desativado (opacity-40) só atinge <button>; CTAs <Link>/<a> não desabilitam.
 const VARIANT_CLASSES: Record<ActionVariant, string> = {
   primary:
@@ -100,6 +110,10 @@ const VARIANT_CLASSES: Record<ActionVariant, string> = {
     'bg-cinza-claro text-cinza-escuro hover:bg-cinza-medio hover:text-cinza-claro active:bg-cinza-escuro active:text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio dark:bg-cinza-medio dark:text-cinza-claro dark:hover:bg-cinza-claro dark:hover:text-cinza-escuro dark:active:bg-cinza-escuro dark:active:text-cinza-claro disabled:pointer-events-none disabled:opacity-40',
   'neutral-inverted':
     'bg-cinza-escuro text-cinza-claro hover:bg-cinza-claro hover:text-cinza-escuro active:bg-cinza-medio active:text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio disabled:pointer-events-none disabled:opacity-40',
+  ghost:
+    'text-marca hover:text-marca-escura active:text-marca-escura focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40',
+  'ghost-adaptive':
+    'text-marca-escura hover:text-marca active:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca dark:text-marca-clara dark:hover:text-marca dark:focus-visible:outline-marca-clara disabled:pointer-events-none disabled:opacity-40',
 }
 
 // Padding vem sempre daqui: `className` não sobrepõe estas classes, porque quem decide é a
@@ -124,6 +138,11 @@ const SIZE_CLASSES: Record<ActionSize, string> = {
   'admin-row-event':
     'gap-2 px-3 py-2 text-sm acoes:gap-1 acoes:px-2 acoes:text-xs sm:gap-2 sm:px-3 sm:text-sm desk:gap-1.5 desk:px-2 desk:text-sm',
   'admin-inline': 'gap-1 px-2 py-1.5 text-xs',
+  // Par do `ghost`: sem padding, porque a ação terciária se alinha ao texto ao redor em
+  // vez de ocupar caixa própria. O sublinhado mora aqui, e não na variante, para a
+  // variante decidir só cor — é o que permitiria um `ghost` com ícone no futuro.
+  link: 'gap-1 text-sm underline underline-offset-4',
+  'link-small': 'gap-1 text-xs underline underline-offset-4',
 }
 
 export function Action(props: ActionProps) {
@@ -140,7 +159,7 @@ export function Action(props: ActionProps) {
   const content = (
     <>
       {icon && iconPosition === 'start' && <Icon name={icon} className="size-5 shrink-0" />}
-      <span>{children}</span>
+      {children !== undefined && <span>{children}</span>}
       {icon && iconPosition === 'end' && <Icon name={icon} className="size-5 shrink-0" />}
     </>
   )

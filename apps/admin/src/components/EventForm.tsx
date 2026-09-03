@@ -1056,7 +1056,7 @@ export const EventForm = forwardRef<EventFormHandle, EventFormProps>(function Ev
                   →
                 </button>
               </div>
-              <button type="button" onClick={() => setField('prizes', draft.prizes.filter((item) => item.id !== prize.id))} className="mt-1 w-full rounded text-xs underline hover:text-marca focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca">Remover</button>
+              <Action onClick={() => setField('prizes', draft.prizes.filter((item) => item.id !== prize.id))} size="link-small" variant="ghost" className="mt-1 w-full">Remover</Action>
             </div>
           ))}
           <button

@@ -17,7 +17,7 @@ Fonte dos tokens: `packages/shared/src/theme.css`. Componentes: `packages/shared
 
 | Componente | Resolve | Variantes / props de forma | Não sobrescreva |
 |---|---|---|---|
-| `Action` | Todo botão, link e CTA | `variant`: `primary`/`secondary`/`neutral` × `-adaptive`/`-inverted`/`-on-brand`. `size`: `default`, `medium`, `small`, `compact`, `card`, `admin-row`, `admin-row-event`, `admin-inline` | **`gap`, `whitespace`, `px`, `py`, `text-*`** — vivem em `SIZE_CLASSES`. Ação dentro de card usa `size="card"`: `compact` reserva 80px de padding e o rótulo vaza a pílula. Escolha a variante pela superfície **imediata** (contraste), não pelo tema da página |
+| `Action` | Todo botão, link e CTA | `variant`: `primary`/`secondary`/`neutral` × `-adaptive`/`-inverted`/`-on-brand`, mais `ghost` e `ghost-adaptive` (sem fundo). `size`: `default`, `medium`, `small`, `compact`, `card`, `admin-row`, `admin-row-event`, `admin-inline`, `link`, `link-small`. `children` é opcional — sem ele, o nome acessível precisa vir do `aria-label` | **`gap`, `whitespace`, `px`, `py`, `text-*`, `underline`** — vivem em `SIZE_CLASSES`. Ação dentro de card usa `size="card"`: `compact` reserva 80px de padding e o rótulo vaza a pílula. Ação terciária sem fundo usa `ghost` + `link`/`link-small`. Escolha a variante pela superfície **imediata** (contraste), não pelo tema da página |
 | `CardGrid` | Grade de cards do público | `variant`: `page` (grade em qualquer largura) ou `preview` (grade de 2 colunas no mobile, carrossel horizontal no desktop, com 4 cards). `label` vira o `aria-label` da região | **`gap`, `mt` e a largura dos filhos no carrossel** — foi a divergência entre 4 cópias que gerou retrabalho recorrente |
 | `CompactCard` | Card de catálogo/listagem | `orientation`: `vertical` (padrão), `horizontal`, `responsive`. `imageAspect`: `square` (padrão), `landscape` | Proporção da imagem e altura do card — use `imageAspect`/`orientation` |
 | `ExpandedCardDialog` | Card aberto em diálogo | `variant`: `default`, `adoption`, `story`, `product`. `images`, `expandableImages`, `tags`, `primaryAction`, `persistentClose` | Estrutura do cabeçalho: nome e tags ficam fixos, só a descrição rola |
@@ -28,7 +28,8 @@ Fonte dos tokens: `packages/shared/src/theme.css`. Componentes: `packages/shared
 | `Switch` | Alternância booleana | `variant`: `neutra`, `marca` | — |
 | `BlobImage` | Foto com máscara orgânica | `aspect`: `square`, `portrait`, `priority` | Máscara e proporção |
 | `ImagePlaceholder` | Vazio de foto | `label` (obrigatório, vira `aria-label`) | Fundo de marca e o ícone |
-| `Logo` | Marca | `variant`: `full`, `icon` | `fill` do SVG — hoje `AdminHeader` sobrescreve com `!`; é pendência aberta |
+| `Logo` | Marca | `variant`: `full`, `icon` | `fill` do SVG — já é `currentColor`, então acompanha a cor do texto do container |
+| `ThemeToggle` | Botão de claro/escuro dos dois headers | `variant`: `surface` (admin, sobre `surface-raised`) ou `on-brand` (público, sobre `bg-marca`) | **O botão não tem fundo.** O círculo é o `<circle>` de dentro do ícone; dar fundo ao botão produz um segundo círculo concêntrico no hover. O `aria-label` também não muda: é por ele que o E2E acha o botão nos dois apps |
 | `Header` | Navegação | `items` (`NavItem[]`) | Altura, espaçamento e breakpoint das abas — padronizados entre os dois apps |
 | `Icon` | Ícone do sprite | `name` | `size` vem de quem usa |
 | `ImageLightbox` | Foto ampliada | `src`, `alt`, `onClose` | — |
@@ -38,6 +39,9 @@ Fonte dos tokens: `packages/shared/src/theme.css`. Componentes: `packages/shared
 Não reabrir sem motivo novo. Vivem aqui, e não no log do `PROGRESS.md`, para não ficarem soterradas no histórico.
 
 - **Padding de `Action` não se sobrescreve por `className`.** Precisa de outro espaçamento? Acrescente um `ActionSize`. `gap` mora no tamanho, não no `BASE_CLASSES` — foi ele que, ao vencer o tamanho na folha de estilo, obrigou quatro arquivos ao `!`.
+- **No `ghost`, a variante decide só a cor; o sublinhado mora no tamanho** (`link`, `link-small`). Separados assim, uma ação `ghost` sem rótulo não herda um sublinhado que não teria o que sublinhar.
+- **Botão só-ícone e chip selecionável não são variantes do `Action`.** Foi medido em 2026-08-23: os 5 botões de ícone divergem em cor (herdada, marca, sobre escuro), em hover (fundo × cor) e em área de toque (16, 32 e 44 px); os 7 chips com `aria-pressed` (valor de doação, número de rifa, código copiável, cartão de prêmio) só compartilham comportamento, não forma. Unificá-los exigiria uma variante por consumidor — o oposto de reuso. Reabrir só se dois casos passarem a coincidir de fato.
+- **Ícone novo entra sem `fill` inline.** `style="fill:..."` no `<circle>`/`<path>` vence qualquer classe e obriga o consumidor ao `!important` — foi o que custou 12 dos 27 `!` da catraca e o que fez o header público, em vez de recolorir, empilhar um segundo círculo. A cor vem de `fill-*` ou de `currentColor`. Cuidado ao mexer: `fill` é herdado em SVG, então um estado que declare só o círculo, e não o glifo, transforma o ícone num borrão de uma cor só — manter os pares completos.
 - **Superfície 100% branca no claro é 100% preta no escuro.** Cores de estado e ilustrações não entram nessa correspondência.
 - **Débito de contraste AA do coral `#f15a55`** é decisão aceita (identidade aprovada pelo Abrigo) e está travada pela suíte E2E nos tokens da marca.
 - **Componente compartilhado com `lg:` só é renderizado no público.** Se algum for para o admin, revise o breakpoint antes: o admin vira em `desk` (85rem), não em `lg` (64rem).
