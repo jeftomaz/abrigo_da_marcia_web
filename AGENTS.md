@@ -17,6 +17,18 @@ Regras universais de trabalho. Instruções específicas do projeto: ver `PROJEC
 - Um arquivo = uma responsabilidade. Se precisa de "e" para descrever o arquivo, divida — exceto se dividir gerar arquivos triviais (<15 linhas).
 - Alterações mínimas: modifique apenas o necessário para a tarefa. Não reformate/renomeie código fora do escopo.
 
+## Segurança (obrigatória em todo projeto)
+
+- Sempre revisar a segurança do sistema para garantir a integridade e a confiabilidade dos dados.
+- Tratar todo input como uma tentativa de agressão ao sistema: validar e limpar antes do uso.
+- Quando a estrutura atual não permitir garantir a segurança, pontuar o risco e sugerir, ambos de forma sucinta, o ajuste necessário.
+- Considerar sempre estes tipos de falha:
+  - Banco sem tranca.
+  - Permissão no navegador.
+  - Rota entregando dado pelo ID.
+  - Chave exposta.
+  - Input sem tratamento.
+
 ## Arquivos de acompanhamento
 
 Manter na raiz, sempre atualizados **na mesma entrega** que os altera (nunca "depois"):

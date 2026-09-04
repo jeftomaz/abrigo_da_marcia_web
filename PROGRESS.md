@@ -1,5 +1,11 @@
 # PROGRESS.md
 
+- Correções de segurança planejadas (2026-09-04): a gestão de Cuidados permanece prioritária; suas falhas de concorrência serão corrigidas nos Blocos 2 e 3. Atomicidade de eventos, abuso em reservas, inputs, limites administrativos, headers e dependências ficaram ordenados em branches posteriores, antes da carga real e do smoke final.
+
+- Segurança universalizada nas orientações (2026-09-04): `AGENTS.md` passou a exigir revisão de segurança, tratamento hostil de inputs e sinalização sucinta de limitações estruturais, cobrindo banco sem tranca, permissões no navegador, rotas por ID, chaves expostas e inputs sem tratamento.
+
+- Configuração local protegida (2026-09-03): `opencode.json` passou a ser ignorado pelo Git e permanece fora do repositório remoto.
+
 - CI estabilizado após mudança do Supabase CLI (2026-09-03): `auto_expose_new_tables = false` tornou explícito o contrato de acesso por grants/RLS, e o workflow fixou o CLI em `2.116.0` para impedir deriva de imagens. A versão `latest` havia reativado grants automáticos e os pgTAP de segurança bloquearam corretamente o deploy. Validação local: reset integral, `db lint`, lint, builds, 284 pgTAP e 155 E2E.
 
 - Fundação privada de Cuidados concluída (2026-09-03): catálogo livre, programas globais/selecionados, atribuições por cão e registros com snapshots foram materializados com autoria, RLS + MFA e automação para cães atuais, novos e retornados. Tipos regenerados; lint, builds, db lint, 284 pgTAP (51 novos) e 155 E2E passaram.
