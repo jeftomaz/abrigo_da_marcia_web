@@ -1495,6 +1495,23 @@ export type Database = {
           total_cents: number
         }[]
       }
+      save_care_program: {
+        Args: {
+          p_active: boolean
+          p_default_dose?: string
+          p_default_frequency?: string
+          p_default_interval_days?: number
+          p_dog_ids: string[]
+          p_end_date?: string
+          p_instructions?: string
+          p_item_id: string
+          p_name: string
+          p_program_id?: string
+          p_scope: Database["public"]["Enums"]["cuidado_abrangencia"]
+          p_start_date?: string
+        }
+        Returns: string
+      }
       set_audit_actor: {
         Args: { p_actor_id: string; p_fallback_name?: string }
         Returns: undefined

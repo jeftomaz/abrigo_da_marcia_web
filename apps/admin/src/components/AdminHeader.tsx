@@ -11,6 +11,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Cães', to: '/' },
+  { label: 'Cuidados', to: '/cuidados' },
   { label: 'Histórias', to: '/historias' },
   { label: 'Eventos', to: '/eventos' },
   { label: 'Configurações', to: '/configuracoes' },

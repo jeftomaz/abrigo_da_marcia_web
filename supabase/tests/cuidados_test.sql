@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(51);
+select plan(69);
 
 delete from public.cae_cuidado_registros;
 delete from public.cae_cuidados;
@@ -182,6 +182,162 @@ select throws_ok(
   'impede desativar item usado por programa ativo'
 );
 
+select ok(
+  position(
+    'for share' in lower(pg_get_functiondef('public.validate_care_program()'::regprocedure))
+  ) > 0,
+  'ativação de programa compartilha a tranca do item'
+);
+
+update public.cuidado_programas set active = false
+where item_id = '70000000-0000-0000-0000-000000000001';
+select lives_ok(
+  $$update public.cuidado_itens set active = false
+    where id = '70000000-0000-0000-0000-000000000001'$$,
+  'desativa item depois de desativar seus programas'
+);
+select throws_ok(
+  $$update public.cuidado_programas set active = true
+    where id = '70000000-0000-0000-0000-000000000201'$$,
+  'P0001', 'O programa exige um item de cuidado ativo.',
+  'não ativa programa ligado a item inativo'
+);
+update public.cuidado_itens set active = true
+where id = '70000000-0000-0000-0000-000000000001';
+select lives_ok(
+  $$update public.cuidado_programas set active = true
+    where id = '70000000-0000-0000-0000-000000000201'$$,
+  'reativa programa depois de reativar o item'
+);
+
+insert into public.cuidado_itens (id, name, category)
+values ('70000000-0000-0000-0000-000000000002', 'Vermífugo', 'Medicamento');
+select lives_ok(
+  $$select public.save_care_program(
+    p_item_id => '70000000-0000-0000-0000-000000000002',
+    p_name => 'Vermifugação',
+    p_scope => 'selecionados',
+    p_active => true,
+    p_dog_ids => array[
+      '70000000-0000-0000-0000-000000000101'::uuid,
+      '70000000-0000-0000-0000-000000000103'::uuid
+    ],
+    p_default_dose => '1 comprimido',
+    p_default_frequency => 'Dose única',
+    p_start_date => '2026-02-01'
+  )$$,
+  'salva programa e seleção de cães em uma transação'
+);
+select is(
+  (select count(*) from public.cae_cuidados
+    where program_id = (
+      select id from public.cuidado_programas where name = 'Vermifugação'
+    )),
+  2::bigint, 'materializa toda a seleção do programa'
+);
+update public.cae_cuidados
+set status = 'suspenso', exception_reason = 'Orientação veterinária'
+where dog_id = '70000000-0000-0000-0000-000000000101'
+  and program_id = (select id from public.cuidado_programas where name = 'Vermifugação');
+select lives_ok(
+  $$select public.save_care_program(
+    p_program_id => (select id from public.cuidado_programas where name = 'Vermifugação'),
+    p_item_id => '70000000-0000-0000-0000-000000000002',
+    p_name => 'Vermifugação',
+    p_scope => 'selecionados',
+    p_active => true,
+    p_dog_ids => array[
+      '70000000-0000-0000-0000-000000000101'::uuid,
+      '70000000-0000-0000-0000-000000000103'::uuid
+    ]
+  )$$,
+  'edita programa sem reativar cuidado suspenso individualmente'
+);
+select is(
+  (select status from public.cae_cuidados
+    where dog_id = '70000000-0000-0000-0000-000000000101'
+      and program_id = (select id from public.cuidado_programas where name = 'Vermifugação')),
+  'suspenso'::public.cuidado_situacao,
+  'preserva suspensão individual ao salvar o programa'
+);
+select lives_ok(
+  $$select public.save_care_program(
+    p_program_id => (select id from public.cuidado_programas where name = 'Vermifugação'),
+    p_item_id => '70000000-0000-0000-0000-000000000002',
+    p_name => 'Vermifugação',
+    p_scope => 'selecionados',
+    p_active => false,
+    p_dog_ids => array[
+      '70000000-0000-0000-0000-000000000101'::uuid,
+      '70000000-0000-0000-0000-000000000103'::uuid
+    ]
+  )$$,
+  'desativa programa selecionado sem recriar suas atribuições'
+);
+select is(
+  (select active from public.cuidado_programas where name = 'Vermifugação'),
+  false, 'persiste a desativação do programa selecionado'
+);
+select throws_ok(
+  $$select public.save_care_program(
+    p_item_id => '70000000-0000-0000-0000-000000000002',
+    p_name => 'Sem seleção',
+    p_scope => 'selecionados',
+    p_active => true,
+    p_dog_ids => '{}'::uuid[]
+  )$$,
+  '23514', 'Selecione ao menos um cão para o programa.',
+  'rejeita programa selecionado sem cães'
+);
+select throws_ok(
+  $$select public.save_care_program(
+    p_item_id => '70000000-0000-0000-0000-000000000002',
+    p_name => 'Cão fora do abrigo',
+    p_scope => 'selecionados',
+    p_active => true,
+    p_dog_ids => array['70000000-0000-0000-0000-000000000102'::uuid]
+  )$$,
+  '23514', 'Novos cuidados só podem ser atribuídos a cães disponíveis.',
+  'rejeita nova atribuição para cão fora do abrigo'
+);
+select throws_ok(
+  $$select public.save_care_program(
+    p_item_id => '70000000-0000-0000-0000-000000000002',
+    p_name => 'Programa inválido',
+    p_scope => 'selecionados',
+    p_active => true,
+    p_dog_ids => array['70000000-0000-0000-0000-000000000999'::uuid]
+  )$$,
+  '23503', 'A seleção contém um cão inexistente.',
+  'rejeita seleção com cão inexistente'
+);
+select is(
+  (select count(*) from public.cuidado_programas
+    where name = 'Programa inválido'),
+  0::bigint, 'falha da seleção não deixa programa parcial'
+);
+select lives_ok(
+  $$select public.save_care_program(
+    p_program_id => (select id from public.cuidado_programas where name = 'Vermifugação'),
+    p_item_id => '70000000-0000-0000-0000-000000000002',
+    p_name => 'Vermifugação',
+    p_scope => 'selecionados',
+    p_active => true,
+    p_dog_ids => array['70000000-0000-0000-0000-000000000101'::uuid],
+    p_default_dose => '1 comprimido',
+    p_default_frequency => 'Dose única',
+    p_start_date => '2026-02-01'
+  )$$,
+  'atualiza a seleção do programa na mesma transação'
+);
+select is(
+  (select count(*) from public.cae_cuidados
+    where program_id = (
+      select id from public.cuidado_programas where name = 'Vermifugação'
+    )),
+  1::bigint, 'remove atribuição sem histórico que saiu da seleção'
+);
+
 select lives_ok(
   $$insert into public.cae_cuidado_registros (
       id, assignment_id, type, occurred_at
@@ -323,6 +479,22 @@ select throws_ok(
 set local role postgres;
 select hasnt_view('public', 'cuidado_itens_public', 'não cria catálogo público de cuidados');
 select hasnt_view('public', 'cuidado_programas_public', 'não cria programas públicos de cuidados');
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.save_care_program(uuid,text,public.cuidado_abrangencia,boolean,uuid[],uuid,text,text,integer,text,date,date)',
+    'execute'
+  ),
+  'nega a RPC de programas ao papel anônimo'
+);
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.save_care_program(uuid,text,public.cuidado_abrangencia,boolean,uuid[],uuid,text,text,integer,text,date,date)',
+    'execute'
+  ),
+  'concede a RPC de programas somente ao papel autenticado protegido por RLS'
+);
 
 select * from finish();
 rollback;

@@ -42,6 +42,29 @@ export type {
   EditableDogPhoto,
 } from './dogs/dogs'
 export {
+  CARE_RECORD_TYPE_LABELS,
+  CARE_STATUS_LABELS,
+  useAdminCare,
+  useCareRecords,
+  useSaveCareItem,
+  useSaveCareProgram,
+  useSaveCareRecord,
+  useSetCareItemActive,
+} from './care/care'
+export type {
+  AdminCareData,
+  CareItem,
+  CareItemDraft,
+  CareProgram,
+  CareProgramDraft,
+  CareRecord,
+  CareRecordDraft,
+  CareRecordType,
+  CareScope,
+  CareStatus,
+  DogCare,
+} from './care/care'
+export {
   getStoryPhotoUrl,
   toEditableStoryPhotos,
   useAdminStories,

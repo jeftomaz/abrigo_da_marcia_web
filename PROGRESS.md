@@ -1,6 +1,8 @@
 # PROGRESS.md
 
-- Correções de segurança planejadas (2026-09-04): a gestão de Cuidados permanece prioritária; suas falhas de concorrência serão corrigidas nos Blocos 2 e 3. Atomicidade de eventos, abuso em reservas, inputs, limites administrativos, headers e dependências ficaram ordenados em branches posteriores, antes da carga real e do smoke final.
+- Aba administrativa de Cuidados concluída (2026-09-04): Agenda, Programas, catálogo livre no próprio fluxo, busca por cão e registro de ocorrências usam dados privados sob RLS + MFA; históricos só são consultados para o cão aberto. A RPC salva programa/seleção atomicamente, preserva suspensões individuais e compartilha a tranca do item para impedir ativação concorrente inválida. Validação: lint, builds, reset integral, `db lint`, 302 pgTAP e 159 E2E; 15 casos ignorados pela matriz.
+
+- Correções de segurança planejadas (2026-09-04): a gestão de Cuidados permanece prioritária; a corrida item/programa foi corrigida no Bloco 2 e a serialização dos registros segue no Bloco 3. Atomicidade de eventos, abuso em reservas, inputs, limites administrativos, headers e dependências ficaram ordenados em branches posteriores, antes da carga real e do smoke final.
 
 - Segurança universalizada nas orientações (2026-09-04): `AGENTS.md` passou a exigir revisão de segurança, tratamento hostil de inputs e sinalização sucinta de limitações estruturais, cobrindo banco sem tranca, permissões no navegador, rotas por ID, chaves expostas e inputs sem tratamento.
 

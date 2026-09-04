@@ -1,0 +1,446 @@
+import { useMemo, useState } from 'react'
+import {
+  Action,
+  Dialog,
+  Icon,
+  STATUS_LABELS,
+  getAdminErrorMessage,
+  useAdminCare,
+  useAdminDogs,
+  useCareRecords,
+  useSaveCareItem,
+  useSaveCareProgram,
+  useSaveCareRecord,
+  useSetCareItemActive,
+} from '@abrigo/shared'
+import type { AdminCareData, CareItem, CareProgram, CareProgramDraft, CareRecord, Dog } from '@abrigo/shared'
+import { AdminListRow } from '../components/AdminListRow'
+import { CareAssignmentCard } from '../components/CareAssignmentCard'
+import { CareItemForm } from '../components/CareItemForm'
+import { CareProgramCard } from '../components/CareProgramCard'
+import { CareProgramForm } from '../components/CareProgramForm'
+import { CareRecordForm } from '../components/CareRecordForm'
+import { StatCards } from '../components/StatCards'
+import { StatusBadge } from '../components/StatusBadge'
+import { useSuccessMessage } from '../hooks/useSuccessMessage'
+
+type CareView = 'agenda' | 'programas' | 'caes'
+
+const TABS: Array<{ id: CareView; label: string }> = [
+  { id: 'agenda', label: 'Agenda' },
+  { id: 'programas', label: 'Programas' },
+  { id: 'caes', label: 'Por cão' },
+]
+const EMPTY_CARE: AdminCareData = { assignments: [], items: [], programs: [] }
+const EMPTY_DOGS: Dog[] = []
+const EMPTY_RECORDS: CareRecord[] = []
+
+function localDateKey() {
+  const date = new Date()
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 10)
+}
+
+function normalizeSearch(value: string) {
+  return value.trim().toLocaleLowerCase('pt-BR')
+}
+
+export function Cuidados() {
+  const { data: care = EMPTY_CARE, isLoading: isCareLoading, error: careError } = useAdminCare()
+  const { data: dogs = EMPTY_DOGS, isLoading: isDogsLoading, error: dogsError } = useAdminDogs()
+  const saveItem = useSaveCareItem()
+  const setItemActive = useSetCareItemActive()
+  const saveProgram = useSaveCareProgram()
+  const saveRecord = useSaveCareRecord()
+  const [view, setView] = useState<CareView>('agenda')
+  const [search, setSearch] = useState('')
+  const [selectedDogId, setSelectedDogId] = useState('')
+  const [programTarget, setProgramTarget] = useState<CareProgram | null | undefined>(undefined)
+  const [itemTarget, setItemTarget] = useState<CareItem | null | undefined>(undefined)
+  const [itemReturnsToProgram, setItemReturnsToProgram] = useState(false)
+  const [preferredItemId, setPreferredItemId] = useState('')
+  const [recordTargetId, setRecordTargetId] = useState('')
+  const [operationError, setOperationError] = useState('')
+  const [successMessage, showSuccess] = useSuccessMessage()
+  const { assignments, items, programs } = care
+
+  const itemById = useMemo(() => new Map(items.map((item) => [item.id, item])), [items])
+  const programById = useMemo(
+    () => new Map(programs.map((program) => [program.id, program])),
+    [programs],
+  )
+  const dogById = useMemo(() => new Map(dogs.map((dog) => [dog.id, dog])), [dogs])
+  const query = normalizeSearch(search)
+  const today = localDateKey()
+
+  const agendaAssignments = useMemo(
+    () => assignments.filter((assignment) => {
+      const dog = dogById.get(assignment.dogId)
+      const program = programById.get(assignment.programId)
+      const item = program ? itemById.get(program.itemId) : undefined
+      if (!dog || !program?.active || !item?.active || dog.status !== 'disponivel') return false
+      if (!['pendente', 'em_andamento'].includes(assignment.status)) return false
+      if (!query) return true
+      return normalizeSearch(`${dog.name} ${program.name} ${item.name} ${item.category}`).includes(query)
+    }),
+    [assignments, dogById, itemById, programById, query],
+  )
+
+  const filteredPrograms = useMemo(
+    () => programs.filter((program) => {
+      const item = itemById.get(program.itemId)
+      return !query || normalizeSearch(`${program.name} ${item?.name ?? ''} ${item?.category ?? ''}`).includes(query)
+    }),
+    [itemById, programs, query],
+  )
+  const filteredItems = useMemo(
+    () => items.filter((item) => !query || normalizeSearch(`${item.name} ${item.category} ${item.presentation}`).includes(query)),
+    [items, query],
+  )
+  const filteredDogs = useMemo(
+    () => dogs.filter((dog) => !query || normalizeSearch(`${dog.name} ${STATUS_LABELS[dog.status]}`).includes(query)),
+    [dogs, query],
+  )
+  const selectedDog = dogById.get(selectedDogId)
+  const selectedDogAssignments = selectedDog
+    ? assignments.filter((assignment) => assignment.dogId === selectedDog.id)
+    : []
+  const { data: selectedDogRecords = EMPTY_RECORDS } = useCareRecords(
+    selectedDogAssignments.map((assignment) => assignment.id),
+  )
+
+  const assignedDogIds = (program: CareProgram | null) => program
+    ? assignments
+      .filter((assignment) => assignment.programId === program.id && assignment.status !== 'dispensado')
+      .map((assignment) => assignment.dogId)
+    : []
+
+  const openProgram = (program: CareProgram | null) => {
+    setOperationError('')
+    setPreferredItemId('')
+    setProgramTarget(program)
+  }
+
+  const openItem = (item: CareItem | null, returnsToProgram = false) => {
+    setOperationError('')
+    setItemReturnsToProgram(returnsToProgram)
+    setItemTarget(item)
+  }
+
+  const handleSaveItem = async (draft: Parameters<typeof saveItem.mutateAsync>[0]) => {
+    const saved = await saveItem.mutateAsync(draft)
+    if (itemReturnsToProgram) setPreferredItemId(saved.id)
+    setItemTarget(undefined)
+    showSuccess(draft.id ? 'Item de cuidado atualizado.' : 'Item de cuidado cadastrado.')
+  }
+
+  const handleSaveProgram = async (draft: CareProgramDraft) => {
+    await saveProgram.mutateAsync(draft)
+    setProgramTarget(undefined)
+    showSuccess(draft.id ? 'Programa atualizado.' : 'Programa cadastrado.')
+  }
+
+  const toggleProgram = async (program: CareProgram) => {
+    setOperationError('')
+    try {
+      await saveProgram.mutateAsync({
+        ...program,
+        active: !program.active,
+        dogIds: program.scope === 'selecionados' ? assignedDogIds(program) : [],
+      })
+      showSuccess(program.active ? 'Programa desativado.' : 'Programa ativado.')
+    } catch (error) {
+      setOperationError(getAdminErrorMessage(error, 'Não foi possível alterar o programa.'))
+    }
+  }
+
+  const toggleItem = async (item: CareItem) => {
+    setOperationError('')
+    try {
+      await setItemActive.mutateAsync({ id: item.id, active: !item.active })
+      showSuccess(item.active ? 'Item desativado.' : 'Item ativado.')
+    } catch (error) {
+      setOperationError(getAdminErrorMessage(error, 'Não foi possível alterar o item de cuidado.'))
+    }
+  }
+
+  const recordTarget = assignments.find((assignment) => assignment.id === recordTargetId)
+  const recordDog = recordTarget ? dogById.get(recordTarget.dogId) : undefined
+  const recordProgram = recordTarget ? programById.get(recordTarget.programId) : undefined
+  const recordItem = recordProgram ? itemById.get(recordProgram.itemId) : undefined
+
+  const isLoading = isCareLoading || isDogsLoading
+  const loadError = careError || dogsError
+  const searchPlaceholder = view === 'agenda'
+    ? 'Buscar cão, cuidado ou programa...'
+    : view === 'programas'
+      ? 'Buscar programa ou item...'
+      : 'Buscar cão...'
+
+  return (
+    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-3 py-4 text-cinza-escuro sm:px-6 dark:bg-cinza-escuro dark:text-cinza-claro">
+      <div className="mx-auto w-full max-w-[75rem]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-medium text-marca desk:text-3xl">Cuidados</h1>
+            <p className="mt-1 text-sm">Agenda e programas privados do abrigo.</p>
+          </div>
+          <div role="tablist" aria-label="Visões de Cuidados" className="flex max-w-full gap-2 overflow-x-auto pb-1">
+            {TABS.map((tab) => (
+              <Action
+                key={tab.id}
+                role="tab"
+                aria-selected={view === tab.id}
+                onClick={() => {
+                  setView(tab.id)
+                  setSearch('')
+                  setOperationError('')
+                }}
+                size="small"
+                variant={view === tab.id ? 'primary-adaptive' : 'neutral-adaptive'}
+                className="min-h-11 shrink-0"
+              >
+                {tab.label}
+              </Action>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+          <div className="relative min-w-0">
+            <Icon name="search" className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 opacity-60" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={searchPlaceholder}
+              aria-label="Buscar em Cuidados"
+              className="h-11 w-full rounded-full bg-white pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
+            />
+          </div>
+          {view === 'programas' && (
+            <div className="grid grid-cols-2 gap-2">
+              <Action onClick={() => openItem(null)} icon="plus-circle-solid" size="admin-row" variant="neutral-adaptive" className="min-h-11 w-full">
+                Novo item
+              </Action>
+              <Action onClick={() => openProgram(null)} icon="keyframe-plus-in-solid" size="admin-row" variant="primary-adaptive" className="min-h-11 w-full">
+                Novo programa
+              </Action>
+            </div>
+          )}
+        </div>
+
+        {isLoading && <p role="status" className="mt-8 text-center">Carregando cuidados...</p>}
+        {loadError && <p role="alert" className="mt-8 text-center">Não foi possível carregar os cuidados.</p>}
+        {operationError && <p role="alert" className="mt-5 text-center font-medium text-marca">{operationError}</p>}
+        {successMessage && <p role="status" className="mt-5 text-center text-sm font-medium text-status-verde-on-surface">{successMessage}</p>}
+
+        {!isLoading && !loadError && view === 'agenda' && (
+          <div className="mt-6 grid gap-6 desk:grid-cols-[22rem_minmax(0,1fr)] desk:items-start">
+            <StatCards
+              label="Cuidados pendentes"
+              total={agendaAssignments.length}
+              items={[
+                { label: 'Atrasados', value: agendaAssignments.filter((item) => item.nextDueOn && item.nextDueOn < today).length },
+                { label: 'Hoje', value: agendaAssignments.filter((item) => item.nextDueOn === today).length },
+                { label: 'Sem data', value: agendaAssignments.filter((item) => !item.nextDueOn).length, className: 'col-span-2' },
+              ]}
+            />
+            <section aria-label="Agenda de cuidados" className="flex min-w-0 flex-col gap-3">
+              {agendaAssignments.map((assignment) => {
+                const dog = dogById.get(assignment.dogId)
+                const program = programById.get(assignment.programId)
+                const item = program ? itemById.get(program.itemId) : undefined
+                return dog && program && item ? (
+                  <CareAssignmentCard
+                    key={assignment.id}
+                    assignment={assignment}
+                    dog={dog}
+                    item={item}
+                    program={program}
+                    onRecord={() => setRecordTargetId(assignment.id)}
+                  />
+                ) : null
+              })}
+              {agendaAssignments.length === 0 && <p className="text-center">Nenhum cuidado pendente encontrado.</p>}
+            </section>
+          </div>
+        )}
+
+        {!isLoading && !loadError && view === 'programas' && (
+          <div className="mt-6 grid gap-8 desk:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)] desk:items-start">
+            <section aria-labelledby="care-programs-heading" className="min-w-0">
+              <h2 id="care-programs-heading" className="text-xl font-medium text-marca">Programas</h2>
+              <div className="mt-3 flex flex-col gap-3">
+                {filteredPrograms.map((program) => {
+                  const item = itemById.get(program.itemId)
+                  return item ? (
+                    <CareProgramCard
+                      key={program.id}
+                      program={program}
+                      item={item}
+                      isPending={saveProgram.isPending}
+                      assignedDogs={assignedDogIds(program).length}
+                      onEdit={() => openProgram(program)}
+                      onToggleActive={() => void toggleProgram(program)}
+                    />
+                  ) : null
+                })}
+                {filteredPrograms.length === 0 && <p className="text-center">Nenhum programa encontrado.</p>}
+              </div>
+            </section>
+
+            <section aria-labelledby="care-items-heading" className="min-w-0">
+              <h2 id="care-items-heading" className="text-xl font-medium text-marca">Itens do catálogo</h2>
+              <div className="mt-3 flex flex-col gap-3">
+                {filteredItems.map((item) => (
+                  <AdminListRow
+                    key={item.id}
+                    audit={item.audit}
+                    isEditing={false}
+                    className="grid min-w-0 gap-3 rounded-2xl p-4 sm:grid-cols-[minmax(0,1fr)_8rem] sm:items-center"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-medium">{item.name}</h3>
+                        <StatusBadge tone={item.active ? 'verde' : 'neutro'} size="sm">
+                          {item.active ? 'Ativo' : 'Inativo'}
+                        </StatusBadge>
+                      </div>
+                      <p className="mt-1 text-sm text-marca">{item.category}</p>
+                      {item.presentation && <p className="mt-1 text-sm">{item.presentation}</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
+                      <Action onClick={() => openItem(item)} size="admin-row" variant="neutral-adaptive" icon="edit-pencil" className="min-h-11 w-full">
+                        Editar
+                      </Action>
+                      <Action
+                        onClick={() => void toggleItem(item)}
+                        disabled={setItemActive.isPending}
+                        size="admin-row"
+                        variant={item.active ? 'secondary-adaptive' : 'primary-adaptive'}
+                        className="min-h-11 w-full"
+                      >
+                        {item.active ? 'Desativar' : 'Ativar'}
+                      </Action>
+                    </div>
+                  </AdminListRow>
+                ))}
+                {filteredItems.length === 0 && <p className="text-center">Nenhum item encontrado.</p>}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {!isLoading && !loadError && view === 'caes' && (
+          <div className="mt-6 grid gap-6 desk:grid-cols-[20rem_minmax(0,1fr)] desk:items-start">
+            <section aria-label="Cães cadastrados" className="flex min-w-0 flex-col gap-2">
+              {filteredDogs.map((dog) => (
+                <button
+                  key={dog.id}
+                  type="button"
+                  aria-pressed={selectedDogId === dog.id}
+                  onClick={() => setSelectedDogId(dog.id)}
+                  className={`min-h-14 rounded-xl px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca ${
+                    selectedDogId === dog.id
+                      ? 'bg-marca text-marca-clara'
+                      : 'bg-surface-raised text-on-surface-raised hover:bg-marca-clara hover:text-marca'
+                  }`}
+                >
+                  <span className="block font-medium">{dog.name}</span>
+                  <span className="block text-xs">{STATUS_LABELS[dog.status]}</span>
+                </button>
+              ))}
+              {filteredDogs.length === 0 && <p className="text-center">Nenhum cão encontrado.</p>}
+            </section>
+
+            <section aria-label="Cuidados do cão" className="flex min-w-0 flex-col gap-3">
+              {!selectedDog && <p className="text-center">Selecione um cão para consultar seus cuidados.</p>}
+              {selectedDog && (
+                <>
+                  <div className="rounded-2xl bg-marca p-4 text-marca-clara">
+                    <h2 className="text-2xl font-medium">{selectedDog.name}</h2>
+                    <p className="text-sm">{STATUS_LABELS[selectedDog.status]} · {selectedDogAssignments.length} cuidado{selectedDogAssignments.length === 1 ? '' : 's'}</p>
+                  </div>
+                  {selectedDogAssignments.map((assignment) => {
+                    const program = programById.get(assignment.programId)
+                    const item = program ? itemById.get(program.itemId) : undefined
+                    return program && item ? (
+                      <CareAssignmentCard
+                        key={assignment.id}
+                        assignment={assignment}
+                        dog={selectedDog}
+                        item={item}
+                        program={program}
+                        records={selectedDogRecords.filter((record) => record.assignmentId === assignment.id)}
+                        showDog={false}
+                        onRecord={() => setRecordTargetId(assignment.id)}
+                      />
+                    ) : null
+                  })}
+                  {selectedDogAssignments.length === 0 && <p className="text-center">Este cão ainda não possui cuidados atribuídos.</p>}
+                </>
+              )}
+            </section>
+          </div>
+        )}
+      </div>
+
+      {programTarget !== undefined && (
+        <Dialog
+          active={itemTarget === undefined}
+          ariaLabel={programTarget ? 'Editar programa' : 'Novo programa'}
+          onClose={() => setProgramTarget(undefined)}
+          className="max-h-[92vh] w-full max-w-[48rem] overflow-y-auto rounded-3xl bg-surface-raised p-5 text-on-surface-raised sm:p-8"
+        >
+          <CareProgramForm
+            key={programTarget?.id ?? 'new'}
+            program={programTarget}
+            items={items}
+            dogs={dogs}
+            assignedDogIds={assignedDogIds(programTarget)}
+            preferredItemId={preferredItemId}
+            onCreateItem={() => openItem(null, true)}
+            onCancel={() => setProgramTarget(undefined)}
+            onSave={handleSaveProgram}
+          />
+        </Dialog>
+      )}
+
+      {itemTarget !== undefined && (
+        <Dialog
+          ariaLabel={itemTarget ? 'Editar item de cuidado' : 'Novo item de cuidado'}
+          onClose={() => setItemTarget(undefined)}
+          className="max-h-[92vh] w-full max-w-[38rem] overflow-y-auto rounded-3xl bg-surface-raised p-5 text-on-surface-raised sm:p-8"
+        >
+          <CareItemForm
+            key={itemTarget?.id ?? 'new'}
+            item={itemTarget}
+            onCancel={() => setItemTarget(undefined)}
+            onSave={handleSaveItem}
+          />
+        </Dialog>
+      )}
+
+      {recordTarget && recordDog && recordProgram && recordItem && (
+        <Dialog
+          ariaLabel="Registrar cuidado"
+          onClose={() => setRecordTargetId('')}
+          className="max-h-[92vh] w-full max-w-[42rem] overflow-y-auto rounded-3xl bg-surface-raised p-5 text-on-surface-raised sm:p-8"
+        >
+          <CareRecordForm
+            assignment={recordTarget}
+            dog={recordDog}
+            item={recordItem}
+            program={recordProgram}
+            onCancel={() => setRecordTargetId('')}
+            onSave={async (draft) => {
+              await saveRecord.mutateAsync(draft)
+              setRecordTargetId('')
+              showSuccess('Cuidado registrado.')
+            }}
+          />
+        </Dialog>
+      )}
+    </main>
+  )
+}

@@ -336,7 +336,7 @@ Domínio exclusivamente administrativo. Separa o item reutilizável, a regra de 
 
 ### `cuidado_itens`
 
-Catálogo livre criado pelos admins. `name`, `category` e `presentation` identificam o item sem diferenciar maiúsculas; duplicatas são rejeitadas. Categoria é texto controlado pelo próprio conteúdo, não enum fechado no client. Itens com programa ativo não podem ser desativados e itens referenciados nunca são excluídos por cascade.
+Catálogo livre criado pelos admins. `name`, `category` e `presentation` identificam o item sem diferenciar maiúsculas; duplicatas são rejeitadas. Categoria é texto controlado pelo próprio conteúdo, não enum fechado no client. Itens com programa ativo não podem ser desativados e itens referenciados nunca são excluídos por cascade. Ao ativar um programa, a validação adquire `FOR SHARE` no item; a atualização que o desativa disputa a mesma linha, serializando as duas operações antes de confirmar o estado.
 
 | Coluna | Tipo | Regra |
 |---|---|---|
@@ -350,6 +350,8 @@ Catálogo livre criado pelos admins. `name`, `category` e `presentation` identif
 ### `cuidado_programas`
 
 Define o uso do item. `scope = todos` materializa uma atribuição para cada cão disponível atual; novos cães disponíveis e cães que retornam ao abrigo recebem os programas globais ativos sem duplicação. `scope = selecionados` só cria as atribuições escolhidas pelo admin. Dose, frequência, intervalo e datas são padrões copiados na criação da atribuição e não reescrevem personalizações existentes.
+
+`save_care_program` grava programa e seleção em uma transação com os privilégios do chamador: IDs inexistentes ou qualquer falha revertem tudo. Novas atribuições aceitam somente cães disponíveis e a abrangência selecionada exige ao menos um cão. Ao retirar um cão, a atribuição sem histórico é removida; com histórico, é preservada como `dispensado`. Reedições e desativações não retomam cuidados suspensos individualmente.
 
 | Coluna | Tipo | Regra |
 |---|---|---|
