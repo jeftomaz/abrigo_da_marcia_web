@@ -10,9 +10,19 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 4. Histórias (público + admin) — `done`
 5. Eventos/arrecadação (público + admin + reservas) — `done`
 6. Configurações admin — `done`
-7. Publicação, produção e hardening — `doing` **← atual**
+7. Publicação, produção e hardening — `doing`
+8. Cuidados e prontuários dos cães (admin) — `doing` **← atual**
 
 ## Pendências abertas
+
+### P0 — Cuidados e prontuários dos cães
+
+Executar antes da carga real dos cães para que o painel seja a fonte única dos dados desde o início.
+
+- `done` **Bloco 1 — fundação privada.** Catálogo flexível de itens, programas para todos/cães selecionados, atribuições individuais, registros realizados, automação para cães atuais/futuros, autoria, RLS + MFA e pgTAP.
+- `todo` **Bloco 2 — aba Cuidados.** Nova rota administrativa com Agenda, Programas e busca por cão; cadastro de itens no próprio fluxo, sem listas fechadas no client. Incluir a tranca que impede ativar programa enquanto o item é desativado.
+- `todo` **Bloco 3 — integração com Cães.** Abrir o prontuário a partir da gestão atual e registrar adoções, devoluções e demais mudanças de status em transação, sem alterar `caes_public`. Serializar a atualização do resumo do cuidado ao registrar ocorrências concorrentes.
+- `todo` **Bloco 4 — impressão.** Carteirinha A4 sem notas internas e prontuário administrativo completo, com cobertura E2E mobile/desktop.
 
 ### P0 — Publicação e produção
 
@@ -78,7 +88,19 @@ Quatro pontos onde o padrão do projeto não chegou e a duplicação é medida, 
 - `done` Aplicar a paleta da marca ao destaque dos ganhadores e exibir os prêmios da rifa em carrossel horizontal no evento público.
 - `done` Exibir ao público somente os números sorteados e manter os nomes dos ganhadores restritos ao admin.
 
-### P1 — Hardening (auditoria de 2026-07-25)
+### P1 — Segurança e integridade
+
+Executar em branches separadas após os blocos funcionais de Cuidados e antes da carga real/smoke final. As duas correções do domínio de Cuidados entram nos próprios Blocos 2 e 3 para não construir a nova gestão sobre invariantes concorrentes.
+
+- `todo` **Bloco 1 — persistência atômica de eventos [Alta].** Substituir as gravações relacionais sequenciais por RPC idempotente em uma transação; imagens novas só podem ser removidas após confirmar que não são referenciadas, e imagens antigas são limpas depois do commit. Cobrir falha em cada etapa e resposta perdida após commit.
+- `todo` **Bloco 2 — contenção de abuso em reservas [Alta].** Serializar o contador por hash de IP e persistir também tentativas inválidas ou conflitantes sem deixar alterações parciais na reserva. Cobrir chamadas paralelas, sessões diferentes e falhas de validação.
+- `todo` **Bloco 3 — contratos de input no banco [Média].** Definir limites de negócio e aplicá-los a nome de reserva, ano de nascimento, textos/coleções/JSON de eventos e caminhos de mídia; normalizar no banco e espelhar no client. Testar limites, caracteres de controle e payloads excedentes.
+- `todo` **Bloco 4 — limites administrativos no servidor [Média].** Decidir entre timeout nativo do Supabase e backend confiável; garantir que inatividade e TOTP recente para troca de senha não possam ser contornados por chamada direta. Manter o risco documentado se a arquitetura gratuita continuar sem essa garantia.
+- `todo` **Bloco 5 — cabeçalhos do navegador [Média].** Definir camada de entrega com headers configuráveis e aplicar CSP, Permissions-Policy, Referrer-Policy, nosniff e HSTS; validar público e admin no smoke hospedado.
+- `todo` **Bloco 6 — dependências [Baixa efetiva].** Atualizar React Router, PostCSS e NanoID para versões corrigidas; exigir `pnpm audit` sem alerta aplicável e regressão completa.
+- `todo` **Fechamento.** Rodar `pnpm verify`, `supabase db lint`, testes concorrentes, varredura de segredos, revisão de rotas por ID e smoke de headers/RLS no hospedado; atualizar `DATA_MODEL.md`, `PROJECT.md` e runbook somente onde cada bloco alterar o contrato.
+
+Hardening anterior:
 
 - `done` **[Média]** Reserva de rifa trava números enquanto `pendente` (griefing/DoS de estoque): padrões reduzidos para 5 números/15 minutos, verificação humana avaliada e cancelamento manual documentado como resposta.
 - `done` **[Info]** Signup confirmado como desabilitado no dashboard hospedado.
@@ -93,7 +115,7 @@ Quatro pontos onde o padrão do projeto não chegou e a duplicação é medida, 
 - `done` Expor o metadado somente nas consultas admin e mostrar uma linha discreta por card; em configurações/redes sociais, usar a alteração mais recente do grupo.
 - `done` Cobrir onboarding/perfil, RLS, triggers, registros legados sem autor e fluxos automáticos com pgTAP e E2E; atualizar tipos gerados e `DATA_MODEL.md` na implementação.
 
-Decisões aceitas (não reabrir): timeout de sessão de 7 dias só no client (trade-off do plano Free — ver `PROJECT.md`). As decisões vinculantes de interface vivem em `UI_CONTRACTS.md`.
+Decisão temporária: o timeout de 7 dias no client permanece durante o desenvolvimento de Cuidados; o Bloco 4 reabre a garantia server-side antes da carga real e do smoke final. As decisões vinculantes de interface vivem em `UI_CONTRACTS.md`.
 
 ## Primitivos compartilhados
 

@@ -55,6 +55,141 @@ export type Database = {
         }
         Relationships: []
       }
+      cae_cuidado_registros: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          dose: string | null
+          id: string
+          item_category: string
+          item_name: string
+          item_presentation: string | null
+          lot: string | null
+          next_due_on: string | null
+          notes: string | null
+          occurred_at: string
+          type: Database["public"]["Enums"]["cuidado_registro_tipo"]
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          dose?: string | null
+          id?: string
+          item_category?: string
+          item_name?: string
+          item_presentation?: string | null
+          lot?: string | null
+          next_due_on?: string | null
+          notes?: string | null
+          occurred_at?: string
+          type: Database["public"]["Enums"]["cuidado_registro_tipo"]
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          dose?: string | null
+          id?: string
+          item_category?: string
+          item_name?: string
+          item_presentation?: string | null
+          lot?: string | null
+          next_due_on?: string | null
+          notes?: string | null
+          occurred_at?: string
+          type?: Database["public"]["Enums"]["cuidado_registro_tipo"]
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cae_cuidado_registros_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "cae_cuidados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cae_cuidados: {
+        Row: {
+          created_at: string
+          dog_id: string
+          dose: string | null
+          end_date: string | null
+          exception_reason: string | null
+          frequency: string | null
+          id: string
+          next_due_on: string | null
+          program_id: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["cuidado_situacao"]
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string
+        }
+        Insert: {
+          created_at?: string
+          dog_id: string
+          dose?: string | null
+          end_date?: string | null
+          exception_reason?: string | null
+          frequency?: string | null
+          id?: string
+          next_due_on?: string | null
+          program_id: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["cuidado_situacao"]
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Update: {
+          created_at?: string
+          dog_id?: string
+          dose?: string | null
+          end_date?: string | null
+          exception_reason?: string | null
+          frequency?: string | null
+          id?: string
+          next_due_on?: string | null
+          program_id?: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["cuidado_situacao"]
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cae_cuidados_dog_id_fkey"
+            columns: ["dog_id"]
+            isOneToOne: false
+            referencedRelation: "caes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cae_cuidados_dog_id_fkey"
+            columns: ["dog_id"]
+            isOneToOne: false
+            referencedRelation: "caes_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cae_cuidados_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "cuidado_programas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       caes: {
         Row: {
           adoption_form_url: string | null
@@ -105,6 +240,107 @@ export type Database = {
           updated_by_name?: string
         }
         Relationships: []
+      }
+      cuidado_itens: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          presentation: string | null
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          presentation?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          presentation?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Relationships: []
+      }
+      cuidado_programas: {
+        Row: {
+          active: boolean
+          created_at: string
+          default_dose: string | null
+          default_frequency: string | null
+          default_interval_days: number | null
+          end_date: string | null
+          id: string
+          instructions: string | null
+          item_id: string
+          name: string
+          scope: Database["public"]["Enums"]["cuidado_abrangencia"]
+          start_date: string | null
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          default_dose?: string | null
+          default_frequency?: string | null
+          default_interval_days?: number | null
+          end_date?: string | null
+          id?: string
+          instructions?: string | null
+          item_id: string
+          name: string
+          scope: Database["public"]["Enums"]["cuidado_abrangencia"]
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          default_dose?: string | null
+          default_frequency?: string | null
+          default_interval_days?: number | null
+          end_date?: string | null
+          id?: string
+          instructions?: string | null
+          item_id?: string
+          name?: string
+          scope?: Database["public"]["Enums"]["cuidado_abrangencia"]
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuidado_programas_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "cuidado_itens"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       event_deletion_audit: {
         Row: {
@@ -1218,10 +1454,7 @@ export type Database = {
         Args: { value: string }
         Returns: boolean
       }
-      is_valid_reservation_name: {
-        Args: { value: string }
-        Returns: boolean
-      }
+      is_valid_reservation_name: { Args: { value: string }; Returns: boolean }
       normalize_reservation_contact: {
         Args: { value: string }
         Returns: string
@@ -1284,6 +1517,14 @@ export type Database = {
       cae_genero: "macho" | "femea"
       cae_porte: "pequeno" | "medio" | "grande"
       cae_status: "disponivel" | "adotado" | "falecido"
+      cuidado_abrangencia: "todos" | "selecionados"
+      cuidado_registro_tipo: "aplicacao" | "inicio" | "observacao" | "conclusao"
+      cuidado_situacao:
+        | "pendente"
+        | "em_andamento"
+        | "concluido"
+        | "suspenso"
+        | "dispensado"
       evento_status: "rascunho" | "ativo" | "encerrado" | "arquivado"
       evento_tipo: "rifa" | "produtos"
       reserva_status: "pendente" | "paga" | "cancelada" | "entregue"
@@ -1421,6 +1662,15 @@ export const Constants = {
       cae_genero: ["macho", "femea"],
       cae_porte: ["pequeno", "medio", "grande"],
       cae_status: ["disponivel", "adotado", "falecido"],
+      cuidado_abrangencia: ["todos", "selecionados"],
+      cuidado_registro_tipo: ["aplicacao", "inicio", "observacao", "conclusao"],
+      cuidado_situacao: [
+        "pendente",
+        "em_andamento",
+        "concluido",
+        "suspenso",
+        "dispensado",
+      ],
       evento_status: ["rascunho", "ativo", "encerrado", "arquivado"],
       evento_tipo: ["rifa", "produtos"],
       reserva_status: ["pendente", "paga", "cancelada", "entregue"],

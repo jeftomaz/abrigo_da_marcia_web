@@ -1,6 +1,6 @@
 # DATA_MODEL.md
 
-Fonte de verdade do banco. O schema está materializado em `supabase/migrations/`; a produção hospedada `banco_site_abrigo` está validada até `20260810214700`, sem migrations pendentes. O projeto legado `site-do-abrigo` permanece fora de uso.
+Fonte de verdade do banco. O schema está materializado em `supabase/migrations/`; a produção hospedada `banco_site_abrigo` está validada até `20260810214700`. A migration de cuidados caninos permanece local até a conclusão do módulo. O projeto legado `site-do-abrigo` permanece fora de uso.
 
 ## Imagens no Storage
 
@@ -49,6 +49,54 @@ erDiagram
     text adoption_form_url "nullable; override do global"
     timestamptz created_at
     timestamptz updated_at
+  }
+  CUIDADO_ITENS {
+    uuid id PK
+    text name
+    text category
+    text presentation "nullable"
+    text notes "nullable"
+    boolean active
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  CUIDADO_PROGRAMAS {
+    uuid id PK
+    uuid item_id FK
+    text name
+    cuidado_abrangencia scope
+    text default_dose "nullable"
+    text default_frequency "nullable"
+    integer default_interval_days "nullable"
+    text instructions "nullable"
+    date start_date "nullable"
+    date end_date "nullable"
+    boolean active
+  }
+  CAE_CUIDADOS {
+    uuid id PK
+    uuid dog_id FK
+    uuid program_id FK
+    cuidado_situacao status
+    text dose "nullable; override"
+    text frequency "nullable; override"
+    date start_date "nullable"
+    date end_date "nullable"
+    date next_due_on "nullable"
+    text exception_reason "nullable"
+  }
+  CAE_CUIDADO_REGISTROS {
+    uuid id PK
+    uuid assignment_id FK
+    cuidado_registro_tipo type
+    timestamptz occurred_at
+    text item_name "snapshot"
+    text item_category "snapshot"
+    text item_presentation "snapshot nullable"
+    text dose "snapshot nullable"
+    text lot "nullable"
+    text notes "nullable"
+    date next_due_on "nullable"
   }
   HISTORIAS {
     uuid id PK
@@ -202,13 +250,17 @@ erDiagram
   PRODUTO_VARIACAO_OPCOES ||--o{ RESERVA_PRODUTO_OPCOES : "escolhe"
   RESERVAS ||--o{ RESERVA_NUMEROS : "contém"
   RIFAS ||--o{ RESERVA_NUMEROS : "aloca"
+  CUIDADO_ITENS ||--o{ CUIDADO_PROGRAMAS : "origina"
+  CUIDADO_PROGRAMAS ||--o{ CAE_CUIDADOS : "atribui"
+  CAES ||--o{ CAE_CUIDADOS : "recebe"
+  CAE_CUIDADOS ||--o{ CAE_CUIDADO_REGISTROS : "registra"
 ```
 
 ## Rastreabilidade administrativa
 
 `admin_profiles` mantém a identidade privada exibida na auditoria: `user_id uuid` é PK/FK para `auth.users` com cascade, `display_name text` exige 2–60 caracteres sem espaços nas pontas e os timestamps são automáticos. Admin com `aal2` lê os perfis; cada admin insere ou altera somente o próprio. Não há exposição pública.
 
-Os agregados `caes`, `historias`, `eventos`, `reservas`, `site_settings`, `event_settings` e `social_links` compartilham `updated_at`, `updated_by uuid` (FK nullable para `auth.users`, `ON DELETE SET NULL`) e `updated_by_name text` (snapshot obrigatório). Trigger de banco sobrescreve qualquer autoria enviada pelo client: admin recebe seu perfil, escrita pública recebe “Visitante” e cron/RPC interna recebe “Sistema”. Registros anteriores à migration começam como “Sistema”; renomear ou excluir o perfil não altera snapshots. Sorteio atualiza o evento, ativação/exclusão recebe o admin validado pela Edge Function e expiração automática permanece atribuída ao sistema. As views públicas omitem os três metadados de autoria.
+Os agregados `caes`, `historias`, `eventos`, `reservas`, configurações, redes sociais e as quatro tabelas de cuidados compartilham `updated_at`, `updated_by uuid` (FK nullable para `auth.users`, `ON DELETE SET NULL`) e `updated_by_name text` (snapshot obrigatório). Trigger de banco sobrescreve qualquer autoria enviada pelo client: admin recebe seu perfil, escrita pública recebe “Visitante” e cron/RPC interna recebe “Sistema”. Registros anteriores à migration começam como “Sistema”; renomear ou excluir o perfil não altera snapshots. Sorteio atualiza o evento, ativação/exclusão recebe o admin validado pela Edge Function e expiração automática permanece atribuída ao sistema. As views públicas omitem os três metadados de autoria.
 
 ## `site_settings`
 
@@ -277,6 +329,56 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 - RLS habilitada na tabela; as migrations não concedem acesso direto a `anon`.
 - View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, `featured` e `adoption_form_url`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status`.
 - CRUD e Storage exigem admin autenticado com `aal2`; `anon` não possui acesso direto.
+
+## Cuidados dos cães
+
+Domínio exclusivamente administrativo. Separa o item reutilizável, a regra de aplicação, a situação individual e os fatos realizados; nenhuma tabela ou view é exposta ao público.
+
+### `cuidado_itens`
+
+Catálogo livre criado pelos admins. `name`, `category` e `presentation` identificam o item sem diferenciar maiúsculas; duplicatas são rejeitadas. Categoria é texto controlado pelo próprio conteúdo, não enum fechado no client. Itens com programa ativo não podem ser desativados e itens referenciados nunca são excluídos por cascade.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `uuid` | PK; default `gen_random_uuid()` |
+| `name` | `text` | not null; 1–80 caracteres |
+| `category` | `text` | not null; 1–40 caracteres |
+| `presentation` | `text` | nullable; 1–80 caracteres quando preenchido |
+| `notes` | `text` | nullable; até 1000 caracteres |
+| `active` | `boolean` | not null; default `true`; desativação preserva o histórico |
+
+### `cuidado_programas`
+
+Define o uso do item. `scope = todos` materializa uma atribuição para cada cão disponível atual; novos cães disponíveis e cães que retornam ao abrigo recebem os programas globais ativos sem duplicação. `scope = selecionados` só cria as atribuições escolhidas pelo admin. Dose, frequência, intervalo e datas são padrões copiados na criação da atribuição e não reescrevem personalizações existentes.
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `uuid` | PK |
+| `item_id` | `uuid` | FK → `cuidado_itens`; `ON DELETE RESTRICT` |
+| `name` | `text` | not null; 1–80 caracteres; unique por item sem diferenciar maiúsculas |
+| `scope` | `cuidado_abrangencia` | `todos \| selecionados` |
+| `default_dose` | `text` | nullable; até 120 caracteres |
+| `default_frequency` | `text` | nullable; até 160 caracteres |
+| `default_interval_days` | `integer` | nullable; 1–3650; sugere a próxima data após aplicação |
+| `instructions` | `text` | nullable; até 1000 caracteres |
+| `start_date`, `end_date` | `date` | nullable; fim não pode anteceder início |
+| `active` | `boolean` | not null; default `true` |
+
+### `cae_cuidados`
+
+Atribuição individual, unique por cão/programa. Pode sobrescrever dose, frequência e datas. `suspenso` e `dispensado` exigem `exception_reason`; atribuição global ativa não pode ser apagada individualmente. Relações com cão/programa usam `ON DELETE RESTRICT`, então um cão com prontuário não pode ser removido definitivamente.
+
+Situações: `pendente | em_andamento | concluido | suspenso | dispensado`. O índice parcial de agenda cobre `next_due_on` apenas para pendentes/em andamento.
+
+### `cae_cuidado_registros`
+
+Linha do tempo de `aplicacao | inicio | observacao | conclusao`. Cada registro guarda snapshots do nome, categoria e apresentação do item, além de dose, lote, nota e próxima data. Uma aplicação usa `default_interval_days` para sugerir `next_due_on`; início, aplicação e conclusão sincronizam a situação individual, enquanto observações não alteram o ciclo. O admin pode corrigir registros, mas não apagá-los nem movê-los para outra atribuição.
+
+### Exposição e acesso
+
+- As quatro tabelas têm RLS e grants apenas para `authenticated`; policy permissiva exige `is_admin()` e policy restritiva exige `aal2`.
+- `anon` não lê, escreve nem recebe views do domínio; `caes_public` permanece inalterada.
+- Triggers de sincronização global são `security definer`, têm `search_path` vazio e não são executáveis diretamente.
 
 ## `historias`
 
@@ -540,7 +642,7 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 - Admin legado sem perfil informa o nome/apelido uma única vez após chegar a `aal2`; a inserção é feita sob as policies do próprio usuário.
 - Em logins posteriores, uma sessão `aal1` com TOTP verificado exige novo desafio. Fatores incompletos são descartados antes de gerar outro QR Code.
 - No plano gratuito, o admin encerra no client a sessão após sete dias sem atividade; `auth.sessions.inactivity_timeout` exige plano Pro e permanece desabilitado no serviço hospedado.
-- `site_settings`, `social_links`, `caes`, `historias`, `event_settings`, `eventos`, `rifas`, `rifa_premios`, `produtos`, variações/opções e reservas usam uma policy permissiva para `is_admin()` e outra policy restritiva exigindo `aal2`, em leitura e escrita.
+- `site_settings`, `social_links`, `caes`, `historias`, cuidados, `event_settings`, `eventos`, `rifas`, `rifa_premios`, `produtos`, variações/opções e reservas usam uma policy permissiva para `is_admin()` e outra policy restritiva exigindo `aal2`, em leitura e escrita; registros realizados de cuidados não concedem exclusão.
 - `admin_profiles` permite leitura a admins, mas inserção/alteração somente do próprio perfil; todas as operações também exigem `aal2`.
 - `event_deletion_audit` permite somente `select` e `insert` a admin `aal2`; atualizações e exclusões não são concedidas.
 - `storage.objects` do bucket `dog-photos` permite `select`, `insert` e `delete` somente a admin `aal2`; leitura pública das imagens continua pelo bucket público.
