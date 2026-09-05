@@ -60,6 +60,7 @@ export function Cuidados() {
   const [itemReturnsToProgram, setItemReturnsToProgram] = useState(false)
   const [preferredItemId, setPreferredItemId] = useState('')
   const [recordTargetId, setRecordTargetId] = useState('')
+  const [showCreationHelp, setShowCreationHelp] = useState(false)
   const [operationError, setOperationError] = useState('')
   const [successMessage, showSuccess] = useSuccessMessage()
   const { assignments, items, programs } = care
@@ -228,6 +229,34 @@ export function Cuidados() {
             </div>
           )}
         </div>
+
+        {view === 'programas' && (
+          <section aria-label="Ajuda sobre itens e programas" className="mt-1">
+            <Action
+              type="button"
+              aria-controls="care-creation-help"
+              aria-expanded={showCreationHelp}
+              onClick={() => setShowCreationHelp((current) => !current)}
+              icon="info-circle-solid"
+              size="admin-row"
+              variant="neutral-adaptive"
+              className="ml-auto min-h-11"
+            >
+              {showCreationHelp ? 'Ocultar explicação' : 'O que são item e programa?'}
+            </Action>
+            {showCreationHelp && (
+              <div
+                id="care-creation-help"
+                role="note"
+                aria-label="Diferença entre item e programa"
+                className="grid gap-3 rounded-2xl bg-surface-raised p-4 text-sm text-on-surface-raised sm:grid-cols-2"
+              >
+                <p><strong className="text-marca-escura dark:text-marca-clara">Item:</strong> é o cuidado em si, como medicamento, vacina, exame, suplemento ou procedimento.</p>
+                <p><strong className="text-marca-escura dark:text-marca-clara">Programa:</strong> define como, quando e para quais cães um item será aplicado, incluindo dose, frequência e período.</p>
+              </div>
+            )}
+          </section>
+        )}
 
         {isLoading && <p role="status" className="mt-8 text-center">Carregando cuidados...</p>}
         {loadError && <p role="alert" className="mt-8 text-center">Não foi possível carregar os cuidados.</p>}

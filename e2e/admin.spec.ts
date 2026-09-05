@@ -38,8 +38,9 @@ test.afterAll(() => {
   removerAdminDeTeste()
 })
 
-async function auditar(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).withTags(PADROES).analyze()
+async function auditar(page: Page, include?: string) {
+  const auditor = new AxeBuilder({ page }).withTags(PADROES)
+  const { violations } = await (include ? auditor.include(include) : auditor).analyze()
   const conhecido = (cor?: string) => Boolean(cor && (FAMILIA_DA_MARCA.has(cor) || SUPERFICIES.has(cor)))
 
   return violations
@@ -546,6 +547,14 @@ test.describe('admin', () => {
       await page.goto(`${ADMIN_URL}/#/cuidados`)
       await expect(page.getByRole('heading', { name: 'Cuidados', exact: true })).toBeVisible()
       await page.getByRole('tab', { name: 'Programas' }).click()
+      const creationHelpButton = page.getByRole('button', { name: 'O que são item e programa?' })
+      await expect(creationHelpButton).toHaveAttribute('aria-expanded', 'false')
+      await creationHelpButton.click()
+      const creationHelp = page.getByRole('note', { name: 'Diferença entre item e programa' })
+      await expect(creationHelp).toContainText('Item: é o cuidado em si')
+      await expect(creationHelp).toContainText('Programa: define como, quando e para quais cães')
+      await page.getByRole('button', { name: 'Ocultar explicação' }).click()
+      await expect(creationHelp).toHaveCount(0)
       await page.getByRole('button', { name: 'Novo programa' }).click()
 
       const programDialog = page.getByRole('dialog', { name: 'Novo programa' })
@@ -814,7 +823,15 @@ test.describe('admin', () => {
     await expect(page.getByRole('heading', { name: 'Cuidados', exact: true })).toBeVisible()
     expect(await auditar(page)).toEqual([])
 
+    await page.getByRole('tab', { name: 'Programas' }).click()
+    await page.getByRole('button', { name: 'O que são item e programa?' }).click()
+    expect(await auditar(page, '[role="note"]')).toEqual([])
+
     await page.getByRole('button', { name: 'Ativar tema escuro' }).click()
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
+    expect(await auditar(page, '[role="note"]')).toEqual([])
+
+    await page.getByRole('tab', { name: 'Agenda' }).click()
     await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
     expect(await auditar(page)).toEqual([])
   })
@@ -1060,6 +1077,9 @@ test.describe('admin', () => {
 
     await page.goto(`${ADMIN_URL}/#/cuidados`)
     await page.getByRole('tab', { name: 'Programas' }).click()
+    await page.getByRole('button', { name: 'O que são item e programa?' }).click()
+    await expect(page.getByRole('note', { name: 'Diferença entre item e programa' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Ajuda de Cuidados em 320px')
     await page.getByRole('button', { name: 'Novo programa' }).click()
     const careProgramDialog = page.getByRole('dialog', { name: 'Novo programa' })
     await expect(careProgramDialog).toBeVisible()

@@ -1,5 +1,6 @@
 # PROGRESS.md
 
+- Ajuda contextual de Cuidados adicionada (2026-09-05): um disclosure acessível por mouse, toque e teclado explica a diferença entre item e programa junto às ações de cadastro, com cobertura funcional, mobile e WCAG.
 - Aba administrativa de Cuidados concluída (2026-09-04): Agenda, Programas, catálogo livre no próprio fluxo, busca por cão e registro de ocorrências usam dados privados sob RLS + MFA; históricos só são consultados para o cão aberto. A RPC salva programa/seleção atomicamente, preserva suspensões individuais e compartilha a tranca do item para impedir ativação concorrente inválida. Validação: lint, builds, reset integral, `db lint`, 302 pgTAP e 159 E2E; 15 casos ignorados pela matriz.
 
 - Correções de segurança planejadas (2026-09-04): a gestão de Cuidados permanece prioritária; a corrida item/programa foi corrigida no Bloco 2 e a serialização dos registros segue no Bloco 3. Atomicidade de eventos, abuso em reservas, inputs, limites administrativos, headers e dependências ficaram ordenados em branches posteriores, antes da carga real e do smoke final.
