@@ -374,7 +374,7 @@ Situações: `pendente | em_andamento | concluido | suspenso | dispensado`. O í
 
 ### `cae_cuidado_registros`
 
-Linha do tempo de `aplicacao | inicio | observacao | conclusao`. Cada registro guarda snapshots do nome, categoria e apresentação do item, além de dose, lote, nota e próxima data. Uma aplicação usa `default_interval_days` para sugerir `next_due_on`; início, aplicação e conclusão sincronizam a situação individual, enquanto observações não alteram o ciclo. O admin pode corrigir registros, mas não apagá-los nem movê-los para outra atribuição.
+Linha do tempo de `aplicacao | inicio | observacao | conclusao`. Cada registro guarda snapshots do nome, categoria e apresentação do item, além de dose, lote, nota e próxima data. Uma aplicação usa `default_interval_days` para sugerir `next_due_on`; início, aplicação e conclusão sincronizam a situação individual, enquanto observações não alteram o ciclo. Novos registros trancam a atribuição, recusam data futura e exigem cão disponível, item/programa ativos e situação não suspensa/dispensada; aplicação e conclusão também exigem ciclo não concluído. O admin pode corrigir registros, mas não apagá-los nem movê-los para outra atribuição.
 
 ### Exposição e acesso
 

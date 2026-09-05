@@ -1,9 +1,10 @@
 # PROGRESS.md
 
-- Ajuda contextual de Cuidados adicionada (2026-09-05): um disclosure acessível por mouse, toque e teclado explica a diferença entre item e programa junto às ações de cadastro, com cobertura funcional, mobile e WCAG.
+- Operação diária de Cuidados simplificada (2026-09-05): programas selecionados listam somente cães disponíveis; “Por cão” permite confirmar a realização diretamente por checkbox, mantendo o formulário completo para data, lote, observações ou doses adicionais. O banco serializa registros concorrentes e rejeita aplicações para cão indisponível, item/programa inativo ou atribuição suspensa/concluída. Validação: lint, builds, `db lint`, 74 pgTAP e 4 E2E afetados.
+- Clareza da aba Cuidados ajustada (2026-09-05): Itens ganhou gestão dedicada com cadastro, edição, ativação/desativação e aviso de preservação do histórico; um disclosure explica item e programa, e as subabas inativas contrastam com o fundo em ambos os temas. Cobertura funcional, mobile e WCAG atualizada.
 - Aba administrativa de Cuidados concluída (2026-09-04): Agenda, Programas, catálogo livre no próprio fluxo, busca por cão e registro de ocorrências usam dados privados sob RLS + MFA; históricos só são consultados para o cão aberto. A RPC salva programa/seleção atomicamente, preserva suspensões individuais e compartilha a tranca do item para impedir ativação concorrente inválida. Validação: lint, builds, reset integral, `db lint`, 302 pgTAP e 159 E2E; 15 casos ignorados pela matriz.
 
-- Correções de segurança planejadas (2026-09-04): a gestão de Cuidados permanece prioritária; a corrida item/programa foi corrigida no Bloco 2 e a serialização dos registros segue no Bloco 3. Atomicidade de eventos, abuso em reservas, inputs, limites administrativos, headers e dependências ficaram ordenados em branches posteriores, antes da carga real e do smoke final.
+- Correções de segurança planejadas (2026-09-04): as corridas de item/programa e registros de Cuidados foram corrigidas no Bloco 2. Atomicidade de eventos, abuso em reservas, inputs, limites administrativos, headers e dependências ficaram ordenados em branches posteriores, antes da carga real e do smoke final.
 
 - Segurança universalizada nas orientações (2026-09-04): `AGENTS.md` passou a exigir revisão de segurança, tratamento hostil de inputs e sinalização sucinta de limitações estruturais, cobrindo banco sem tranca, permissões no navegador, rotas por ID, chaves expostas e inputs sem tratamento.
 

@@ -20,23 +20,25 @@ import { CareItemForm } from '../components/CareItemForm'
 import { CareProgramCard } from '../components/CareProgramCard'
 import { CareProgramForm } from '../components/CareProgramForm'
 import { CareRecordForm } from '../components/CareRecordForm'
+import { ConfirmationDialog } from '../components/ConfirmationDialog'
 import { StatCards } from '../components/StatCards'
 import { StatusBadge } from '../components/StatusBadge'
 import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
-type CareView = 'agenda' | 'programas' | 'caes'
+type CareView = 'agenda' | 'programas' | 'itens' | 'caes'
 
 const TABS: Array<{ id: CareView; label: string }> = [
   { id: 'agenda', label: 'Agenda' },
   { id: 'programas', label: 'Programas' },
+  { id: 'itens', label: 'Itens' },
   { id: 'caes', label: 'Por cão' },
 ]
 const EMPTY_CARE: AdminCareData = { assignments: [], items: [], programs: [] }
 const EMPTY_DOGS: Dog[] = []
 const EMPTY_RECORDS: CareRecord[] = []
 
-function localDateKey() {
-  const date = new Date()
+function localDateKey(value: Date | string = new Date()) {
+  const date = typeof value === 'string' ? new Date(value) : value
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
   return local.toISOString().slice(0, 10)
 }
@@ -60,6 +62,7 @@ export function Cuidados() {
   const [itemReturnsToProgram, setItemReturnsToProgram] = useState(false)
   const [preferredItemId, setPreferredItemId] = useState('')
   const [recordTargetId, setRecordTargetId] = useState('')
+  const [quickRecordTargetId, setQuickRecordTargetId] = useState('')
   const [showCreationHelp, setShowCreationHelp] = useState(false)
   const [operationError, setOperationError] = useState('')
   const [successMessage, showSuccess] = useSuccessMessage()
@@ -169,14 +172,40 @@ export function Cuidados() {
   const recordDog = recordTarget ? dogById.get(recordTarget.dogId) : undefined
   const recordProgram = recordTarget ? programById.get(recordTarget.programId) : undefined
   const recordItem = recordProgram ? itemById.get(recordProgram.itemId) : undefined
+  const quickRecordTarget = assignments.find((assignment) => assignment.id === quickRecordTargetId)
+  const quickRecordDog = quickRecordTarget ? dogById.get(quickRecordTarget.dogId) : undefined
+  const quickRecordProgram = quickRecordTarget ? programById.get(quickRecordTarget.programId) : undefined
+  const quickRecordItem = quickRecordProgram ? itemById.get(quickRecordProgram.itemId) : undefined
+
+  const confirmQuickRecord = async () => {
+    if (!quickRecordTarget || !quickRecordDog || !quickRecordItem) return
+    setOperationError('')
+    try {
+      await saveRecord.mutateAsync({
+        assignmentId: quickRecordTarget.id,
+        dose: quickRecordTarget.dose,
+        lot: '',
+        nextDueOn: '',
+        notes: '',
+        occurredAt: new Date().toISOString(),
+        type: 'aplicacao',
+      })
+      setQuickRecordTargetId('')
+      showSuccess(`${quickRecordItem.name} marcado como realizado para ${quickRecordDog.name}.`)
+    } catch (error) {
+      setOperationError(getAdminErrorMessage(error, 'Não foi possível registrar o cuidado.'))
+    }
+  }
 
   const isLoading = isCareLoading || isDogsLoading
   const loadError = careError || dogsError
   const searchPlaceholder = view === 'agenda'
     ? 'Buscar cão, cuidado ou programa...'
     : view === 'programas'
-      ? 'Buscar programa ou item...'
-      : 'Buscar cão...'
+      ? 'Buscar programa...'
+      : view === 'itens'
+        ? 'Buscar item...'
+        : 'Buscar cão...'
 
   return (
     <main className="flex-1 overflow-x-hidden bg-cinza-claro px-3 py-4 text-cinza-escuro sm:px-6 dark:bg-cinza-escuro dark:text-cinza-claro">
@@ -198,7 +227,7 @@ export function Cuidados() {
                   setOperationError('')
                 }}
                 size="small"
-                variant={view === tab.id ? 'primary-adaptive' : 'neutral-adaptive'}
+                variant={view === tab.id ? 'primary-adaptive' : 'surface-adaptive'}
                 className="min-h-11 shrink-0"
               >
                 {tab.label}
@@ -218,19 +247,22 @@ export function Cuidados() {
               className="h-11 w-full rounded-full bg-white pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
             />
           </div>
-          {view === 'programas' && (
-            <div className="grid grid-cols-2 gap-2">
-              <Action onClick={() => openItem(null)} icon="plus-circle-solid" size="admin-row" variant="neutral-adaptive" className="min-h-11 w-full">
-                Novo item
-              </Action>
-              <Action onClick={() => openProgram(null)} icon="keyframe-plus-in-solid" size="admin-row" variant="primary-adaptive" className="min-h-11 w-full">
-                Novo programa
-              </Action>
+          {(view === 'programas' || view === 'itens') && (
+            <div>
+              {view === 'itens' ? (
+                <Action onClick={() => openItem(null)} icon="plus-circle-solid" size="admin-row" variant="primary-adaptive" className="min-h-11 w-full">
+                  Novo item
+                </Action>
+              ) : (
+                <Action onClick={() => openProgram(null)} icon="keyframe-plus-in-solid" size="admin-row" variant="primary-adaptive" className="min-h-11 w-full">
+                  Novo programa
+                </Action>
+              )}
             </div>
           )}
         </div>
 
-        {view === 'programas' && (
+        {(view === 'programas' || view === 'itens') && (
           <section aria-label="Ajuda sobre itens e programas" className="mt-1">
             <Action
               type="button"
@@ -296,68 +328,69 @@ export function Cuidados() {
         )}
 
         {!isLoading && !loadError && view === 'programas' && (
-          <div className="mt-6 grid gap-8 desk:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)] desk:items-start">
-            <section aria-labelledby="care-programs-heading" className="min-w-0">
-              <h2 id="care-programs-heading" className="text-xl font-medium text-marca">Programas</h2>
-              <div className="mt-3 flex flex-col gap-3">
-                {filteredPrograms.map((program) => {
-                  const item = itemById.get(program.itemId)
-                  return item ? (
-                    <CareProgramCard
-                      key={program.id}
-                      program={program}
-                      item={item}
-                      isPending={saveProgram.isPending}
-                      assignedDogs={assignedDogIds(program).length}
-                      onEdit={() => openProgram(program)}
-                      onToggleActive={() => void toggleProgram(program)}
-                    />
-                  ) : null
-                })}
-                {filteredPrograms.length === 0 && <p className="text-center">Nenhum programa encontrado.</p>}
-              </div>
-            </section>
+          <section aria-labelledby="care-programs-heading" className="mt-6 min-w-0">
+            <h2 id="care-programs-heading" className="text-xl font-medium text-marca">Programas</h2>
+            <div className="mt-3 flex flex-col gap-3">
+              {filteredPrograms.map((program) => {
+                const item = itemById.get(program.itemId)
+                return item ? (
+                  <CareProgramCard
+                    key={program.id}
+                    program={program}
+                    item={item}
+                    isPending={saveProgram.isPending}
+                    assignedDogs={assignedDogIds(program).length}
+                    onEdit={() => openProgram(program)}
+                    onToggleActive={() => void toggleProgram(program)}
+                  />
+                ) : null
+              })}
+              {filteredPrograms.length === 0 && <p className="text-center">Nenhum programa encontrado.</p>}
+            </div>
+          </section>
+        )}
 
-            <section aria-labelledby="care-items-heading" className="min-w-0">
-              <h2 id="care-items-heading" className="text-xl font-medium text-marca">Itens do catálogo</h2>
-              <div className="mt-3 flex flex-col gap-3">
-                {filteredItems.map((item) => (
-                  <AdminListRow
-                    key={item.id}
-                    audit={item.audit}
-                    isEditing={false}
-                    className="grid min-w-0 gap-3 rounded-2xl p-4 sm:grid-cols-[minmax(0,1fr)_8rem] sm:items-center"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-medium">{item.name}</h3>
-                        <StatusBadge tone={item.active ? 'verde' : 'neutro'} size="sm">
-                          {item.active ? 'Ativo' : 'Inativo'}
-                        </StatusBadge>
-                      </div>
-                      <p className="mt-1 text-sm text-marca">{item.category}</p>
-                      {item.presentation && <p className="mt-1 text-sm">{item.presentation}</p>}
+        {!isLoading && !loadError && view === 'itens' && (
+          <section aria-labelledby="care-items-heading" className="mt-6 min-w-0">
+            <h2 id="care-items-heading" className="text-xl font-medium text-marca">Itens do catálogo</h2>
+            <p className="mt-1 text-sm">Para preservar programas e históricos, itens cadastrados não são excluídos. Desative os que não estiverem mais em uso.</p>
+            <div className="mt-3 flex flex-col gap-3">
+              {filteredItems.map((item) => (
+                <AdminListRow
+                  key={item.id}
+                  audit={item.audit}
+                  isEditing={false}
+                  className="grid min-w-0 gap-3 rounded-2xl p-4 sm:grid-cols-[minmax(0,1fr)_8rem] sm:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-medium">{item.name}</h3>
+                      <StatusBadge tone={item.active ? 'verde' : 'neutro'} size="sm">
+                        {item.active ? 'Ativo' : 'Inativo'}
+                      </StatusBadge>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
-                      <Action onClick={() => openItem(item)} size="admin-row" variant="neutral-adaptive" icon="edit-pencil" className="min-h-11 w-full">
-                        Editar
-                      </Action>
-                      <Action
-                        onClick={() => void toggleItem(item)}
-                        disabled={setItemActive.isPending}
-                        size="admin-row"
-                        variant={item.active ? 'secondary-adaptive' : 'primary-adaptive'}
-                        className="min-h-11 w-full"
-                      >
-                        {item.active ? 'Desativar' : 'Ativar'}
-                      </Action>
-                    </div>
-                  </AdminListRow>
-                ))}
-                {filteredItems.length === 0 && <p className="text-center">Nenhum item encontrado.</p>}
-              </div>
-            </section>
-          </div>
+                    <p className="mt-1 text-sm text-marca">{item.category}</p>
+                    {item.presentation && <p className="mt-1 text-sm">{item.presentation}</p>}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
+                    <Action onClick={() => openItem(item)} size="admin-row" variant="neutral-adaptive" icon="edit-pencil" className="min-h-11 w-full">
+                      Editar
+                    </Action>
+                    <Action
+                      onClick={() => void toggleItem(item)}
+                      disabled={setItemActive.isPending}
+                      size="admin-row"
+                      variant={item.active ? 'secondary-adaptive' : 'primary-adaptive'}
+                      className="min-h-11 w-full"
+                    >
+                      {item.active ? 'Desativar' : 'Ativar'}
+                    </Action>
+                  </div>
+                </AdminListRow>
+              ))}
+              {filteredItems.length === 0 && <p className="text-center">Nenhum item encontrado.</p>}
+            </div>
+          </section>
         )}
 
         {!isLoading && !loadError && view === 'caes' && (
@@ -390,9 +423,11 @@ export function Cuidados() {
                     <h2 className="text-2xl font-medium">{selectedDog.name}</h2>
                     <p className="text-sm">{STATUS_LABELS[selectedDog.status]} · {selectedDogAssignments.length} cuidado{selectedDogAssignments.length === 1 ? '' : 's'}</p>
                   </div>
+                  <p className="text-sm">Marque o cuidado realizado agora. Para informar outra data, lote, observações ou mais de uma dose no dia, use “Registrar detalhes”.</p>
                   {selectedDogAssignments.map((assignment) => {
                     const program = programById.get(assignment.programId)
                     const item = program ? itemById.get(program.itemId) : undefined
+                    const records = selectedDogRecords.filter((record) => record.assignmentId === assignment.id)
                     return program && item ? (
                       <CareAssignmentCard
                         key={assignment.id}
@@ -400,9 +435,11 @@ export function Cuidados() {
                         dog={selectedDog}
                         item={item}
                         program={program}
-                        records={selectedDogRecords.filter((record) => record.assignmentId === assignment.id)}
+                        records={records}
+                        recordedToday={records.some((record) => record.type === 'aplicacao' && localDateKey(record.occurredAt) === today)}
                         showDog={false}
                         onRecord={() => setRecordTargetId(assignment.id)}
+                        onQuickRecord={() => setQuickRecordTargetId(assignment.id)}
                       />
                     ) : null
                   })}
@@ -469,6 +506,17 @@ export function Cuidados() {
             }}
           />
         </Dialog>
+      )}
+
+      {quickRecordTarget && quickRecordDog && quickRecordProgram && quickRecordItem && (
+        <ConfirmationDialog
+          title="Confirmar cuidado realizado"
+          description={`Registrar ${quickRecordItem.name}${quickRecordTarget.dose ? ` (${quickRecordTarget.dose})` : ''} para ${quickRecordDog.name} agora? A próxima data será calculada conforme o programa ${quickRecordProgram.name}.`}
+          confirmLabel="Confirmar realização"
+          isPending={saveRecord.isPending}
+          onCancel={() => setQuickRecordTargetId('')}
+          onConfirm={() => void confirmQuickRecord()}
+        />
       )}
     </main>
   )

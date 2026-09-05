@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(69);
+select plan(74);
 
 delete from public.cae_cuidado_registros;
 delete from public.cae_cuidados;
@@ -368,6 +368,77 @@ select is(
     where dog_id = '70000000-0000-0000-0000-000000000101'
       and program_id = '70000000-0000-0000-0000-000000000201'),
   'pendente'::public.cuidado_situacao, 'programa recorrente permanece pendente'
+);
+
+select ok(
+  position(
+    'for update' in lower(pg_get_functiondef('public.prepare_dog_care_record()'::regprocedure))
+  ) > 0,
+  'registro serializa a atualização da atribuição'
+);
+
+update public.caes set status = 'adotado'
+where id = '70000000-0000-0000-0000-000000000101';
+select throws_ok(
+  $$insert into public.cae_cuidado_registros (assignment_id, type)
+    values (
+      (select id from public.cae_cuidados
+        where dog_id = '70000000-0000-0000-0000-000000000101'
+          and program_id = '70000000-0000-0000-0000-000000000201'),
+      'aplicacao'
+    )$$,
+  '23514', 'Só é possível registrar cuidados para cães disponíveis.',
+  'rejeita realização para cão fora do abrigo'
+);
+update public.caes set status = 'disponivel'
+where id = '70000000-0000-0000-0000-000000000101';
+
+update public.cuidado_programas set active = false
+where id = '70000000-0000-0000-0000-000000000201';
+select throws_ok(
+  $$insert into public.cae_cuidado_registros (assignment_id, type)
+    values (
+      (select id from public.cae_cuidados
+        where dog_id = '70000000-0000-0000-0000-000000000101'
+          and program_id = '70000000-0000-0000-0000-000000000201'),
+      'aplicacao'
+    )$$,
+  '23514', 'O item e o programa precisam estar ativos.',
+  'rejeita realização com programa inativo'
+);
+update public.cuidado_programas set active = true
+where id = '70000000-0000-0000-0000-000000000201';
+
+update public.cae_cuidados
+set status = 'suspenso', exception_reason = 'Aguardando avaliação'
+where dog_id = '70000000-0000-0000-0000-000000000101'
+  and program_id = '70000000-0000-0000-0000-000000000201';
+select throws_ok(
+  $$insert into public.cae_cuidado_registros (assignment_id, type)
+    values (
+      (select id from public.cae_cuidados
+        where dog_id = '70000000-0000-0000-0000-000000000101'
+          and program_id = '70000000-0000-0000-0000-000000000201'),
+      'aplicacao'
+    )$$,
+  '23514', 'O cuidado precisa estar pendente ou em andamento.',
+  'rejeita realização de cuidado suspenso'
+);
+update public.cae_cuidados
+set status = 'pendente', exception_reason = null
+where dog_id = '70000000-0000-0000-0000-000000000101'
+  and program_id = '70000000-0000-0000-0000-000000000201';
+
+select throws_ok(
+  $$insert into public.cae_cuidado_registros (assignment_id, type, occurred_at)
+    values (
+      (select id from public.cae_cuidados
+        where dog_id = '70000000-0000-0000-0000-000000000101'
+          and program_id = '70000000-0000-0000-0000-000000000201'),
+      'aplicacao', now() + interval '1 day'
+    )$$,
+  '23514', 'A realização não pode ser registrada no futuro.',
+  'rejeita realização em data futura'
 );
 
 select lives_ok(

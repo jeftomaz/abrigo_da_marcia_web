@@ -1,7 +1,6 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import {
   Action,
-  STATUS_LABELS,
   Switch,
   TextField,
   getAdminErrorMessage,
@@ -33,7 +32,9 @@ export function CareProgramForm({
   const [name, setName] = useState(program?.name ?? '')
   const [itemId, setItemId] = useState(program?.itemId ?? preferredItemId ?? '')
   const [scope, setScope] = useState<CareScope>(program?.scope ?? 'todos')
-  const [dogIds, setDogIds] = useState(assignedDogIds)
+  const [dogIds, setDogIds] = useState(
+    assignedDogIds.filter((id) => dogs.some((dog) => dog.id === id && dog.status === 'disponivel')),
+  )
   const [defaultDose, setDefaultDose] = useState(program?.defaultDose ?? '')
   const [defaultFrequency, setDefaultFrequency] = useState(program?.defaultFrequency ?? '')
   const [defaultIntervalDays, setDefaultIntervalDays] = useState(
@@ -46,8 +47,10 @@ export function CareProgramForm({
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const selectedItem = items.find((item) => item.id === itemId)
-  const sortedDogs = useMemo(
-    () => [...dogs].sort((left, right) => left.name.localeCompare(right.name, 'pt-BR')),
+  const availableDogs = useMemo(
+    () => dogs
+      .filter((dog) => dog.status === 'disponivel')
+      .sort((left, right) => left.name.localeCompare(right.name, 'pt-BR')),
     [dogs],
   )
 
@@ -178,22 +181,18 @@ export function CareProgramForm({
           <fieldset className="mt-4">
             <legend className="font-medium">Cães do programa*</legend>
             <div className="mt-2 grid max-h-52 gap-2 overflow-y-auto rounded-xl border-2 border-cinza-medio p-3 sm:grid-cols-2 dark:border-cinza-claro">
-              {sortedDogs.map((dog) => (
+              {availableDogs.map((dog) => (
                 <label key={dog.id} className="flex min-h-11 items-center gap-3 rounded-lg px-2 hover:bg-cinza-claro dark:hover:bg-cinza-medio">
                   <input
                     type="checkbox"
                     checked={dogIds.includes(dog.id)}
                     onChange={() => toggleDog(dog.id)}
-                    disabled={dog.status !== 'disponivel' && !assignedDogIds.includes(dog.id)}
                     className="size-5 accent-marca"
                   />
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">{dog.name}</span>
-                    <span className="block text-xs">{STATUS_LABELS[dog.status]}</span>
-                  </span>
+                  <span className="min-w-0 truncate font-medium">{dog.name}</span>
                 </label>
               ))}
-              {sortedDogs.length === 0 && <p className="text-sm">Nenhum cão cadastrado.</p>}
+              {availableDogs.length === 0 && <p className="text-sm">Nenhum cão disponível.</p>}
             </div>
           </fieldset>
         )}

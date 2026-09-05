@@ -546,7 +546,12 @@ test.describe('admin', () => {
       await entrar(page)
       await page.goto(`${ADMIN_URL}/#/cuidados`)
       await expect(page.getByRole('heading', { name: 'Cuidados', exact: true })).toBeVisible()
-      await page.getByRole('tab', { name: 'Programas' }).click()
+      const agendaTab = page.getByRole('tab', { name: 'Agenda' })
+      const programsTab = page.getByRole('tab', { name: 'Programas' })
+      expect(await programsTab.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe('rgb(255, 255, 255)')
+      await programsTab.click()
+      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
+      expect(await agendaTab.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe('rgb(255, 255, 255)')
       const creationHelpButton = page.getByRole('button', { name: 'O que são item e programa?' })
       await expect(creationHelpButton).toHaveAttribute('aria-expanded', 'false')
       await creationHelpButton.click()
@@ -569,6 +574,8 @@ test.describe('admin', () => {
       await expect(programDialog.getByLabel('Item de cuidado*')).toContainText(CARE_ITEM_NAME)
       await programDialog.getByLabel('Nome do programa*').fill(CARE_PROGRAM_NAME)
       await programDialog.getByLabel('Atende*').selectOption('selecionados')
+      await expect(programDialog.getByText('Bidu', { exact: true })).toHaveCount(0)
+      await expect(programDialog.getByText('Fumaça', { exact: true })).toHaveCount(0)
       await programDialog.getByRole('checkbox', { name: /Negão/ }).check()
       await programDialog.getByLabel('Dose padrão').fill('1 mL')
       await programDialog.getByLabel('Frequência').fill('Mensal')
@@ -577,47 +584,73 @@ test.describe('admin', () => {
       await programDialog.getByRole('button', { name: 'Salvar programa' }).click()
 
       const programCard = page.locator('article').filter({ hasText: CARE_PROGRAM_NAME })
-      const itemCard = page.locator('article').filter({ hasText: CARE_ITEM_NAME }).filter({ hasNotText: CARE_PROGRAM_NAME })
       await expect(programCard).toContainText('1 cão selecionado')
+      await programCard.getByRole('button', { name: 'Editar' }).click()
+      const editProgramDialog = page.getByRole('dialog', { name: 'Editar programa' })
+      await expect(editProgramDialog.getByText('Bidu', { exact: true })).toHaveCount(0)
+      await expect(editProgramDialog.getByText('Fumaça', { exact: true })).toHaveCount(0)
+      await expect(editProgramDialog.getByRole('checkbox', { name: /Negão/ })).toBeChecked()
+      await editProgramDialog.getByRole('button', { name: 'Cancelar' }).click()
+
+      await page.getByRole('tab', { name: 'Itens' }).click()
+      await expect(page.getByRole('heading', { name: 'Itens do catálogo' })).toBeVisible()
+      await expect(page.getByText('itens cadastrados não são excluídos', { exact: false })).toBeVisible()
+      const itemCard = page.locator('article').filter({ hasText: CARE_ITEM_NAME })
       await expect(itemCard).toContainText('Ativo')
 
       await itemCard.getByRole('button', { name: 'Desativar' }).click()
       await expect(page.getByRole('alert')).toContainText('Desative os programas deste item')
       expect(executarSql(`select active from public.cuidado_itens where name = '${CARE_ITEM_NAME}'`)).toBe('t')
 
+      await page.getByRole('tab', { name: 'Programas' }).click()
       await programCard.getByRole('button', { name: 'Desativar' }).click()
       await expect(page.getByText('Programa desativado.', { exact: true })).toBeVisible()
       await expect(programCard).toContainText('Inativo')
+
+      await page.getByRole('tab', { name: 'Itens' }).click()
       await itemCard.getByRole('button', { name: 'Desativar' }).click()
       await expect(itemCard).toContainText('Inativo')
+
+      await page.getByRole('tab', { name: 'Programas' }).click()
       await programCard.getByRole('button', { name: 'Ativar' }).click()
       await expect(page.getByRole('alert')).toContainText('O programa exige um item de cuidado ativo')
       expect(executarSql(`select active from public.cuidado_programas where name = '${CARE_PROGRAM_NAME}'`)).toBe('f')
 
+      await page.getByRole('tab', { name: 'Itens' }).click()
       await itemCard.getByRole('button', { name: 'Ativar' }).click()
       await expect(itemCard).toContainText('Ativo')
+
+      await page.getByRole('tab', { name: 'Programas' }).click()
       await programCard.getByRole('button', { name: 'Ativar' }).click()
       await expect(programCard).toContainText('Ativo')
       await page.getByRole('tab', { name: 'Agenda' }).click()
       const agendaCard = page.locator('article').filter({ hasText: CARE_PROGRAM_NAME })
       await expect(agendaCard).toContainText('Negão')
-      await agendaCard.getByRole('button', { name: 'Registrar' }).click()
-
-      const recordDialog = page.getByRole('dialog', { name: 'Registrar cuidado' })
-      await recordDialog.getByLabel('Lote').fill('LOTE-E2E')
-      await recordDialog.getByLabel('Observações').fill('Registro criado pelo E2E.')
-      await recordDialog.getByRole('button', { name: 'Registrar', exact: true }).click()
-      await expect(page.getByText('Cuidado registrado.', { exact: true })).toBeVisible()
 
       await page.getByRole('tab', { name: 'Por cão' }).click()
       await page.getByLabel('Buscar em Cuidados').fill('Negão')
       await page.getByRole('button', { name: /Negão/ }).click()
+      const dogCareCard = page.locator('article').filter({ hasText: CARE_PROGRAM_NAME })
+      await dogCareCard.getByRole('checkbox', { name: 'Marcar como realizado' }).click()
+      const quickConfirmation = page.getByRole('dialog', { name: 'Confirmar cuidado realizado' })
+      await expect(quickConfirmation).toContainText(`${CARE_ITEM_NAME} (1 mL) para Negão`)
+      await quickConfirmation.getByRole('button', { name: 'Confirmar realização' }).click()
+      await expect(page.getByText(`${CARE_ITEM_NAME} marcado como realizado para Negão.`)).toBeVisible()
+      await expect(dogCareCard.getByRole('checkbox', { name: 'Realizado hoje' })).toBeChecked()
+
+      await dogCareCard.getByRole('button', { name: 'Registrar detalhes' }).click()
+      const recordDialog = page.getByRole('dialog', { name: 'Registrar cuidado' })
+      await recordDialog.getByLabel('Tipo de registro*').selectOption('observacao')
+      await recordDialog.getByLabel('Observações').fill('Registro criado pelo E2E.')
+      await recordDialog.getByRole('button', { name: 'Registrar', exact: true }).click()
+      await expect(page.getByText('Cuidado registrado.', { exact: true })).toBeVisible()
+
       await expect(page.getByRole('region', { name: 'Cuidados do cão' })).toContainText('Aplicação realizada')
       expect(executarSql(`
         select count(*) from public.cae_cuidado_registros record
         join public.cae_cuidados assignment on assignment.id = record.assignment_id
         join public.cuidado_programas program on program.id = assignment.program_id
-        where program.name = '${CARE_PROGRAM_NAME}' and record.lot = 'LOTE-E2E'
+        where program.name = '${CARE_PROGRAM_NAME}' and record.type = 'aplicacao'
       `)).toBe('1')
     } finally {
       limparCuidadosE2E()
@@ -829,6 +862,7 @@ test.describe('admin', () => {
 
     await page.getByRole('button', { name: 'Ativar tema escuro' }).click()
     await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
+    expect(await page.getByRole('tab', { name: 'Agenda' }).evaluate((element) => getComputedStyle(element).backgroundColor)).toBe('rgb(0, 0, 0)')
     expect(await auditar(page, '[role="note"]')).toEqual([])
 
     await page.getByRole('tab', { name: 'Agenda' }).click()
@@ -1076,6 +1110,15 @@ test.describe('admin', () => {
     await page.getByRole('dialog', { name: 'Nova História' }).getByRole('button', { name: 'Cancelar' }).click()
 
     await page.goto(`${ADMIN_URL}/#/cuidados`)
+    await page.getByRole('tab', { name: 'Itens' }).click()
+    await expect(page.getByRole('heading', { name: 'Itens do catálogo' })).toBeVisible()
+    await expect(page.getByText('itens cadastrados não são excluídos', { exact: false })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Gestão de Itens em 320px')
+    await page.getByRole('button', { name: 'Novo item' }).click()
+    await expect(page.getByRole('dialog', { name: 'Novo item de cuidado' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Formulário direto de Item de Cuidados em 320px')
+    await page.getByRole('dialog', { name: 'Novo item de cuidado' }).getByRole('button', { name: 'Cancelar' }).click()
+
     await page.getByRole('tab', { name: 'Programas' }).click()
     await page.getByRole('button', { name: 'O que são item e programa?' }).click()
     await expect(page.getByRole('note', { name: 'Diferença entre item e programa' })).toBeVisible()

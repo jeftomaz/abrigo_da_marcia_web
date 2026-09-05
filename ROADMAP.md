@@ -20,8 +20,8 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 Executar antes da carga real dos cães para que o painel seja a fonte única dos dados desde o início.
 
 - `done` **Bloco 1 — fundação privada.** Catálogo flexível de itens, programas para todos/cães selecionados, atribuições individuais, registros realizados, automação para cães atuais/futuros, autoria, RLS + MFA e pgTAP.
-- `done` **Bloco 2 — aba Cuidados.** Nova rota administrativa com Agenda, Programas e busca por cão; cadastro de itens no próprio fluxo, sem listas fechadas no client. A gravação dos programas é atômica e a tranca do item serializa ativação e desativação concorrentes.
-- `todo` **Bloco 3 — integração com Cães.** Abrir o prontuário a partir da gestão atual e registrar adoções, devoluções e demais mudanças de status em transação, sem alterar `caes_public`. Serializar a atualização do resumo do cuidado ao registrar ocorrências concorrentes.
+- `done` **Bloco 2 — aba Cuidados.** Nova rota administrativa com Agenda, Programas, Itens e busca por cão; seleção restrita aos cães disponíveis e baixa rápida confirmada na visão por cão. Cadastro de itens no fluxo do programa ou na gestão dedicada, sem listas fechadas no client. Gravações de programas e ocorrências são serializadas no banco.
+- `todo` **Bloco 3 — integração com Cães.** Abrir o prontuário a partir da gestão atual e registrar adoções, devoluções e demais mudanças de status em transação, sem alterar `caes_public`. A serialização do resumo ao registrar ocorrências foi antecipada no Bloco 2.
 - `todo` **Bloco 4 — impressão.** Carteirinha A4 sem notas internas e prontuário administrativo completo, com cobertura E2E mobile/desktop.
 
 ### P0 — Publicação e produção

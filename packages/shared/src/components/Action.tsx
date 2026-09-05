@@ -18,6 +18,7 @@ type ActionVariant =
   | 'neutral'
   | 'neutral-adaptive'
   | 'neutral-inverted'
+  | 'surface-adaptive'
   | 'ghost'
   | 'ghost-adaptive'
 type ActionSize =
@@ -81,6 +82,8 @@ const BASE_CLASSES =
 //                              escuro, legível sobre qualquer superfície (card branco
 //                              ou preto). `neutral-adaptive` acompanha o tema e
 //                              `neutral-inverted` é a metade escura (Invertido).
+//   `surface-adaptive`         = superfície branca no claro e preta no escuro, para
+//                              destacar ações neutras sobre o fundo cinza da página.
 //   `ghost`                  = sem fundo: só texto sublinhado. Para a ação terciária que
 //                              não disputa atenção com a pílula ao lado ("Esqueci a
 //                              senha", "Não tenho celular", "Remover"). O sublinhado é
@@ -110,6 +113,8 @@ const VARIANT_CLASSES: Record<ActionVariant, string> = {
     'bg-cinza-claro text-cinza-escuro hover:bg-cinza-medio hover:text-cinza-claro active:bg-cinza-escuro active:text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio dark:bg-cinza-medio dark:text-cinza-claro dark:hover:bg-cinza-claro dark:hover:text-cinza-escuro dark:active:bg-cinza-escuro dark:active:text-cinza-claro disabled:pointer-events-none disabled:opacity-40',
   'neutral-inverted':
     'bg-cinza-escuro text-cinza-claro hover:bg-cinza-claro hover:text-cinza-escuro active:bg-cinza-medio active:text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio disabled:pointer-events-none disabled:opacity-40',
+  'surface-adaptive':
+    'bg-surface-raised text-on-surface-raised hover:bg-cinza-medio hover:text-cinza-claro active:bg-cinza-escuro active:text-cinza-claro focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cinza-medio dark:hover:bg-cinza-claro dark:hover:text-cinza-escuro dark:active:bg-cinza-medio dark:active:text-cinza-claro dark:focus-visible:outline-cinza-claro disabled:pointer-events-none disabled:opacity-40',
   ghost:
     'text-marca hover:text-marca-escura active:text-marca-escura focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca disabled:pointer-events-none disabled:opacity-40',
   'ghost-adaptive':
