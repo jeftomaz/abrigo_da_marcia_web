@@ -98,6 +98,12 @@ export const CARE_RECORD_TYPE_LABELS: Record<CareRecordType, string> = {
   conclusao: 'Tratamento concluído',
 }
 
+export function currentLocalDateTime() {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 16)
+}
+
 const adminCareKey = ['care', 'admin'] as const
 
 function mapCareItem(row: Tables<'cuidado_itens'>): CareItem {

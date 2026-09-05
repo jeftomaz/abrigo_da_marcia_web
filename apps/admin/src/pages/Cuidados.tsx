@@ -4,6 +4,8 @@ import {
   Dialog,
   Icon,
   STATUS_LABELS,
+  TextField,
+  currentLocalDateTime,
   getAdminErrorMessage,
   useAdminCare,
   useAdminDogs,
@@ -63,6 +65,8 @@ export function Cuidados() {
   const [preferredItemId, setPreferredItemId] = useState('')
   const [recordTargetId, setRecordTargetId] = useState('')
   const [quickRecordTargetId, setQuickRecordTargetId] = useState('')
+  const [quickRecordOccurredAt, setQuickRecordOccurredAt] = useState(currentLocalDateTime)
+  const [quickRecordError, setQuickRecordError] = useState('')
   const [showCreationHelp, setShowCreationHelp] = useState(false)
   const [operationError, setOperationError] = useState('')
   const [successMessage, showSuccess] = useSuccessMessage()
@@ -179,7 +183,13 @@ export function Cuidados() {
 
   const confirmQuickRecord = async () => {
     if (!quickRecordTarget || !quickRecordDog || !quickRecordItem) return
-    setOperationError('')
+    const occurredDate = new Date(quickRecordOccurredAt)
+    if (!quickRecordOccurredAt || Number.isNaN(occurredDate.getTime())) {
+      setQuickRecordError('Informe uma data e hora válidas.')
+      return
+    }
+
+    setQuickRecordError('')
     try {
       await saveRecord.mutateAsync({
         assignmentId: quickRecordTarget.id,
@@ -187,13 +197,13 @@ export function Cuidados() {
         lot: '',
         nextDueOn: '',
         notes: '',
-        occurredAt: new Date().toISOString(),
+        occurredAt: occurredDate.toISOString(),
         type: 'aplicacao',
       })
       setQuickRecordTargetId('')
       showSuccess(`${quickRecordItem.name} marcado como realizado para ${quickRecordDog.name}.`)
     } catch (error) {
-      setOperationError(getAdminErrorMessage(error, 'Não foi possível registrar o cuidado.'))
+      setQuickRecordError(getAdminErrorMessage(error, 'Não foi possível registrar o cuidado.'))
     }
   }
 
@@ -439,7 +449,11 @@ export function Cuidados() {
                         recordedToday={records.some((record) => record.type === 'aplicacao' && localDateKey(record.occurredAt) === today)}
                         showDog={false}
                         onRecord={() => setRecordTargetId(assignment.id)}
-                        onQuickRecord={() => setQuickRecordTargetId(assignment.id)}
+                        onQuickRecord={() => {
+                          setQuickRecordOccurredAt(currentLocalDateTime())
+                          setQuickRecordError('')
+                          setQuickRecordTargetId(assignment.id)
+                        }}
                       />
                     ) : null
                   })}
@@ -511,12 +525,30 @@ export function Cuidados() {
       {quickRecordTarget && quickRecordDog && quickRecordProgram && quickRecordItem && (
         <ConfirmationDialog
           title="Confirmar cuidado realizado"
-          description={`Registrar ${quickRecordItem.name}${quickRecordTarget.dose ? ` (${quickRecordTarget.dose})` : ''} para ${quickRecordDog.name} agora? A próxima data será calculada conforme o programa ${quickRecordProgram.name}.`}
+          description={`Confirme ${quickRecordItem.name}${quickRecordTarget.dose ? ` (${quickRecordTarget.dose})` : ''} para ${quickRecordDog.name}. A próxima data será calculada conforme o programa ${quickRecordProgram.name}.`}
           confirmLabel="Confirmar realização"
           isPending={saveRecord.isPending}
-          onCancel={() => setQuickRecordTargetId('')}
+          onCancel={() => {
+            setQuickRecordTargetId('')
+            setQuickRecordError('')
+          }}
           onConfirm={() => void confirmQuickRecord()}
-        />
+        >
+          <label htmlFor="quick-care-occurred-at" className="mt-5 block font-medium">
+            Data e hora da realização*
+            <TextField
+              id="quick-care-occurred-at"
+              type="datetime-local"
+              value={quickRecordOccurredAt}
+              max={currentLocalDateTime()}
+              onChange={(event) => setQuickRecordOccurredAt(event.target.value)}
+              required
+              className="mt-1 px-3 py-2"
+            />
+            <span className="mt-1 block text-xs">Ajuste se o cuidado foi administrado antes.</span>
+          </label>
+          {quickRecordError && <p role="alert" className="mt-4 text-sm font-medium text-marca">{quickRecordError}</p>}
+        </ConfirmationDialog>
       )}
     </main>
   )

@@ -634,9 +634,24 @@ test.describe('admin', () => {
       await dogCareCard.getByRole('checkbox', { name: 'Marcar como realizado' }).click()
       const quickConfirmation = page.getByRole('dialog', { name: 'Confirmar cuidado realizado' })
       await expect(quickConfirmation).toContainText(`${CARE_ITEM_NAME} (1 mL) para Negão`)
+      const occurredAtField = quickConfirmation.getByLabel('Data e hora da realização*')
+      const currentLocalDate = await page.evaluate(() => {
+        const now = new Date()
+        return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+      })
+      await expect(occurredAtField).toHaveValue(new RegExp(`^${currentLocalDate}T`))
+      await occurredAtField.fill(`${currentLocalDate}T00:00`)
+      expect(await auditar(page, '[role="dialog"]')).toEqual([])
       await quickConfirmation.getByRole('button', { name: 'Confirmar realização' }).click()
       await expect(page.getByText(`${CARE_ITEM_NAME} marcado como realizado para Negão.`)).toBeVisible()
       await expect(dogCareCard.getByRole('checkbox', { name: 'Realizado hoje' })).toBeChecked()
+      expect(executarSql(`
+        select to_char(record.occurred_at at time zone 'America/Sao_Paulo', 'YYYY-MM-DD"T"HH24:MI')
+        from public.cae_cuidado_registros record
+        join public.cae_cuidados assignment on assignment.id = record.assignment_id
+        join public.cuidado_programas program on program.id = assignment.program_id
+        where program.name = '${CARE_PROGRAM_NAME}' and record.type = 'aplicacao'
+      `)).toBe(`${currentLocalDate}T00:00`)
 
       await dogCareCard.getByRole('button', { name: 'Registrar detalhes' }).click()
       const recordDialog = page.getByRole('dialog', { name: 'Registrar cuidado' })

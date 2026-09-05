@@ -3,6 +3,7 @@ import {
   Action,
   CARE_RECORD_TYPE_LABELS,
   TextField,
+  currentLocalDateTime,
   getAdminErrorMessage,
 } from '@abrigo/shared'
 import type {
@@ -21,12 +22,6 @@ type CareRecordFormProps = {
   onCancel: () => void
   onSave: (draft: CareRecordDraft) => Promise<void>
   program: CareProgram
-}
-
-function currentLocalDateTime() {
-  const now = new Date()
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
-  return local.toISOString().slice(0, 16)
 }
 
 export function CareRecordForm({ assignment, dog, item, onCancel, onSave, program }: CareRecordFormProps) {

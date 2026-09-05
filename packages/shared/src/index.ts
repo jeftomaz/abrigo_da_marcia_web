@@ -44,6 +44,7 @@ export type {
 export {
   CARE_RECORD_TYPE_LABELS,
   CARE_STATUS_LABELS,
+  currentLocalDateTime,
   useAdminCare,
   useCareRecords,
   useSaveCareItem,
