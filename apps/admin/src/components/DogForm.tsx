@@ -14,6 +14,7 @@ import type {
   DogSize,
 } from '@abrigo/shared'
 import { PhotoGalleryField } from './PhotoGalleryField'
+import { TagInput, type Tag } from './TagInput'
 import { getImageSubmitLabel } from './imageSubmitLabel'
 
 type DogFormProps = {
@@ -26,6 +27,8 @@ type DogFormProps = {
 
 const MAX_NAME_LENGTH = 40
 const MAX_DESCRIPTION_LENGTH = 1000
+const MAX_TAG_LENGTH = 30
+const MAX_TAGS = 12
 const CURRENT_YEAR = new Date().getFullYear()
 const MIN_BIRTH_YEAR = 1990
 const MAX_APPROX_AGE = CURRENT_YEAR - MIN_BIRTH_YEAR
@@ -51,6 +54,9 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
     dog?.birthYear ? (CURRENT_YEAR - dog.birthYear).toString() : '',
   )
   const [description, setDescription] = useState(dog?.description ?? '')
+  const [tags, setTags] = useState<Tag[]>(() =>
+    (dog?.tags ?? []).map((name) => ({ id: crypto.randomUUID(), name })),
+  )
   const { data: siteSettings } = useAdminSiteSettings()
   const [adoptionFormUrl, setAdoptionFormUrl] = useState(dog?.adoptionFormUrl ?? '')
   const [photos, setPhotos] = useState(() => toEditableDogPhotos(dog))
@@ -125,6 +131,7 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         featured: dog?.featured ?? false,
         adoptionFormUrl: normalizedAdoptionFormUrl,
         photos,
+        tags: tags.map((tag) => tag.name),
       })
     } catch (error) {
       setSaveError(getAdminErrorMessage(error, 'Não foi possível salvar o cão.'))
@@ -280,6 +287,21 @@ export function DogForm({ dog, layout, title, onCancel, onSave }: DogFormProps) 
         className="mt-1 resize-y px-3 py-2 text-sm"
       />
       <FieldError id={`${formId}-description-error`} message={fieldErrors.description} />
+
+      <label htmlFor={`${formId}-tags`} className={labelClasses}>
+        Tags
+      </label>
+      <TagInput
+        id={`${formId}-tags`}
+        tags={tags}
+        onChange={setTags}
+        maxLength={MAX_TAG_LENGTH}
+        maxTags={MAX_TAGS}
+        placeholder="Ex: canil 9, idoso, doença renal"
+      />
+      <p className="mt-1 text-xs text-cinza-medio dark:text-cinza-claro">
+        Pressione Enter após cada tag. Máximo de {MAX_TAGS} tags com {MAX_TAG_LENGTH} caracteres.
+      </p>
     </section>
   )
 

@@ -37,7 +37,9 @@ export function Caes() {
     () =>
       dogs.filter(
         (dog) =>
-          (!search || dog.name.toLowerCase().includes(search.toLowerCase())) &&
+          (!search || [dog.name, ...dog.tags].some((value) =>
+            value.toLocaleLowerCase('pt-BR').includes(search.replace(/^#/, '').toLocaleLowerCase('pt-BR')),
+          )) &&
           (!statusFilter || dog.status === statusFilter),
       ),
     [dogs, search, statusFilter],
@@ -174,8 +176,8 @@ export function Caes() {
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Busca por nome..."
-                aria-label="Busca por nome"
+                placeholder="Busca por nome ou tag..."
+                aria-label="Busca por nome ou tag"
                 className="h-10 w-full rounded-full bg-white pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
               />
             </div>

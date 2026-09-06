@@ -431,6 +431,30 @@ test.describe('admin', () => {
     await expect(page.getByRole('button', { name: 'Sair' })).toBeVisible()
   })
 
+  test('vincula tags ao cão e permite encontrá-lo pela tag', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'A persistência é coberta uma vez.')
+    try {
+      await entrar(page)
+      const dogCard = page.locator('article').filter({ hasText: 'Dentinho' })
+      await dogCard.getByRole('button', { name: 'Editar' }).click()
+
+      const form = page.getByRole('heading', { name: 'Editar Cão' }).locator('xpath=ancestor::form')
+      await form.getByLabel('Tags').fill('#Canil 9')
+      await form.getByLabel('Tags').press('Enter')
+      await form.getByLabel('Tags').fill('Doença renal')
+      await form.getByLabel('Tags').press('Enter')
+      await form.getByRole('button', { name: 'Salvar Cão' }).click()
+
+      await expect(page.getByText('Cão atualizado.')).toBeVisible()
+      await expect(dogCard.getByText('#canil 9')).toBeVisible()
+      await page.getByLabel('Busca por nome ou tag').fill('#doença renal')
+      await expect(dogCard).toBeVisible()
+      await expect(page.locator('article').filter({ hasText: 'Doguinho' })).toHaveCount(0)
+    } finally {
+      executarSql("update public.caes set tags = '{}' where name = 'Dentinho'")
+    }
+  })
+
   test('recusa código TOTP inválido', async ({ page }) => {
     await page.addInitScript(() => {
       Object.defineProperty(Navigator.prototype, 'clipboard', {
@@ -550,6 +574,7 @@ test.describe('admin', () => {
   test('gerencia agenda, programa, catálogo e registros de cuidados', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'O fluxo funcional é coberto uma vez.')
     limparCuidadosE2E()
+    executarSql("update public.caes set tags = case when name in ('Negão', 'Dentinho') then array['canil 9'] else array['outro canil'] end")
 
     try {
       await entrar(page)
@@ -693,9 +718,18 @@ test.describe('admin', () => {
       await page.getByRole('tab', { name: 'Por cão' }).click()
       const unassignedDogCare = page.getByRole('region', { name: 'Cuidados de Dentinho', exact: true })
       await expect(unassignedDogCare.locator('article').filter({ hasText: CARE_PROGRAM_NAME })).toContainText('Não recebe')
+      const selectedDogCare = page.getByRole('region', { name: 'Cuidados de Negão', exact: true })
+      await page.getByLabel('Buscar em Cuidados').fill('#canil 9')
+      await expect(unassignedDogCare).toBeVisible()
+      await expect(selectedDogCare).toBeVisible()
+      await expect(page.getByRole('region', { name: 'Cuidados de Doguinho', exact: true })).toHaveCount(0)
+      await page.getByLabel('Buscar em Cuidados').fill('')
+      await page.getByRole('button', { name: '#canil 9' }).click()
+      await expect(unassignedDogCare).toBeVisible()
+      await expect(selectedDogCare).toBeVisible()
+      await expect(page.getByRole('region', { name: 'Cuidados de Doguinho', exact: true })).toHaveCount(0)
       await page.getByLabel('Buscar em Cuidados').fill('Negão')
       await expect(unassignedDogCare).toHaveCount(0)
-      const selectedDogCare = page.getByRole('region', { name: 'Cuidados de Negão', exact: true })
       const dogCareCard = selectedDogCare.locator('article').filter({ hasText: CARE_PROGRAM_NAME })
       await dogCareCard.getByRole('checkbox', { name: 'Marcar como realizado' }).click()
       const quickConfirmation = page.getByRole('dialog', { name: 'Confirmar cuidado realizado' })
@@ -738,6 +772,7 @@ test.describe('admin', () => {
       `)).toBe('1')
     } finally {
       limparCuidadosE2E()
+      executarSql("update public.caes set tags = '{}'")
     }
   })
 

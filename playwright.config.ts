@@ -21,6 +21,7 @@ export default defineConfig({
   reporter: process.env.CI ? 'line' : [['list']],
   use: {
     baseURL: PUBLIC_URL,
+    timezoneId: 'America/Sao_Paulo',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -30,6 +31,12 @@ export default defineConfig({
     { name: 'mobile-webkit', use: { ...devices['iPhone 12'], browserName: 'webkit' } },
   ],
   webServer: [
+    {
+      command: 'node scripts/serve-edge-functions.mjs',
+      url: 'http://127.0.0.1:54329',
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
     {
       command: 'pnpm --filter public exec vite --port 5173 --strictPort --host 127.0.0.1',
       url: PUBLIC_URL,

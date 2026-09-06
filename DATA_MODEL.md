@@ -45,6 +45,7 @@ erDiagram
     cae_porte size
     cae_status status
     text photos "text[] ordenado; [0]=capa"
+    text tags "text[]; somente admin"
     boolean featured
     text adoption_form_url "nullable; override do global"
     timestamptz created_at
@@ -343,6 +344,7 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 | `size` | `cae_porte` | not null |
 | `status` | `cae_status` | not null; default `disponivel` |
 | `photos` | `text[]` | not null; default `'{}'`; 0–5 caminhos ordenados no Storage, `[0]` = capa quando existir |
+| `tags` | `text[]` | not null; default `'{}'`; 0–12 tags administrativas normalizadas em minúsculas, sem `#`, com 1–30 caracteres; índice GIN para busca/agrupamento |
 | `featured` | `boolean` | not null; default `false`; destacados aparecem primeiro na view pública; alternado direto no card da listagem admin |
 | `adoption_form_url` | `text` | nullable; CHECK HTTPS quando preenchido; override opcional — vazio faz o CTA usar `site_settings.adoption_form_url` |
 | `created_at` | `timestamptz` | not null; default `now()` |
@@ -351,7 +353,7 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 ### Exposição e acesso
 
 - RLS habilitada na tabela; as migrations não concedem acesso direto a `anon`.
-- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, `featured` e `adoption_form_url`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status`.
+- View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, `featured` e `adoption_form_url`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status` nem `tags` administrativas.
 - CRUD e Storage exigem admin autenticado com `aal2`; `anon` não possui acesso direto.
 
 ## Cuidados dos cães

@@ -78,20 +78,6 @@ jobs:
       - name: Instalar navegadores
         run: npx playwright install --with-deps chromium webkit
 
-      # `supabase start` deixa o edge runtime em "Stopped services": sem este
-      # passo, o teste de CORS das Edge Functions recebe 503 em vez de 403.
-      # Sem ADMIN_ALLOWED_ORIGINS, `admin-http.ts` cai nas origens locais.
-      - name: Servir Edge Functions
-        run: |
-          supabase functions serve --no-verify-jwt &
-          for _ in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS \
-              http://127.0.0.1:54321/functions/v1/activate-event || true)
-            case "$code" in 000|503) sleep 2 ;; *) echo "edge runtime pronto ($code)"; exit 0 ;; esac
-          done
-          echo 'edge runtime não respondeu' >&2
-          exit 1
-
       - name: E2E
         run: pnpm e2e
 

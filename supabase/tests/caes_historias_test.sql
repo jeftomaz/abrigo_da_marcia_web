@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(41);
+select plan(47);
 
 -- Isola o catálogo dos registros fictícios do seed; o rollback final os devolve.
 delete from public.historias;
@@ -59,6 +59,27 @@ select is(
   (select featured from public.caes where id = '50000000-0000-0000-0000-000000000001'),
   false,
   'não destaca o cão no catálogo por padrão'
+);
+
+update public.caes
+set tags = array[' #Canil 9 ', 'Doença   renal']
+where id = '50000000-0000-0000-0000-000000000001';
+select is(
+  (select tags from public.caes where id = '50000000-0000-0000-0000-000000000001'),
+  array['canil 9', 'doença renal'],
+  'normaliza e vincula tags ao cão'
+);
+select throws_ok(
+  $$update public.caes set tags = array['idoso', 'IDOSO'] where id = '50000000-0000-0000-0000-000000000001'$$,
+  '23514', null, 'rejeita tags repetidas após normalização'
+);
+select throws_ok(
+  $$update public.caes set tags = array[repeat('a', 31)] where id = '50000000-0000-0000-0000-000000000001'$$,
+  '23514', null, 'rejeita tag acima de 30 caracteres'
+);
+select throws_ok(
+  $$update public.caes set tags = array['1','2','3','4','5','6','7','8','9','10','11','12','13'] where id = '50000000-0000-0000-0000-000000000001'$$,
+  '23514', null, 'rejeita mais de 12 tags por cão'
 );
 
 update public.caes
@@ -136,6 +157,7 @@ select is(
 );
 select hasnt_column('public', 'caes_public', 'status', 'não revela o status interno do cão ao público');
 select hasnt_column('public', 'caes_public', 'created_at', 'não revela a data de cadastro do cão ao público');
+select hasnt_column('public', 'caes_public', 'tags', 'não expõe tags administrativas ao público');
 
 update public.historias set published = true where id = '60000000-0000-0000-0000-000000000001';
 insert into public.historias (id, name, description, photos, published)
@@ -164,6 +186,10 @@ set local role anon;
 select throws_ok(
   $$select 1 from public.caes$$,
   '42501', null, 'nega ao anônimo a leitura direta da tabela de cães'
+);
+select throws_ok(
+  $$select tags from public.caes$$,
+  '42501', null, 'nega ao anônimo a leitura das tags dos cães'
 );
 select throws_ok(
   $$select 1 from public.historias$$,

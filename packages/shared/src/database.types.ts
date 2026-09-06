@@ -209,6 +209,7 @@ export type Database = {
           photos: string[]
           size: Database["public"]["Enums"]["cae_porte"]
           status: Database["public"]["Enums"]["cae_status"]
+          tags: string[]
           updated_at: string
           updated_by: string | null
           updated_by_name: string
@@ -225,6 +226,7 @@ export type Database = {
           photos?: string[]
           size: Database["public"]["Enums"]["cae_porte"]
           status?: Database["public"]["Enums"]["cae_status"]
+          tags?: string[]
           updated_at?: string
           updated_by?: string | null
           updated_by_name?: string
@@ -241,6 +243,7 @@ export type Database = {
           photos?: string[]
           size?: Database["public"]["Enums"]["cae_porte"]
           status?: Database["public"]["Enums"]["cae_status"]
+          tags?: string[]
           updated_at?: string
           updated_by?: string | null
           updated_by_name?: string
