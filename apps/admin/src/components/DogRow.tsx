@@ -48,6 +48,15 @@ export function DogRow({ dog, isEditing, onEdit, onRemove, onSetFeatured, onSetS
 
       <div className="flex min-w-0 flex-col items-start gap-2 self-center">
         <p className="min-w-0 text-base leading-tight font-medium linha:text-lg">{dog.name}</p>
+        {dog.tags.length > 0 && (
+          <div className="flex max-w-full flex-wrap gap-1" aria-label={`Tags de ${dog.name}`}>
+            {dog.tags.map((tag) => (
+              <span key={tag} className="rounded-full bg-marca px-2 py-0.5 text-xs text-marca-clara">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
         <Action
           onClick={() => onSetFeatured(!dog.featured)}
           size="admin-inline"

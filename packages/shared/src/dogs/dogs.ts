@@ -28,6 +28,7 @@ export type Dog = {
   /** Override opcional do formulário de adoção; vazio usa o link global de Configurações. */
   adoptionFormUrl: string
   photos: string[]
+  tags: string[]
 }
 
 export type DogPatch = { featured?: boolean; status?: DogStatus }
@@ -61,6 +62,7 @@ function mapDog(row: Tables<'caes'>): Dog {
     featured: row.featured,
     adoptionFormUrl: row.adoption_form_url ?? '',
     photos: row.photos,
+    tags: row.tags,
   }
 }
 
@@ -88,6 +90,7 @@ function mapPublicDog(row: Tables<'caes_public'>): Dog {
     featured: row.featured ?? false,
     adoptionFormUrl: row.adoption_form_url ?? '',
     photos: row.photos ?? [],
+    tags: [],
   }
 }
 
@@ -139,6 +142,7 @@ async function saveDog(draft: DogDraft) {
     featured: draft.featured,
     adoption_form_url: draft.adoptionFormUrl.trim() || null,
     photos,
+    tags: draft.tags,
   }
 
   const request = draft.id

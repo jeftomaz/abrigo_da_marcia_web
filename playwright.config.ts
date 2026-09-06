@@ -31,6 +31,12 @@ export default defineConfig({
   ],
   webServer: [
     {
+      command: 'node scripts/serve-edge-functions.mjs',
+      url: 'http://127.0.0.1:54329',
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    {
       command: 'pnpm --filter public exec vite --port 5173 --strictPort --host 127.0.0.1',
       url: PUBLIC_URL,
       reuseExistingServer: false,

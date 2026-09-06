@@ -23,7 +23,7 @@ Executar antes da carga real dos cães para que o painel seja a fonte única dos
 - `done` **Bloco 2 — aba Cuidados.** Agenda, Programas, Itens e visão por cão sempre expandida, com a mesma ordem de programas e indicação de cuidados não recebidos; categorias e frequências personalizadas são gerenciadas em Configurações, enquanto hora/dia/semana/mês/ano permanecem fixas. Todo item mantém estoque automático, com baixa por aplicação e ajuste manual motivado; gravações concorrentes são serializadas no banco.
 - `todo` **Bloco 3 — integração com Cães.** Abrir o prontuário a partir da gestão atual e registrar adoções, devoluções e demais mudanças de status em transação, sem alterar `caes_public`. A serialização do resumo ao registrar ocorrências foi antecipada no Bloco 2.
 - `todo` **Bloco 4 — impressão.** Carteirinha A4 sem notas internas e prontuário administrativo completo, com cobertura E2E mobile/desktop.
-- `todo` **Branch posterior — tags de cães.** Agrupamento flexível (`#canil9`, `#doente`, `#idoso`) na gestão e busca de cães; fora do escopo da aba Cuidados.
+- `done` **Branch posterior — tags de cães.** Inclusão, vínculo, exibição, busca administrativa e agrupamento em Cuidados > Por cão por tags flexíveis (`#canil9`, `#doente`, `#idoso`).
 
 ### P0 — Backend de aplicação e redução da superfície do frontend
 

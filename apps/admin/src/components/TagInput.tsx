@@ -1,21 +1,23 @@
 import { useState } from 'react'
 import { Icon } from '@abrigo/shared'
 
-type Tag = { id: string; name: string }
+export type Tag = { id: string; name: string }
 
 type TagInputProps = {
   id: string
+  maxLength?: number
+  maxTags?: number
   onChange: (tags: Tag[]) => void
   placeholder?: string
   tags: Tag[]
 }
 
-export function TagInput({ id, onChange, placeholder, tags }: TagInputProps) {
+export function TagInput({ id, maxLength, maxTags, onChange, placeholder, tags }: TagInputProps) {
   const [value, setValue] = useState('')
 
   const addTag = () => {
     const name = value.trim()
-    if (!name) return
+    if (!name || (maxTags !== undefined && tags.length >= maxTags)) return
     if (!tags.some((tag) => tag.name.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))) {
       onChange([...tags, { id: crypto.randomUUID(), name }])
     }
@@ -42,6 +44,8 @@ export function TagInput({ id, onChange, placeholder, tags }: TagInputProps) {
         id={id}
         value={value}
         onChange={(event) => setValue(event.target.value)}
+        maxLength={maxLength}
+        disabled={maxTags !== undefined && tags.length >= maxTags}
         onBlur={addTag}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
