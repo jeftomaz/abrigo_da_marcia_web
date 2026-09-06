@@ -4,6 +4,7 @@ import { Action, Icon, Logo, supabase, TextField } from '@abrigo/shared'
 import { AuthenticatorCodeForm } from './AuthenticatorCodeForm'
 import { AdminAuthContext } from './AdminAuthContext'
 import { isStrongPassword, PasswordChangeForm, PasswordRequirements } from './PasswordChangeForm'
+import { generateLocalTotp, getLocalAdminCredentials } from './localAdminAccess'
 
 const LAST_ACTIVITY_KEY = 'abrigo-admin-last-activity-at'
 const INACTIVITY_LIMIT_MS = 7 * 24 * 60 * 60 * 1000
@@ -103,10 +104,12 @@ function PasswordRecoveryRequest({
 
 function Login({
   notice,
+  onLocalAccess,
   onRequestReset,
   onSubmit,
 }: {
   notice?: string
+  onLocalAccess?: () => Promise<void>
   onRequestReset: (email: string) => Promise<void>
   onSubmit: (email: string, password: string) => Promise<void>
 }) {
@@ -116,6 +119,7 @@ function Login({
   const [showRecovery, setShowRecovery] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLocalSubmitting, setIsLocalSubmitting] = useState(false)
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -127,6 +131,19 @@ function Login({
       setError('E-mail ou senha inválidos.')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const accessLocal = async () => {
+    if (!onLocalAccess) return
+    setIsLocalSubmitting(true)
+    setError('')
+    try {
+      await onLocalAccess()
+    } catch {
+      setError('Não foi possível iniciar o acesso local. Reinicie o ambiente de testes.')
+    } finally {
+      setIsLocalSubmitting(false)
     }
   }
 
@@ -176,6 +193,20 @@ function Login({
         <Action type="submit" disabled={isSubmitting} className="mt-6 w-full px-6">
           {isSubmitting ? 'Entrando...' : 'Entrar'}
         </Action>
+        {import.meta.env.DEV && onLocalAccess && (
+          <div className="mt-6 border-t border-cinza-medio/30 pt-6 text-center">
+            <Action
+              type="button"
+              variant="secondary-adaptive"
+              disabled={isLocalSubmitting || isSubmitting}
+              onClick={() => void accessLocal()}
+              className="w-full px-6"
+            >
+              {isLocalSubmitting ? 'Preparando acesso...' : 'Entrar no ambiente local'}
+            </Action>
+            <p className="mt-2 text-sm text-cinza-medio">Disponível apenas no Supabase local.</p>
+          </div>
+        )}
       </form>
     </AuthLayout>
   )
@@ -383,6 +414,7 @@ export function AdminAuth({ children }: { children: ReactNode }) {
   const completingRegistration = useRef(false)
   const recoveringPassword = useRef(false)
   const refreshedInvitationRole = useRef(false)
+  const localCredentials = import.meta.env.DEV ? getLocalAdminCredentials() : null
 
   const signOut = useCallback(async () => {
     recoveringPassword.current = false
@@ -517,6 +549,29 @@ export function AdminAuth({ children }: { children: ReactNode }) {
     await inspectSession(data.session)
   }
 
+  const loginLocal = import.meta.env.DEV && localCredentials ? async () => {
+    try {
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: localCredentials.email,
+        password: localCredentials.password,
+      })
+      if (loginError) throw loginError
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors()
+      if (factorsError) throw factorsError
+      const factor = factors.totp.find((item) => item.status === 'verified')
+      if (!factor) throw new Error('Autenticador local indisponível.')
+      const code = await generateLocalTotp(localCredentials.totpSecret)
+      const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code })
+      if (verifyError) throw verifyError
+      localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()))
+      const { data } = await supabase.auth.getSession()
+      await inspectSession(data.session)
+    } catch (error) {
+      await signOut()
+      throw error
+    }
+  } : undefined
+
   const requestPasswordReset = async (email: string) => {
     const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
@@ -623,7 +678,14 @@ export function AdminAuth({ children }: { children: ReactNode }) {
   } : null
 
   if (state.status === 'checking') return <AuthLayout><p role="status" className="text-center">Verificando sessão...</p></AuthLayout>
-  if (state.status === 'signed-out') return <Login notice={state.notice} onRequestReset={requestPasswordReset} onSubmit={login} />
+  if (state.status === 'signed-out') return (
+    <Login
+      notice={state.notice}
+      onLocalAccess={loginLocal}
+      onRequestReset={requestPasswordReset}
+      onSubmit={login}
+    />
+  )
   if (state.status === 'forbidden') return (
     <AuthLayout>
       <h1 className="text-3xl font-medium text-marca">Acesso negado</h1>

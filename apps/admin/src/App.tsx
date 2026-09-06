@@ -6,6 +6,7 @@ import { AdminHeader } from './components/AdminHeader'
 
 const Caes = lazy(() => import('./pages/Caes').then((m) => ({ default: m.Caes })))
 const Configuracoes = lazy(() => import('./pages/Configuracoes').then((m) => ({ default: m.Configuracoes })))
+const Cuidados = lazy(() => import('./pages/Cuidados').then((m) => ({ default: m.Cuidados })))
 const Eventos = lazy(() => import('./pages/Eventos').then((m) => ({ default: m.Eventos })))
 const Historias = lazy(() => import('./pages/Historias').then((m) => ({ default: m.Historias })))
 const NotFound = lazy(() => import('./pages/NotFound').then((m) => ({ default: m.NotFound })))
@@ -29,6 +30,7 @@ function App() {
             <Routes>
               <Route element={<AdminShell />}>
                 <Route path="/" element={<Caes />} />
+                <Route path="/cuidados" element={<Cuidados />} />
                 <Route path="/historias" element={<Historias />} />
                 <Route path="/eventos" element={<Eventos />} />
                 <Route path="/configuracoes" element={<Configuracoes />} />

@@ -25,6 +25,10 @@ const EVENTOS_HISTORICO_IDS = [
   'e2000000-0000-0000-0000-000000000002',
   'e2000000-0000-0000-0000-000000000003',
 ]
+const CARE_ITEM_NAME = 'Vacina E2E Cuidados'
+const CARE_PROGRAM_NAME = 'Programa E2E Cuidados'
+const CARE_CATEGORY_NAME = 'Categoria E2E Cuidados'
+const CARE_FREQUENCY_COUNT = 10
 
 let credenciais: { accessToken: string; email: string; senha: string; segredo: string }
 
@@ -36,8 +40,9 @@ test.afterAll(() => {
   removerAdminDeTeste()
 })
 
-async function auditar(page: Page) {
-  const { violations } = await new AxeBuilder({ page }).withTags(PADROES).analyze()
+async function auditar(page: Page, include?: string) {
+  const auditor = new AxeBuilder({ page }).withTags(PADROES)
+  const { violations } = await (include ? auditor.include(include) : auditor).analyze()
   const conhecido = (cor?: string) => Boolean(cor && (FAMILIA_DA_MARCA.has(cor) || SUPERFICIES.has(cor)))
 
   return violations
@@ -201,6 +206,31 @@ function limparEventoDePublicacao() {
     update public.event_settings set event_export_email = null where singleton;
     select public.activate_event('a1000000-0000-0000-0000-000000000001')
     where not exists (select 1 from public.eventos where status = 'ativo');
+  `)
+}
+
+function limparCuidadosE2E() {
+  executarSql(`
+    delete from public.cuidado_estoque_movimentos
+    where item_id in (
+      select item.id from public.cuidado_itens item where item.name = '${CARE_ITEM_NAME}'
+    );
+    delete from public.cae_cuidado_registros
+    where assignment_id in (
+      select assignment.id
+      from public.cae_cuidados assignment
+      join public.cuidado_programas program on program.id = assignment.program_id
+      where program.name = '${CARE_PROGRAM_NAME}'
+    );
+    delete from public.cae_cuidados
+    where program_id in (
+      select id from public.cuidado_programas where name = '${CARE_PROGRAM_NAME}'
+    );
+    delete from public.cuidado_programas where name = '${CARE_PROGRAM_NAME}';
+    delete from public.cuidado_itens where name = '${CARE_ITEM_NAME}';
+    delete from public.cuidado_categorias where name = '${CARE_CATEGORY_NAME}';
+    delete from public.cuidado_frequencias
+    where interval_count = ${CARE_FREQUENCY_COUNT} and interval_unit = 'dia' and not predefined;
   `)
 }
 
@@ -501,7 +531,7 @@ test.describe('admin', () => {
   test('navega entre as gestões e encerra a sessão', async ({ page }) => {
     await entrar(page)
 
-    for (const aba of ['Histórias', 'Eventos', 'Configurações']) {
+    for (const aba of ['Cuidados', 'Histórias', 'Eventos', 'Configurações']) {
       await page.getByRole('link', { name: aba }).click()
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     }
@@ -515,6 +545,200 @@ test.describe('admin', () => {
     await page.getByRole('button', { name: 'Sair' }).click()
     await page.getByRole('dialog', { name: 'Sair da área administrativa' }).getByRole('button', { name: 'Sair' }).click()
     await expect(page.getByRole('heading', { name: 'Acesso administrativo' })).toBeVisible()
+  })
+
+  test('gerencia agenda, programa, catálogo e registros de cuidados', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'O fluxo funcional é coberto uma vez.')
+    limparCuidadosE2E()
+
+    try {
+      await entrar(page)
+      await page.goto(`${ADMIN_URL}/#/configuracoes`)
+      const careSettings = page.getByRole('region', { name: 'Gestão de Cuidados' })
+      const categorySettings = careSettings.locator('article').filter({ hasText: 'Categorias dos itens' })
+      await categorySettings.getByRole('button', { name: 'Editar' }).click()
+      const categoryForm = page.locator('form').filter({ has: page.getByRole('heading', { name: 'Editar Categorias' }) })
+      await categoryForm.getByRole('button', { name: 'Adicionar categoria' }).click()
+      await categoryForm.getByRole('group').last().getByLabel('Nome*').fill(CARE_CATEGORY_NAME)
+      await categoryForm.getByRole('button', { name: 'Salvar categorias' }).click()
+      await expect(page.getByText('Categorias de Cuidados salvas.')).toBeVisible()
+      expect(executarSql(`
+        select active from public.cuidado_categorias where name = '${CARE_CATEGORY_NAME}'
+      `)).toBe('t')
+
+      const frequencySettings = careSettings.locator('article').filter({ hasText: 'Frequências de administração' })
+      await frequencySettings.getByRole('button', { name: 'Editar' }).click()
+      const frequencyForm = page.locator('form').filter({ has: page.getByRole('heading', { name: 'Gerenciar Frequências' }) })
+      await expect(frequencyForm.getByText('A cada 1 hora', { exact: true })).toBeVisible()
+      await expect(frequencyForm.getByText('A cada 1 ano', { exact: true })).toBeVisible()
+      await frequencyForm.getByRole('button', { name: 'Adicionar personalizada' }).click()
+      const newFrequency = frequencyForm.getByRole('group').last()
+      await newFrequency.getByLabel('Intervalo*').fill(String(CARE_FREQUENCY_COUNT))
+      await newFrequency.getByLabel('Unidade*').selectOption('dia')
+      await frequencyForm.getByRole('button', { name: 'Salvar personalizadas' }).click()
+      await expect(page.getByText('Frequências de Cuidados salvas.')).toBeVisible()
+      expect(executarSql(`
+        select concat(interval_count, '|', interval_unit, '|', predefined)
+        from public.cuidado_frequencias
+        where interval_count = ${CARE_FREQUENCY_COUNT} and interval_unit = 'dia'
+      `)).toBe('10|dia|f')
+
+      await page.goto(`${ADMIN_URL}/#/cuidados`)
+      await expect(page.getByRole('heading', { name: 'Cuidados', exact: true })).toBeVisible()
+      const agendaTab = page.getByRole('tab', { name: 'Agenda' })
+      const programsTab = page.getByRole('tab', { name: 'Programas' })
+      expect(await programsTab.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe('rgb(255, 255, 255)')
+      await programsTab.click()
+      await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
+      expect(await agendaTab.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe('rgb(255, 255, 255)')
+      const creationHelpButton = page.getByRole('button', { name: 'O que são item e programa?' })
+      await expect(creationHelpButton).toHaveAttribute('aria-expanded', 'false')
+      await creationHelpButton.click()
+      const creationHelp = page.getByRole('note', { name: 'Diferença entre item e programa' })
+      await expect(creationHelp).toContainText('Item: é o cuidado em si e concentra sua frequência')
+      await expect(creationHelp).toContainText('Programa: define a dose, o período')
+      await page.getByRole('button', { name: 'Ocultar explicação' }).click()
+      await expect(creationHelp).toHaveCount(0)
+      await page.getByRole('button', { name: 'Novo programa' }).click()
+
+      const programDialog = page.getByRole('dialog', { name: 'Novo programa' })
+      await programDialog.getByRole('button', { name: 'Cadastrar novo item' }).click()
+      const itemDialog = page.getByRole('dialog', { name: 'Novo item de cuidado' })
+      await itemDialog.getByLabel('Nome*').fill(CARE_ITEM_NAME)
+      await itemDialog.getByLabel('Categoria*').selectOption({ label: CARE_CATEGORY_NAME })
+      const manageLinks = itemDialog.getByRole('link', { name: 'Gerenciar' })
+      await expect(manageLinks.first()).toHaveAttribute(
+        'href',
+        /\/configuracoes\?editor=care-categories$/,
+      )
+      await expect(manageLinks.last()).toHaveAttribute(
+        'href',
+        /\/configuracoes\?editor=care-frequencies$/,
+      )
+      const frequencySelect = itemDialog.getByLabel('Frequência')
+      const frequencyOptions = await frequencySelect.locator('option').allTextContents()
+      expect(frequencyOptions.indexOf('A cada 1 hora')).toBeLessThan(frequencyOptions.indexOf('A cada 1 dia'))
+      expect(frequencyOptions.indexOf('A cada 1 dia')).toBeLessThan(frequencyOptions.indexOf('A cada 1 semana'))
+      expect(frequencyOptions.indexOf('A cada 1 semana')).toBeLessThan(frequencyOptions.indexOf('A cada 1 mês'))
+      expect(frequencyOptions.indexOf('A cada 1 mês')).toBeLessThan(frequencyOptions.indexOf('A cada 1 ano'))
+      await frequencySelect.selectOption({ label: 'A cada 10 dias' })
+      await itemDialog.getByLabel('Quantidade disponível*').fill('2')
+      await itemDialog.getByRole('button', { name: 'Salvar item' }).click()
+
+      await expect(itemDialog).toHaveCount(0)
+      await expect(programDialog.getByLabel('Item de cuidado*')).toContainText(CARE_ITEM_NAME)
+      await programDialog.getByLabel('Nome do programa*').fill(CARE_PROGRAM_NAME)
+      await programDialog.getByLabel('Atende*').selectOption('selecionados')
+      await expect(programDialog.getByText('Bidu', { exact: true })).toHaveCount(0)
+      await expect(programDialog.getByText('Fumaça', { exact: true })).toHaveCount(0)
+      await programDialog.getByRole('checkbox', { name: /Negão/ }).check()
+      await programDialog.getByLabel('Dose padrão').fill('1 mL')
+      await programDialog.getByLabel('Data inicial').fill('2026-09-04')
+      await programDialog.getByRole('button', { name: 'Salvar programa' }).click()
+
+      const programCard = page.locator('article').filter({ hasText: CARE_PROGRAM_NAME })
+      await expect(programCard).toContainText('1 cão selecionado')
+      await programCard.getByRole('button', { name: 'Editar' }).click()
+      const editProgramDialog = page.getByRole('dialog', { name: 'Editar programa' })
+      await expect(editProgramDialog.getByText('Bidu', { exact: true })).toHaveCount(0)
+      await expect(editProgramDialog.getByText('Fumaça', { exact: true })).toHaveCount(0)
+      await expect(editProgramDialog.getByRole('checkbox', { name: /Negão/ })).toBeChecked()
+      await editProgramDialog.getByRole('button', { name: 'Cancelar' }).click()
+
+      await page.getByRole('tab', { name: 'Itens' }).click()
+      await expect(page.getByRole('heading', { name: 'Itens do catálogo' })).toBeVisible()
+      await expect(page.getByText('itens cadastrados não são excluídos', { exact: false })).toBeVisible()
+      const itemCard = page.locator('article').filter({ hasText: CARE_ITEM_NAME })
+      await expect(itemCard).toContainText('Ativo')
+      await expect(itemCard).toContainText('A cada 10 dias')
+      await expect(itemCard).toContainText('Estoque disponível: 2')
+
+      await itemCard.getByRole('button', { name: 'Editar' }).click()
+      const editItemDialog = page.getByRole('dialog', { name: 'Editar item de cuidado' })
+      await editItemDialog.getByLabel('Quantidade disponível*').fill('3')
+      await expect(editItemDialog.getByLabel('Motivo do ajuste de estoque*')).toBeVisible()
+      await editItemDialog.getByLabel('Motivo do ajuste de estoque*').fill('Entrada de uma unidade')
+      await editItemDialog.getByRole('button', { name: 'Salvar item' }).click()
+      await expect(itemCard).toContainText('Estoque disponível: 3')
+
+      await itemCard.getByRole('button', { name: 'Desativar' }).click()
+      await expect(page.getByRole('alert')).toContainText('Desative os programas deste item')
+      expect(executarSql(`select active from public.cuidado_itens where name = '${CARE_ITEM_NAME}'`)).toBe('t')
+
+      await page.getByRole('tab', { name: 'Programas' }).click()
+      await programCard.getByRole('button', { name: 'Desativar' }).click()
+      await expect(page.getByText('Programa desativado.', { exact: true })).toBeVisible()
+      await expect(programCard).toContainText('Inativo')
+
+      await page.getByRole('tab', { name: 'Itens' }).click()
+      await itemCard.getByRole('button', { name: 'Desativar' }).click()
+      await expect(itemCard).toContainText('Inativo')
+
+      await page.getByRole('tab', { name: 'Programas' }).click()
+      await programCard.getByRole('button', { name: 'Ativar' }).click()
+      await expect(page.getByRole('alert')).toContainText('O programa exige um item de cuidado ativo')
+      expect(executarSql(`select active from public.cuidado_programas where name = '${CARE_PROGRAM_NAME}'`)).toBe('f')
+
+      await page.getByRole('tab', { name: 'Itens' }).click()
+      await itemCard.getByRole('button', { name: 'Ativar' }).click()
+      await expect(itemCard).toContainText('Ativo')
+
+      await page.getByRole('tab', { name: 'Programas' }).click()
+      await programCard.getByRole('button', { name: 'Ativar' }).click()
+      await expect(programCard).toContainText('Ativo')
+      await page.getByRole('tab', { name: 'Agenda' }).click()
+      const agendaCard = page.locator('article').filter({ hasText: CARE_PROGRAM_NAME })
+      await expect(agendaCard).toContainText('Negão')
+
+      await page.getByRole('tab', { name: 'Por cão' }).click()
+      const unassignedDogCare = page.getByRole('region', { name: 'Cuidados de Dentinho', exact: true })
+      await expect(unassignedDogCare.locator('article').filter({ hasText: CARE_PROGRAM_NAME })).toContainText('Não recebe')
+      await page.getByLabel('Buscar em Cuidados').fill('Negão')
+      await expect(unassignedDogCare).toHaveCount(0)
+      const selectedDogCare = page.getByRole('region', { name: 'Cuidados de Negão', exact: true })
+      const dogCareCard = selectedDogCare.locator('article').filter({ hasText: CARE_PROGRAM_NAME })
+      await dogCareCard.getByRole('checkbox', { name: 'Marcar como realizado' }).click()
+      const quickConfirmation = page.getByRole('dialog', { name: 'Confirmar cuidado realizado' })
+      await expect(quickConfirmation).toContainText(`${CARE_ITEM_NAME} (1 mL) para Negão`)
+      const occurredAtField = quickConfirmation.getByLabel('Data e hora da realização*')
+      const currentLocalDate = await page.evaluate(() => {
+        const now = new Date()
+        return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+      })
+      await expect(occurredAtField).toHaveValue(new RegExp(`^${currentLocalDate}T`))
+      await occurredAtField.fill(`${currentLocalDate}T00:00`)
+      expect(await auditar(page, '[role="dialog"]')).toEqual([])
+      await quickConfirmation.getByRole('button', { name: 'Confirmar realização' }).click()
+      await expect(page.getByText(`${CARE_ITEM_NAME} marcado como realizado para Negão.`)).toBeVisible()
+      await expect(dogCareCard.getByRole('checkbox', { name: 'Realizado hoje' })).toBeChecked()
+      expect(executarSql(`
+        select to_char(record.occurred_at at time zone 'America/Sao_Paulo', 'YYYY-MM-DD"T"HH24:MI')
+        from public.cae_cuidado_registros record
+        join public.cae_cuidados assignment on assignment.id = record.assignment_id
+        join public.cuidado_programas program on program.id = assignment.program_id
+        where program.name = '${CARE_PROGRAM_NAME}' and record.type = 'aplicacao'
+      `)).toBe(`${currentLocalDate}T00:00`)
+      expect(executarSql(`
+        select stock_quantity from public.cuidado_itens where name = '${CARE_ITEM_NAME}'
+      `)).toBe('2.000')
+
+      await dogCareCard.getByRole('button', { name: 'Registrar detalhes' }).click()
+      const recordDialog = page.getByRole('dialog', { name: 'Registrar cuidado' })
+      await recordDialog.getByLabel('Tipo de registro*').selectOption('observacao')
+      await recordDialog.getByLabel('Observações').fill('Registro criado pelo E2E.')
+      await recordDialog.getByRole('button', { name: 'Registrar', exact: true }).click()
+      await expect(page.getByText('Cuidado registrado.', { exact: true })).toBeVisible()
+
+      await expect(selectedDogCare).toContainText('Aplicação realizada')
+      expect(executarSql(`
+        select count(*) from public.cae_cuidado_registros record
+        join public.cae_cuidados assignment on assignment.id = record.assignment_id
+        join public.cuidado_programas program on program.id = assignment.program_id
+        where program.name = '${CARE_PROGRAM_NAME}' and record.type = 'aplicacao'
+      `)).toBe('1')
+    } finally {
+      limparCuidadosE2E()
+    }
   })
 
   test('exige arquivar o evento encerrado antes da exclusão auditada', async ({ page }, testInfo) => {
@@ -706,6 +930,26 @@ test.describe('admin', () => {
     expect(await auditar(page)).toEqual([])
 
     await page.getByRole('button', { name: 'Ativar tema escuro' }).click()
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
+    expect(await auditar(page)).toEqual([])
+  })
+
+  test('gestão de Cuidados passa na auditoria nos dois temas', async ({ page }) => {
+    await entrar(page)
+    await page.goto(`${ADMIN_URL}/#/cuidados`)
+    await expect(page.getByRole('heading', { name: 'Cuidados', exact: true })).toBeVisible()
+    expect(await auditar(page)).toEqual([])
+
+    await page.getByRole('tab', { name: 'Programas' }).click()
+    await page.getByRole('button', { name: 'O que são item e programa?' }).click()
+    expect(await auditar(page, '[role="note"]')).toEqual([])
+
+    await page.getByRole('button', { name: 'Ativar tema escuro' }).click()
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
+    expect(await page.getByRole('tab', { name: 'Agenda' }).evaluate((element) => getComputedStyle(element).backgroundColor)).toBe('rgb(0, 0, 0)')
+    expect(await auditar(page, '[role="note"]')).toEqual([])
+
+    await page.getByRole('tab', { name: 'Agenda' }).click()
     await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
     expect(await auditar(page)).toEqual([])
   })
@@ -908,6 +1152,7 @@ test.describe('admin', () => {
       await page.setViewportSize({ width, height: 844 })
       for (const [path, heading] of [
         ['/', 'Cães Cadastrados'],
+        ['/cuidados', 'Cuidados'],
         ['/historias', 'Histórias Contadas'],
         ['/eventos', 'Eventos'],
         ['/configuracoes', 'Configurações'],
@@ -947,6 +1192,34 @@ test.describe('admin', () => {
     await expect(page.getByRole('dialog', { name: 'Nova História' })).toBeVisible()
     await expectNoHorizontalOverflow(page, 'Formulário de Histórias em 320px')
     await page.getByRole('dialog', { name: 'Nova História' }).getByRole('button', { name: 'Cancelar' }).click()
+
+    await page.goto(`${ADMIN_URL}/#/cuidados`)
+    await page.getByRole('tab', { name: 'Itens' }).click()
+    await expect(page.getByRole('heading', { name: 'Itens do catálogo' })).toBeVisible()
+    await expect(page.getByText('itens cadastrados não são excluídos', { exact: false })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Gestão de Itens em 320px')
+    await page.getByRole('button', { name: 'Novo item' }).click()
+    await expect(page.getByRole('dialog', { name: 'Novo item de cuidado' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Formulário direto de Item de Cuidados em 320px')
+    await page.getByRole('dialog', { name: 'Novo item de cuidado' }).getByRole('button', { name: 'Cancelar' }).click()
+
+    await page.getByRole('tab', { name: 'Programas' }).click()
+    await page.getByRole('button', { name: 'O que são item e programa?' }).click()
+    await expect(page.getByRole('note', { name: 'Diferença entre item e programa' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Ajuda de Cuidados em 320px')
+    await page.getByRole('button', { name: 'Novo programa' }).click()
+    const careProgramDialog = page.getByRole('dialog', { name: 'Novo programa' })
+    await expect(careProgramDialog).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Formulário de Programa de Cuidados em 320px')
+    await careProgramDialog.getByRole('button', { name: 'Cadastrar novo item' }).click()
+    await expect(page.getByRole('dialog', { name: 'Novo item de cuidado' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Formulário de Item de Cuidados em 320px')
+    await page.getByRole('dialog', { name: 'Novo item de cuidado' }).getByRole('button', { name: 'Cancelar' }).click()
+    await careProgramDialog.getByRole('button', { name: 'Cancelar' }).click()
+
+    await page.getByRole('tab', { name: 'Por cão' }).click()
+    await expect(page.getByRole('region', { name: 'Cuidados por cão' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Cuidados por cão em 320px')
 
     await page.goto(`${ADMIN_URL}/#/eventos`)
     await page.getByRole('button', { name: 'Novo Evento' }).click()
@@ -1009,6 +1282,11 @@ test.describe('admin', () => {
     await eventSettings.getByRole('button', { name: 'Editar' }).click()
     await expect(page.getByRole('dialog', { name: 'Editar configurações' })).toBeVisible()
     await expectNoHorizontalOverflow(page, 'Configurações de Eventos em 320px')
+    await page.getByRole('dialog', { name: 'Editar configurações' }).getByRole('button', { name: 'Cancelar' }).click()
+    const careSettings = page.getByLabel('Gestão de Cuidados', { exact: true })
+    await careSettings.locator('article').filter({ hasText: 'Frequências de administração' }).getByRole('button', { name: 'Editar' }).click()
+    await expect(page.getByRole('heading', { name: 'Gerenciar Frequências' })).toBeVisible()
+    await expectNoHorizontalOverflow(page, 'Configurações de Cuidados em 320px')
 
     await page.setViewportSize({ width: 1360, height: 900 })
     await page.goto(`${ADMIN_URL}/#/eventos`)

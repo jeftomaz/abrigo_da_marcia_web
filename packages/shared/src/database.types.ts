@@ -62,12 +62,14 @@ export type Database = {
           dose: string | null
           id: string
           item_category: string
+          item_frequency: string | null
           item_name: string
           item_presentation: string | null
           lot: string | null
-          next_due_on: string | null
+          next_due_at: string | null
           notes: string | null
           occurred_at: string
+          stock_quantity_used: number | null
           type: Database["public"]["Enums"]["cuidado_registro_tipo"]
           updated_at: string
           updated_by: string | null
@@ -79,12 +81,14 @@ export type Database = {
           dose?: string | null
           id?: string
           item_category?: string
+          item_frequency?: string | null
           item_name?: string
           item_presentation?: string | null
           lot?: string | null
-          next_due_on?: string | null
+          next_due_at?: string | null
           notes?: string | null
           occurred_at?: string
+          stock_quantity_used?: number | null
           type: Database["public"]["Enums"]["cuidado_registro_tipo"]
           updated_at?: string
           updated_by?: string | null
@@ -96,12 +100,14 @@ export type Database = {
           dose?: string | null
           id?: string
           item_category?: string
+          item_frequency?: string | null
           item_name?: string
           item_presentation?: string | null
           lot?: string | null
-          next_due_on?: string | null
+          next_due_at?: string | null
           notes?: string | null
           occurred_at?: string
+          stock_quantity_used?: number | null
           type?: Database["public"]["Enums"]["cuidado_registro_tipo"]
           updated_at?: string
           updated_by?: string | null
@@ -126,7 +132,7 @@ export type Database = {
           exception_reason: string | null
           frequency: string | null
           id: string
-          next_due_on: string | null
+          next_due_at: string | null
           program_id: string
           start_date: string | null
           status: Database["public"]["Enums"]["cuidado_situacao"]
@@ -142,7 +148,7 @@ export type Database = {
           exception_reason?: string | null
           frequency?: string | null
           id?: string
-          next_due_on?: string | null
+          next_due_at?: string | null
           program_id: string
           start_date?: string | null
           status?: Database["public"]["Enums"]["cuidado_situacao"]
@@ -158,7 +164,7 @@ export type Database = {
           exception_reason?: string | null
           frequency?: string | null
           id?: string
-          next_due_on?: string | null
+          next_due_at?: string | null
           program_id?: string
           start_date?: string | null
           status?: Database["public"]["Enums"]["cuidado_situacao"]
@@ -241,15 +247,137 @@ export type Database = {
         }
         Relationships: []
       }
+      cuidado_categorias: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Relationships: []
+      }
+      cuidado_estoque_movimentos: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          new_quantity: number | null
+          previous_quantity: number | null
+          reason: string | null
+          record_id: string | null
+          source: Database["public"]["Enums"]["cuidado_estoque_origem"]
+          updated_by: string | null
+          updated_by_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          new_quantity?: number | null
+          previous_quantity?: number | null
+          reason?: string | null
+          record_id?: string | null
+          source: Database["public"]["Enums"]["cuidado_estoque_origem"]
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          new_quantity?: number | null
+          previous_quantity?: number | null
+          reason?: string | null
+          record_id?: string | null
+          source?: Database["public"]["Enums"]["cuidado_estoque_origem"]
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuidado_estoque_movimentos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "cuidado_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuidado_estoque_movimentos_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "cae_cuidado_registros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cuidado_frequencias: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          interval_count: number
+          interval_unit: Database["public"]["Enums"]["cuidado_intervalo_unidade"]
+          predefined: boolean
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          interval_count: number
+          interval_unit: Database["public"]["Enums"]["cuidado_intervalo_unidade"]
+          predefined?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          interval_count?: number
+          interval_unit?: Database["public"]["Enums"]["cuidado_intervalo_unidade"]
+          predefined?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string
+        }
+        Relationships: []
+      }
       cuidado_itens: {
         Row: {
           active: boolean
           category: string
           created_at: string
+          frequency_id: string | null
           id: string
           name: string
           notes: string | null
           presentation: string | null
+          stock_quantity: number
           updated_at: string
           updated_by: string | null
           updated_by_name: string
@@ -258,10 +386,12 @@ export type Database = {
           active?: boolean
           category: string
           created_at?: string
+          frequency_id?: string | null
           id?: string
           name: string
           notes?: string | null
           presentation?: string | null
+          stock_quantity?: number
           updated_at?: string
           updated_by?: string | null
           updated_by_name?: string
@@ -270,15 +400,32 @@ export type Database = {
           active?: boolean
           category?: string
           created_at?: string
+          frequency_id?: string | null
           id?: string
           name?: string
           notes?: string | null
           presentation?: string | null
+          stock_quantity?: number
           updated_at?: string
           updated_by?: string | null
           updated_by_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cuidado_itens_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "cuidado_categorias"
+            referencedColumns: ["name"]
+          },
+          {
+            foreignKeyName: "cuidado_itens_frequency_id_fkey"
+            columns: ["frequency_id"]
+            isOneToOne: false
+            referencedRelation: "cuidado_frequencias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cuidado_programas: {
         Row: {
@@ -1414,6 +1561,13 @@ export type Database = {
         }
         Returns: string
       }
+      calculate_care_next_due: {
+        Args: {
+          p_frequency_id: string
+          p_occurred_at: string
+        }
+        Returns: string
+      }
       clean_expired_event_personal_data: { Args: never; Returns: number }
       create_reservation_session: { Args: never; Returns: string }
       current_request_ip_hash: { Args: never; Returns: string }
@@ -1495,8 +1649,50 @@ export type Database = {
           total_cents: number
         }[]
       }
+      save_care_categories: { Args: { p_categories: Json }; Returns: undefined }
+      save_care_frequencies: {
+        Args: { p_frequencies: Json }
+        Returns: undefined
+      }
+      save_care_item: {
+        Args: {
+          p_active: boolean
+          p_category: string
+          p_expected_updated_at?: string
+          p_frequency_id?: string
+          p_item_id?: string
+          p_name: string
+          p_notes?: string
+          p_stock_adjustment_reason?: string
+          p_stock_quantity?: number
+        }
+        Returns: string
+      }
+      save_care_program: {
+        Args: {
+          p_active: boolean
+          p_default_dose?: string
+          p_dog_ids: string[]
+          p_end_date?: string
+          p_instructions?: string
+          p_item_id: string
+          p_name: string
+          p_program_id?: string
+          p_scope: Database["public"]["Enums"]["cuidado_abrangencia"]
+          p_start_date?: string
+        }
+        Returns: string
+      }
       set_audit_actor: {
         Args: { p_actor_id: string; p_fallback_name?: string }
+        Returns: undefined
+      }
+      set_care_item_active: {
+        Args: {
+          p_active: boolean
+          p_expected_updated_at: string
+          p_item_id: string
+        }
         Returns: undefined
       }
       update_event_reservation: {
@@ -1518,6 +1714,8 @@ export type Database = {
       cae_porte: "pequeno" | "medio" | "grande"
       cae_status: "disponivel" | "adotado" | "falecido"
       cuidado_abrangencia: "todos" | "selecionados"
+      cuidado_estoque_origem: "cadastro" | "ajuste_manual" | "aplicacao"
+      cuidado_intervalo_unidade: "hora" | "dia" | "semana" | "mes" | "ano"
       cuidado_registro_tipo: "aplicacao" | "inicio" | "observacao" | "conclusao"
       cuidado_situacao:
         | "pendente"
@@ -1663,6 +1861,8 @@ export const Constants = {
       cae_porte: ["pequeno", "medio", "grande"],
       cae_status: ["disponivel", "adotado", "falecido"],
       cuidado_abrangencia: ["todos", "selecionados"],
+      cuidado_estoque_origem: ["cadastro", "ajuste_manual", "aplicacao"],
+      cuidado_intervalo_unidade: ["hora", "dia", "semana", "mes", "ano"],
       cuidado_registro_tipo: ["aplicacao", "inicio", "observacao", "conclusao"],
       cuidado_situacao: [
         "pendente",

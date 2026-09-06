@@ -1,29 +1,36 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Action,
   Dialog,
   getAdminErrorMessage,
+  useCareCategories,
+  useCareFrequencies,
   useAdminSiteSettings,
   useAdminSocialLinks,
   useEventSettings,
+  useSaveCareCategories,
   useSaveEventSettings,
+  useSaveCareFrequencies,
   useSaveSiteSettings,
   useSaveSocialLinks,
 } from '@abrigo/shared'
-import type { AuditMetadata, EventSettings, SiteSettings, SocialLinks } from '@abrigo/shared'
+import type { AuditMetadata, CareCategoryDraft, CareFrequencyDraft, EventSettings, SiteSettings, SocialLinks } from '@abrigo/shared'
 import { useAdminAuth } from '../auth/AdminAuthContext'
 import { AuthenticatorCodeForm } from '../auth/AuthenticatorCodeForm'
 import { PasswordChangeForm } from '../auth/PasswordChangeForm'
 import { AdminListRow } from '../components/AdminListRow'
 import { ConfirmationDialog } from '../components/ConfirmationDialog'
+import { CareCategorySettingsForm } from '../components/CareCategorySettingsForm'
+import { CareFrequencySettingsForm } from '../components/CareFrequencySettingsForm'
 import { EventSettingsForm } from '../components/EventSettingsForm'
 import { GlobalSettingsForm } from '../components/GlobalSettingsForm'
 import { StatusBadge } from '../components/StatusBadge'
 import { useIsDesktop } from '../hooks/useIsDesktop'
 import { useSuccessMessage } from '../hooks/useSuccessMessage'
 
-type Editor = 'dogs' | 'events' | 'general' | 'landing'
+type Editor = 'care-categories' | 'care-frequencies' | 'dogs' | 'events' | 'general' | 'landing'
 type SecurityDialog = 'password' | 'verification'
 
 type SettingsCardProps = {
@@ -68,31 +75,62 @@ function latestAudit(...audits: Array<AuditMetadata | null | undefined>) {
 }
 
 export function Configuracoes() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { displayName, email, removeAuthenticator, updatePassword, verifyAuthenticator } = useAdminAuth()
   const { data: siteSettings, error: siteError, isLoading: isLoadingSite } = useAdminSiteSettings()
   const { data: socialLinks, error: socialError, isLoading: isLoadingSocial } = useAdminSocialLinks()
   const { data: eventSettings, error: eventError, isLoading: isLoadingEvents } = useEventSettings()
+  const { data: careCategories, error: categoryError, isLoading: isLoadingCategories } = useCareCategories()
+  const { data: careFrequencies, error: careError, isLoading: isLoadingCare } = useCareFrequencies()
   const saveSiteSettings = useSaveSiteSettings()
   const saveSocialLinks = useSaveSocialLinks()
   const saveEventSettings = useSaveEventSettings()
-  const [editor, setEditor] = useState<Editor | null>(null)
+  const saveCareCategories = useSaveCareCategories()
+  const saveCareFrequencies = useSaveCareFrequencies()
+  const [editor, setEditor] = useState<Editor | null>(() => {
+    const requestedEditor = searchParams.get('editor')
+    return requestedEditor === 'care-categories' || requestedEditor === 'care-frequencies'
+      ? requestedEditor
+      : null
+  })
   const [securityError, setSecurityError] = useState('')
   const [confirmMfaRemoval, setConfirmMfaRemoval] = useState(false)
   const [securityDialog, setSecurityDialog] = useState<SecurityDialog | null>(null)
   const [successMessage, showSuccess] = useSuccessMessage()
   const isDesktop = useIsDesktop()
 
+  const closeEditor = () => {
+    setEditor(null)
+    if (searchParams.has('editor')) {
+      const nextParams = new URLSearchParams(searchParams)
+      nextParams.delete('editor')
+      setSearchParams(nextParams, { replace: true })
+    }
+  }
+
   const saveGlobalSettings = async (settings: SiteSettings, links: SocialLinks) => {
     if (editor === 'general') await saveSocialLinks.mutateAsync(links)
     await saveSiteSettings.mutateAsync(settings)
-    setEditor(null)
+    closeEditor()
     showSuccess('Configurações salvas.')
   }
 
   const saveEvents = async (settings: EventSettings) => {
     await saveEventSettings.mutateAsync(settings)
-    setEditor(null)
+    closeEditor()
     showSuccess('Configurações salvas.')
+  }
+
+  const saveCare = async (frequencies: CareFrequencyDraft[]) => {
+    await saveCareFrequencies.mutateAsync(frequencies)
+    closeEditor()
+    showSuccess('Frequências de Cuidados salvas.')
+  }
+
+  const saveCategories = async (categories: CareCategoryDraft[]) => {
+    await saveCareCategories.mutateAsync(categories)
+    closeEditor()
+    showSuccess('Categorias de Cuidados salvas.')
   }
 
   const removeMfa = async () => {
@@ -132,16 +170,29 @@ export function Configuracoes() {
     `Instrução pós-pagamento: ${configurationStatus(eventSettings.defaultPostPaymentInstructions)}`,
     `E-mail para exportação automática: ${configurationStatus(eventSettings.eventExportEmail)}`,
   ] : ['Limites, pagamento, expiração e auditoria das reservas']
+  const frequencyDetails = careFrequencies ? [
+    '5 frequências preestabelecidas',
+    `${careFrequencies.filter((frequency) => !frequency.predefined && frequency.active).length} personalizada(s) disponível(is)`,
+    'Cálculo automático da próxima administração',
+  ] : ['Frequências de administração dos itens']
+  const categoryDetails = careCategories ? [
+    `${careCategories.filter((category) => category.active).length} categoria(s) disponível(is)`,
+    'Lista usada no cadastro dos itens',
+  ] : ['Categorias dos itens de cuidado']
 
-  const editorContent = editor === 'events' && eventSettings ? (
-    <EventSettingsForm layout={isDesktop ? 'panel' : 'modal'} settings={eventSettings} onCancel={() => setEditor(null)} onSave={saveEvents} />
-  ) : editor && editor !== 'events' && siteSettings && ((editor !== 'general') || socialLinks) ? (
+  const editorContent = editor === 'care-categories' && careCategories ? (
+    <CareCategorySettingsForm layout={isDesktop ? 'panel' : 'modal'} categories={careCategories} onCancel={closeEditor} onSave={saveCategories} />
+  ) : editor === 'care-frequencies' && careFrequencies ? (
+    <CareFrequencySettingsForm layout={isDesktop ? 'panel' : 'modal'} frequencies={careFrequencies} onCancel={closeEditor} onSave={saveCare} />
+  ) : editor === 'events' && eventSettings ? (
+    <EventSettingsForm layout={isDesktop ? 'panel' : 'modal'} settings={eventSettings} onCancel={closeEditor} onSave={saveEvents} />
+  ) : editor && editor !== 'care-categories' && editor !== 'care-frequencies' && editor !== 'events' && siteSettings && ((editor !== 'general') || socialLinks) ? (
     <GlobalSettingsForm
       layout={isDesktop ? 'panel' : 'modal'}
       mode={editor}
       settings={siteSettings}
       socialLinks={socialLinks ?? { facebook: '', instagram: '' }}
-      onCancel={() => setEditor(null)}
+      onCancel={closeEditor}
       onSave={saveGlobalSettings}
     />
   ) : null
@@ -205,6 +256,28 @@ export function Configuracoes() {
               {eventError && <p role="alert" className="mt-2 text-sm font-medium text-marca">Não foi possível carregar os valores padrão de Eventos.</p>}
             </section>
 
+            <section aria-labelledby="care-settings-title">
+              <h2 id="care-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Gestão de Cuidados</h2>
+              <div className="flex flex-col gap-3">
+                <SettingsCard
+                  audit={latestAudit(...(careCategories?.map((category) => category.audit) ?? []))}
+                  title="Categorias dos itens"
+                  details={categoryDetails}
+                  isEditing={editor === 'care-categories'}
+                  actions={<Action onClick={() => setEditor('care-categories')} disabled={!careCategories || isLoadingCategories} icon="edit-pencil" size="small" variant="neutral-adaptive" className="h-11 px-5">Editar</Action>}
+                />
+                <SettingsCard
+                  audit={latestAudit(...(careFrequencies?.map((frequency) => frequency.audit) ?? []))}
+                  title="Frequências de administração"
+                  details={frequencyDetails}
+                  isEditing={editor === 'care-frequencies'}
+                  actions={<Action onClick={() => setEditor('care-frequencies')} disabled={!careFrequencies || isLoadingCare} icon="edit-pencil" size="small" variant="neutral-adaptive" className="h-11 px-5">Editar</Action>}
+                />
+              </div>
+              {(isLoadingCategories || isLoadingCare) && <p role="status" className="mt-2 text-sm">Carregando...</p>}
+              {(categoryError || careError) && <p role="alert" className="mt-2 text-sm font-medium text-marca">Não foi possível carregar as listas de Cuidados.</p>}
+            </section>
+
             <section aria-labelledby="security-settings-title">
               <h2 id="security-settings-title" className="mb-3 text-3xl font-medium desk:mb-2 desk:text-2xl">Segurança</h2>
               <SettingsCard
@@ -231,7 +304,7 @@ export function Configuracoes() {
       </div>
 
       {editorContent && !isDesktop && (
-        <Dialog ariaLabel="Editar configurações" onClose={() => setEditor(null)} className="max-h-[94vh] w-full max-w-[55rem] overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-12">
+        <Dialog ariaLabel="Editar configurações" onClose={closeEditor} className="max-h-[94vh] w-full max-w-[55rem] overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised sm:p-12">
           {editorContent}
         </Dialog>
       )}

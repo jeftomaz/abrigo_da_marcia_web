@@ -2,18 +2,19 @@
 
 ## Contexto
 
-Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin (gestão). Código será público no GitHub — segurança vive no banco (RLS), nunca no client.
+Site para abrigo de cães, custo zero. Dois apps: público (visitantes) e admin (gestão). O repositório ainda é público; a direção solicitada é torná-lo privado e reduzir a superfície de dados conhecida pelo frontend. Código executado no navegador continua público por natureza, portanto autorização nunca depende de ocultação.
 
 ## Stack
 
-- **Host:** GitHub Pages (estático). Domínio canônico em preparação: `https://abrigodamarcia.com.br/`; o endereço padrão `https://jeftomaz.github.io/abrigo_da_marcia_web/` permanece ativo durante a transição. O workflow deriva o prefixo do próprio Pages: público com BrowserRouter + `404.html`, admin em `/admin/` com HashRouter no domínio próprio.
+- **Host atual:** GitHub Pages (estático). Domínio canônico em preparação: `https://abrigodamarcia.com.br/`; o endereço padrão `https://jeftomaz.github.io/abrigo_da_marcia_web/` permanece ativo durante a transição. O workflow deriva o prefixo do próprio Pages: público com BrowserRouter + `404.html`, admin em `/admin/` com HashRouter no domínio próprio.
 - **Frontend:** React + Vite + TypeScript. Tailwind CSS (tokens do design system em `tailwind.config`).
-- **Backend:** Supabase — Postgres (RLS rígido), Auth (MFA TOTP p/ admin), Storage (fotos), `pg_cron` (expiração de reservas).
+- **Backend atual:** Supabase — Postgres (RLS rígido), Auth (MFA TOTP p/ admin), Storage (fotos), `pg_cron` (expiração de reservas) e Edge Functions nas operações que já exigem servidor. O client ainda acessa parte do Data API/RPC diretamente.
+- **Arquitetura-alvo em avaliação:** API/BFF server-side entre os apps e o Supabase, começando pelo admin; concentra validação, autorização, rate limiting e auditoria e permite fechar grants diretos após cada migração. Recomendação técnica inicial: ampliar Supabase Edge Functions e hospedar o frontend no Cloudflare Pages a partir de repositório privado; decisão e execução estão no `ROADMAP.md`.
 - **E-mail transacional:** Resend via Supabase Edge Function; credenciais somente em secrets (`RESEND_API_KEY`, `RESEND_FROM_EMAIL`).
 - **Dados no client:** TanStack Query; client Supabase único e tipado (`database.types.ts` gerado) em `packages/shared`.
 - **Monorepo:** pnpm workspaces — `apps/public`, `apps/admin`, `packages/shared`.
 - **Dev local do banco:** `supabase start` (requer Docker) sobe o stack; `supabase db reset` aplica `supabase/migrations/` + `supabase/seed.sql`. Studio em `localhost:54323`.
-- **Bootstrap local removível:** `./scripts/dev-local.sh` inicia Supabase, público (`5173`) e admin (`5174`). O arquivo não participa de build/deploy.
+- **Bootstrap exclusivamente local:** `./scripts/dev-local.sh` inicia Supabase, público (`5173`) e admin (`5174`) e provisiona o botão de acesso local em um clique. A credencial aleatória existe só no processo do admin; o fluxo ainda conclui TOTP/AAL2. `check-production-bundle.mjs` bloqueia o build se qualquer atalho, marcador ou credencial local chegar ao artefato.
 - **Testes:** `pnpm verify` roda tudo na ordem do CI (lint → build → pgTAP → E2E); as partes isoladas são `pnpm lint`, `pnpm build`, `pnpm test:db` e `pnpm e2e`. pgTAP e E2E exigem `supabase start`; o E2E sobe os apps sozinho e força o Supabase local, ignorando o `.env` da raiz. Primeira execução: `npx playwright install chromium webkit`. **O E2E também exige `supabase functions serve` em outro terminal** — o edge runtime fica em "Stopped services" após o `supabase start`, e sem ele o teste de CORS das Edge Functions recebe 503 em vez de 403.
 - **CI:** `verify.yml` roda lint/build (rápido) e pgTAP/E2E (com Docker) em todo PR e push fora da `main`; `deploy-pages.yml` só publica com os dois verdes. Suíte vermelha bloqueia entrega — nenhum teste falhando é tolerado como pendência.
 - **Admin:** entrada exclusiva por convite, nome/apelido privado, definição de senha, TOTP obrigatório e RLS condicionada a `app_metadata.role = admin` + `aal2`. Cadastro público permanece desabilitado; convites são enviados pelo Dashboard ou Admin API.
@@ -59,4 +60,4 @@ Refresh token longo (padrão Supabase). A sessão é encerrada no client após 7
 
 A recuperação por e-mail e a troca de senha em Configurações exigem um novo código TOTP antes de aceitar a nova senha. O link de recuperação nunca permite cadastrar ou substituir o autenticador.
 
-Para provisionar um admin local ou hospedado: convidar a conta pelo Studio/Dashboard ou Admin API. O banco atribui `app_metadata.role = admin` somente a usuários convidados; o link exige nome/apelido, definição de senha e cadastro do TOTP antes de liberar a gestão. Admins legados sem `admin_profiles` completam o perfil uma vez após o MFA. Nenhuma credencial administrativa vive no repositório.
+Para provisionar um admin hospedado: convidar a conta pelo Dashboard ou Admin API. O banco atribui `app_metadata.role = admin` somente a usuários convidados; o link exige nome/apelido, definição de senha e cadastro do TOTP antes de liberar a gestão. Admins legados sem `admin_profiles` completam o perfil uma vez após o MFA. Localmente, `./scripts/dev-local.sh` recria uma conta descartável e expõe o atalho apenas em endereço loopback com Supabase local. Nenhuma credencial administrativa vive no repositório.
