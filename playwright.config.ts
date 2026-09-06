@@ -21,6 +21,7 @@ export default defineConfig({
   reporter: process.env.CI ? 'line' : [['list']],
   use: {
     baseURL: PUBLIC_URL,
+    timezoneId: 'America/Sao_Paulo',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

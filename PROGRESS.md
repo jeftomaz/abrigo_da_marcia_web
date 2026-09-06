@@ -1,5 +1,7 @@
 # PROGRESS.md
 
+- CI de Cuidados corrigido (2026-09-06): o Playwright agora fixa `America/Sao_Paulo`, evitando que campos locais de data/hora sejam interpretados em UTC no runner; pgTAP permanece verde com 347 testes.
+
 - Tags de cães concluídas (2026-09-06): vínculo privado incluído no cadastro, nos cards, nas buscas administrativas e no agrupamento de Cuidados > Por cão, com normalização/limites no banco e sem exposição em `caes_public`. O Playwright agora inicia o runtime local das Edge Functions junto com os apps.
 
 - Visão “Por cão” de Cuidados expandida (2026-09-06): todos os cães exibem os detalhes e ações sem seleção prévia; cada bloco mantém os programas na mesma ordem e marca explicitamente “Não recebe” onde não há atribuição. Busca, histórico recente, confirmação rápida e layout mobile permanecem cobertos por E2E.
