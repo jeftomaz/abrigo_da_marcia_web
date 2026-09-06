@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Action,
   Dialog,
@@ -75,6 +75,8 @@ function latestAudit(...audits: Array<AuditMetadata | null | undefined>) {
 }
 
 export function Configuracoes() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { displayName, email, removeAuthenticator, updatePassword, verifyAuthenticator } = useAdminAuth()
   const { data: siteSettings, error: siteError, isLoading: isLoadingSite } = useAdminSiteSettings()
@@ -100,6 +102,11 @@ export function Configuracoes() {
   const isDesktop = useIsDesktop()
 
   const closeEditor = () => {
+    const returnTo = (location.state as { returnTo?: string } | null)?.returnTo
+    if (returnTo) {
+      navigate(returnTo, { replace: true })
+      return
+    }
     setEditor(null)
     if (searchParams.has('editor')) {
       const nextParams = new URLSearchParams(searchParams)

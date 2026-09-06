@@ -1,5 +1,7 @@
 # PROGRESS.md
 
+- Cuidados e retorno de editores corrigidos (2026-09-06): “Por cão” exibe todos os cães mesmo sem programas, e editores de categorias/frequências abertos por Itens retornam à aba de origem ao cancelar ou salvar. Validação: lint, builds, 347 pgTAP e 161 E2E; 19 casos ignorados pela matriz.
+
 - CI de Cuidados corrigido (2026-09-06): o Playwright agora fixa `America/Sao_Paulo`, evitando que campos locais de data/hora sejam interpretados em UTC no runner; pgTAP permanece verde com 347 testes.
 
 - Tags de cães concluídas (2026-09-06): vínculo privado incluído no cadastro, nos cards, nas buscas administrativas e no agrupamento de Cuidados > Por cão, com normalização/limites no banco e sem exposição em `caes_public`. O Playwright agora inicia o runtime local das Edge Functions junto com os apps.
