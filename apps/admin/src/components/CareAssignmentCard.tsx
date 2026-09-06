@@ -33,10 +33,6 @@ const STATUS_TONE: Record<DogCare['status'], StatusTone> = {
   dispensado: 'neutro',
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('pt-BR').format(new Date(`${value}T12:00:00`))
-}
-
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     dateStyle: 'short',
@@ -79,10 +75,10 @@ export function CareAssignmentCard({
         <p className="mt-0.5 text-sm">{program.name}</p>
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
           <span>
-            {assignment.nextDueOn ? `Próxima: ${formatDate(assignment.nextDueOn)}` : 'Sem próxima data'}
+            {assignment.nextDueAt ? `Próxima: ${formatDateTime(assignment.nextDueAt)}` : 'Sem próxima data'}
           </span>
           {assignment.dose && <span>Dose: {assignment.dose}</span>}
-          {assignment.frequency && <span>Frequência: {assignment.frequency}</span>}
+          {item.frequencyLabel && <span>Frequência: {item.frequencyLabel}</span>}
         </div>
         {assignment.exceptionReason && (
           <p className="mt-2 text-sm">Motivo: {assignment.exceptionReason}</p>

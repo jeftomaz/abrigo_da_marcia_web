@@ -36,10 +36,6 @@ export function CareProgramForm({
     assignedDogIds.filter((id) => dogs.some((dog) => dog.id === id && dog.status === 'disponivel')),
   )
   const [defaultDose, setDefaultDose] = useState(program?.defaultDose ?? '')
-  const [defaultFrequency, setDefaultFrequency] = useState(program?.defaultFrequency ?? '')
-  const [defaultIntervalDays, setDefaultIntervalDays] = useState(
-    program?.defaultIntervalDays ? String(program.defaultIntervalDays) : '',
-  )
   const [instructions, setInstructions] = useState(program?.instructions ?? '')
   const [startDate, setStartDate] = useState(program?.startDate ?? '')
   const [endDate, setEndDate] = useState(program?.endDate ?? '')
@@ -66,7 +62,6 @@ export function CareProgramForm({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    const interval = defaultIntervalDays ? Number(defaultIntervalDays) : null
     if (!name.trim() || !itemId) {
       setSaveError('Informe o nome e o item do programa.')
       return
@@ -77,10 +72,6 @@ export function CareProgramForm({
     }
     if (scope === 'selecionados' && dogIds.length === 0) {
       setSaveError('Selecione ao menos um cão para este programa.')
-      return
-    }
-    if (interval !== null && (!Number.isInteger(interval) || interval < 1 || interval > 3650)) {
-      setSaveError('O intervalo deve ser um número inteiro entre 1 e 3650 dias.')
       return
     }
     if (startDate && endDate && endDate < startDate) {
@@ -94,8 +85,6 @@ export function CareProgramForm({
       await onSave({
         active,
         defaultDose: defaultDose.trim(),
-        defaultFrequency: defaultFrequency.trim(),
-        defaultIntervalDays: interval,
         dogIds: scope === 'selecionados' ? dogIds : [],
         endDate,
         id: program?.id,
@@ -150,7 +139,7 @@ export function CareProgramForm({
               <option value="" disabled>Selecionar</option>
               {items.map((item) => (
                 <option key={item.id} value={item.id} disabled={!item.active}>
-                  {item.category} — {item.name}{item.presentation ? ` (${item.presentation})` : ''}{item.active ? '' : ' — inativo'}
+                  {item.category} — {item.name}{item.active ? '' : ' — inativo'}
                 </option>
               ))}
             </TextField>
@@ -211,30 +200,6 @@ export function CareProgramForm({
               className={fieldClasses}
             />
           </label>
-          <label htmlFor={`${formId}-frequency`} className="block font-medium">
-            Frequência
-            <TextField
-              id={`${formId}-frequency`}
-              value={defaultFrequency}
-              onChange={(event) => setDefaultFrequency(event.target.value)}
-              maxLength={160}
-              className={fieldClasses}
-            />
-          </label>
-          <label htmlFor={`${formId}-interval`} className="block font-medium">
-            Intervalo em dias
-            <TextField
-              id={`${formId}-interval`}
-              type="number"
-              min={1}
-              max={3650}
-              step={1}
-              value={defaultIntervalDays}
-              onChange={(event) => setDefaultIntervalDays(event.target.value)}
-              className={fieldClasses}
-            />
-          </label>
-          <div className="hidden sm:block" />
           <label htmlFor={`${formId}-start-date`} className="block font-medium">
             Data inicial
             <TextField

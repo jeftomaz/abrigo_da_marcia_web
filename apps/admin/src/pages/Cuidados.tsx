@@ -35,7 +35,7 @@ const TABS: Array<{ id: CareView; label: string }> = [
   { id: 'itens', label: 'Itens' },
   { id: 'caes', label: 'Por cão' },
 ]
-const EMPTY_CARE: AdminCareData = { assignments: [], items: [], programs: [] }
+const EMPTY_CARE: AdminCareData = { assignments: [], categories: [], frequencies: [], items: [], programs: [] }
 const EMPTY_DOGS: Dog[] = []
 const EMPTY_RECORDS: CareRecord[] = []
 
@@ -58,7 +58,6 @@ export function Cuidados() {
   const saveRecord = useSaveCareRecord()
   const [view, setView] = useState<CareView>('agenda')
   const [search, setSearch] = useState('')
-  const [selectedDogId, setSelectedDogId] = useState('')
   const [programTarget, setProgramTarget] = useState<CareProgram | null | undefined>(undefined)
   const [itemTarget, setItemTarget] = useState<CareItem | null | undefined>(undefined)
   const [itemReturnsToProgram, setItemReturnsToProgram] = useState(false)
@@ -70,7 +69,7 @@ export function Cuidados() {
   const [showCreationHelp, setShowCreationHelp] = useState(false)
   const [operationError, setOperationError] = useState('')
   const [successMessage, showSuccess] = useSuccessMessage()
-  const { assignments, items, programs } = care
+  const { assignments, categories, frequencies, items, programs } = care
 
   const itemById = useMemo(() => new Map(items.map((item) => [item.id, item])), [items])
   const programById = useMemo(
@@ -102,20 +101,46 @@ export function Cuidados() {
     [itemById, programs, query],
   )
   const filteredItems = useMemo(
-    () => items.filter((item) => !query || normalizeSearch(`${item.name} ${item.category} ${item.presentation}`).includes(query)),
+    () => items.filter((item) => !query || normalizeSearch(`${item.name} ${item.category} ${item.frequencyLabel}`).includes(query)),
     [items, query],
   )
   const filteredDogs = useMemo(
     () => dogs.filter((dog) => !query || normalizeSearch(`${dog.name} ${STATUS_LABELS[dog.status]}`).includes(query)),
     [dogs, query],
   )
-  const selectedDog = dogById.get(selectedDogId)
-  const selectedDogAssignments = selectedDog
-    ? assignments.filter((assignment) => assignment.dogId === selectedDog.id)
-    : []
-  const { data: selectedDogRecords = EMPTY_RECORDS } = useCareRecords(
-    selectedDogAssignments.map((assignment) => assignment.id),
+  const dogViewPrograms = useMemo(() => {
+    const assignedProgramIds = new Set(assignments.map((assignment) => assignment.programId))
+    return programs.filter((program) => (
+      itemById.has(program.itemId) && (program.active || assignedProgramIds.has(program.id))
+    ))
+  }, [assignments, itemById, programs])
+  const assignmentsByDog = useMemo(() => {
+    const grouped = new Map<string, typeof assignments>()
+    assignments.forEach((assignment) => {
+      const dogAssignments = grouped.get(assignment.dogId) ?? []
+      dogAssignments.push(assignment)
+      grouped.set(assignment.dogId, dogAssignments)
+    })
+    return grouped
+  }, [assignments])
+  const assignmentByDogAndProgram = useMemo(
+    () => new Map(assignments.map((assignment) => [`${assignment.dogId}:${assignment.programId}`, assignment])),
+    [assignments],
   )
+  const dogViewAssignmentIds = useMemo(
+    () => view === 'caes' ? assignments.map((assignment) => assignment.id) : [],
+    [assignments, view],
+  )
+  const { data: dogViewRecords = EMPTY_RECORDS } = useCareRecords(dogViewAssignmentIds)
+  const recordsByAssignment = useMemo(() => {
+    const grouped = new Map<string, CareRecord[]>()
+    dogViewRecords.forEach((record) => {
+      const assignmentRecords = grouped.get(record.assignmentId) ?? []
+      assignmentRecords.push(record)
+      grouped.set(record.assignmentId, assignmentRecords)
+    })
+    return grouped
+  }, [dogViewRecords])
 
   const assignedDogIds = (program: CareProgram | null) => program
     ? assignments
@@ -136,8 +161,8 @@ export function Cuidados() {
   }
 
   const handleSaveItem = async (draft: Parameters<typeof saveItem.mutateAsync>[0]) => {
-    const saved = await saveItem.mutateAsync(draft)
-    if (itemReturnsToProgram) setPreferredItemId(saved.id)
+    const savedItemId = await saveItem.mutateAsync(draft)
+    if (itemReturnsToProgram) setPreferredItemId(savedItemId)
     setItemTarget(undefined)
     showSuccess(draft.id ? 'Item de cuidado atualizado.' : 'Item de cuidado cadastrado.')
   }
@@ -165,7 +190,11 @@ export function Cuidados() {
   const toggleItem = async (item: CareItem) => {
     setOperationError('')
     try {
-      await setItemActive.mutateAsync({ id: item.id, active: !item.active })
+      await setItemActive.mutateAsync({
+        active: !item.active,
+        audit: item.audit,
+        id: item.id,
+      })
       showSuccess(item.active ? 'Item desativado.' : 'Item ativado.')
     } catch (error) {
       setOperationError(getAdminErrorMessage(error, 'Não foi possível alterar o item de cuidado.'))
@@ -195,9 +224,10 @@ export function Cuidados() {
         assignmentId: quickRecordTarget.id,
         dose: quickRecordTarget.dose,
         lot: '',
-        nextDueOn: '',
+        nextDueAt: '',
         notes: '',
         occurredAt: occurredDate.toISOString(),
+        stockQuantityUsed: 1,
         type: 'aplicacao',
       })
       setQuickRecordTargetId('')
@@ -293,8 +323,8 @@ export function Cuidados() {
                 aria-label="Diferença entre item e programa"
                 className="grid gap-3 rounded-2xl bg-surface-raised p-4 text-sm text-on-surface-raised sm:grid-cols-2"
               >
-                <p><strong className="text-marca-escura dark:text-marca-clara">Item:</strong> é o cuidado em si, como medicamento, vacina, exame, suplemento ou procedimento.</p>
-                <p><strong className="text-marca-escura dark:text-marca-clara">Programa:</strong> define como, quando e para quais cães um item será aplicado, incluindo dose, frequência e período.</p>
+                <p><strong className="text-marca-escura dark:text-marca-clara">Item:</strong> é o cuidado em si e concentra sua frequência de administração e estoque, quando aplicáveis.</p>
+                <p><strong className="text-marca-escura dark:text-marca-clara">Programa:</strong> define a dose, o período e para quais cães o item será aplicado.</p>
               </div>
             )}
           </section>
@@ -311,9 +341,9 @@ export function Cuidados() {
               label="Cuidados pendentes"
               total={agendaAssignments.length}
               items={[
-                { label: 'Atrasados', value: agendaAssignments.filter((item) => item.nextDueOn && item.nextDueOn < today).length },
-                { label: 'Hoje', value: agendaAssignments.filter((item) => item.nextDueOn === today).length },
-                { label: 'Sem data', value: agendaAssignments.filter((item) => !item.nextDueOn).length, className: 'col-span-2' },
+                { label: 'Atrasados', value: agendaAssignments.filter((item) => item.nextDueAt && localDateKey(item.nextDueAt) < today).length },
+                { label: 'Hoje', value: agendaAssignments.filter((item) => item.nextDueAt && localDateKey(item.nextDueAt) === today).length },
+                { label: 'Sem data', value: agendaAssignments.filter((item) => !item.nextDueAt).length, className: 'col-span-2' },
               ]}
             />
             <section aria-label="Agenda de cuidados" className="flex min-w-0 flex-col gap-3">
@@ -380,7 +410,8 @@ export function Cuidados() {
                       </StatusBadge>
                     </div>
                     <p className="mt-1 text-sm text-marca">{item.category}</p>
-                    {item.presentation && <p className="mt-1 text-sm">{item.presentation}</p>}
+                    {item.frequencyLabel && <p className="mt-1 text-sm">{item.frequencyLabel}</p>}
+                    <p className="mt-1 text-sm">Estoque disponível: {item.stockQuantity}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
                     <Action onClick={() => openItem(item)} size="admin-row" variant="neutral-adaptive" icon="edit-pencil" className="min-h-11 w-full">
@@ -404,64 +435,69 @@ export function Cuidados() {
         )}
 
         {!isLoading && !loadError && view === 'caes' && (
-          <div className="mt-6 grid gap-6 desk:grid-cols-[20rem_minmax(0,1fr)] desk:items-start">
-            <section aria-label="Cães cadastrados" className="flex min-w-0 flex-col gap-2">
-              {filteredDogs.map((dog) => (
-                <button
-                  key={dog.id}
-                  type="button"
-                  aria-pressed={selectedDogId === dog.id}
-                  onClick={() => setSelectedDogId(dog.id)}
-                  className={`min-h-14 rounded-xl px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca ${
-                    selectedDogId === dog.id
-                      ? 'bg-marca text-marca-clara'
-                      : 'bg-surface-raised text-on-surface-raised hover:bg-marca-clara hover:text-marca'
-                  }`}
-                >
-                  <span className="block font-medium">{dog.name}</span>
-                  <span className="block text-xs">{STATUS_LABELS[dog.status]}</span>
-                </button>
-              ))}
-              {filteredDogs.length === 0 && <p className="text-center">Nenhum cão encontrado.</p>}
-            </section>
-
-            <section aria-label="Cuidados do cão" className="flex min-w-0 flex-col gap-3">
-              {!selectedDog && <p className="text-center">Selecione um cão para consultar seus cuidados.</p>}
-              {selectedDog && (
-                <>
-                  <div className="rounded-2xl bg-marca p-4 text-marca-clara">
-                    <h2 className="text-2xl font-medium">{selectedDog.name}</h2>
-                    <p className="text-sm">{STATUS_LABELS[selectedDog.status]} · {selectedDogAssignments.length} cuidado{selectedDogAssignments.length === 1 ? '' : 's'}</p>
-                  </div>
-                  <p className="text-sm">Marque o cuidado realizado agora. Para informar outra data, lote, observações ou mais de uma dose no dia, use “Registrar detalhes”.</p>
-                  {selectedDogAssignments.map((assignment) => {
-                    const program = programById.get(assignment.programId)
-                    const item = program ? itemById.get(program.itemId) : undefined
-                    const records = selectedDogRecords.filter((record) => record.assignmentId === assignment.id)
-                    return program && item ? (
-                      <CareAssignmentCard
-                        key={assignment.id}
-                        assignment={assignment}
-                        dog={selectedDog}
-                        item={item}
-                        program={program}
-                        records={records}
-                        recordedToday={records.some((record) => record.type === 'aplicacao' && localDateKey(record.occurredAt) === today)}
-                        showDog={false}
-                        onRecord={() => setRecordTargetId(assignment.id)}
-                        onQuickRecord={() => {
-                          setQuickRecordOccurredAt(currentLocalDateTime())
-                          setQuickRecordError('')
-                          setQuickRecordTargetId(assignment.id)
-                        }}
-                      />
-                    ) : null
-                  })}
-                  {selectedDogAssignments.length === 0 && <p className="text-center">Este cão ainda não possui cuidados atribuídos.</p>}
-                </>
-              )}
-            </section>
-          </div>
+          <section aria-label="Cuidados por cão" className="mt-6 min-w-0">
+            <p className="text-sm">Todos os cães aparecem abertos. Os programas seguem a mesma ordem; “Não recebe” identifica os cuidados não atribuídos.</p>
+            <div className="mt-4 flex min-w-0 flex-col gap-8">
+              {filteredDogs.length === 0 ? (
+                <p className="text-center">Nenhum cão encontrado.</p>
+              ) : dogViewPrograms.length === 0 ? (
+                <p className="text-center">Nenhum programa de cuidado cadastrado.</p>
+              ) : filteredDogs.map((dog) => {
+                const dogAssignments = assignmentsByDog.get(dog.id) ?? []
+                const assignedCareCount = dogAssignments.filter((assignment) => assignment.status !== 'dispensado').length
+                return (
+                  <section key={dog.id} aria-label={`Cuidados de ${dog.name}`} className="flex min-w-0 flex-col gap-3">
+                    <div className="rounded-2xl bg-marca p-4 text-marca-clara">
+                      <h2 className="text-2xl font-medium">{dog.name}</h2>
+                      <p className="text-sm">
+                        {STATUS_LABELS[dog.status]}
+                        {dogViewPrograms.length > 0 && ` · ${assignedCareCount} de ${dogViewPrograms.length} ${dogViewPrograms.length === 1 ? 'cuidado atribuído' : 'cuidados atribuídos'}`}
+                      </p>
+                    </div>
+                    <div className="grid min-w-0 items-stretch gap-3 desk:grid-cols-2">
+                      {dogViewPrograms.map((program) => {
+                        const item = itemById.get(program.itemId)
+                        const assignment = assignmentByDogAndProgram.get(`${dog.id}:${program.id}`)
+                        if (!item) return null
+                        if (!assignment) {
+                          return (
+                            <AdminListRow
+                              key={program.id}
+                              isEditing={false}
+                              className="flex min-h-40 min-w-0 flex-col justify-center rounded-2xl p-4"
+                            >
+                              <StatusBadge tone="neutro" size="sm">Não recebe</StatusBadge>
+                              <p className="mt-2 font-medium text-marca">{item.name}</p>
+                              <p className="mt-0.5 text-sm">{program.name}</p>
+                            </AdminListRow>
+                          )
+                        }
+                        const records = recordsByAssignment.get(assignment.id) ?? []
+                        return (
+                          <CareAssignmentCard
+                            key={program.id}
+                            assignment={assignment}
+                            dog={dog}
+                            item={item}
+                            program={program}
+                            records={records}
+                            recordedToday={records.some((record) => record.type === 'aplicacao' && localDateKey(record.occurredAt) === today)}
+                            showDog={false}
+                            onRecord={() => setRecordTargetId(assignment.id)}
+                            onQuickRecord={() => {
+                              setQuickRecordOccurredAt(currentLocalDateTime())
+                              setQuickRecordError('')
+                              setQuickRecordTargetId(assignment.id)
+                            }}
+                          />
+                        )
+                      })}
+                    </div>
+                  </section>
+                )
+              })}
+            </div>
+          </section>
         )}
       </div>
 
@@ -494,6 +530,8 @@ export function Cuidados() {
         >
           <CareItemForm
             key={itemTarget?.id ?? 'new'}
+            categories={categories}
+            frequencies={frequencies}
             item={itemTarget}
             onCancel={() => setItemTarget(undefined)}
             onSave={handleSaveItem}
@@ -525,7 +563,7 @@ export function Cuidados() {
       {quickRecordTarget && quickRecordDog && quickRecordProgram && quickRecordItem && (
         <ConfirmationDialog
           title="Confirmar cuidado realizado"
-          description={`Confirme ${quickRecordItem.name}${quickRecordTarget.dose ? ` (${quickRecordTarget.dose})` : ''} para ${quickRecordDog.name}. A próxima data será calculada conforme o programa ${quickRecordProgram.name}.`}
+          description={`Confirme ${quickRecordItem.name}${quickRecordTarget.dose ? ` (${quickRecordTarget.dose})` : ''} para ${quickRecordDog.name}. ${quickRecordItem.frequencyLabel ? `A próxima data será calculada conforme a frequência do item (${quickRecordItem.frequencyLabel.toLocaleLowerCase('pt-BR')}).` : 'O item não possui próxima frequência definida.'} Uma unidade será baixada do estoque.`}
           confirmLabel="Confirmar realização"
           isPending={saveRecord.isPending}
           onCancel={() => {

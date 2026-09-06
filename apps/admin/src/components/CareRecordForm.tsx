@@ -30,7 +30,8 @@ export function CareRecordForm({ assignment, dog, item, onCancel, onSave, progra
   const [occurredAt, setOccurredAt] = useState(currentLocalDateTime)
   const [dose, setDose] = useState(assignment.dose)
   const [lot, setLot] = useState('')
-  const [nextDueOn, setNextDueOn] = useState('')
+  const [nextDueAt, setNextDueAt] = useState('')
+  const [stockQuantityUsed, setStockQuantityUsed] = useState('1')
   const [notes, setNotes] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -48,6 +49,22 @@ export function CareRecordForm({ assignment, dog, item, onCancel, onSave, progra
       setSaveError('Descreva a observação realizada.')
       return
     }
+    const parsedStockQuantityUsed = isApplication ? Number(stockQuantityUsed) : null
+    if (isApplication && (
+      !Number.isFinite(parsedStockQuantityUsed)
+      || parsedStockQuantityUsed === null
+      || parsedStockQuantityUsed <= 0
+      || parsedStockQuantityUsed > item.stockQuantity
+      || !/^\d+(?:\.\d{1,3})?$/.test(stockQuantityUsed)
+    )) {
+      setSaveError(`Informe uma quantidade consumida entre 0 e ${item.stockQuantity}.`)
+      return
+    }
+    const nextDueDate = nextDueAt ? new Date(nextDueAt) : null
+    if (nextDueDate && Number.isNaN(nextDueDate.getTime())) {
+      setSaveError('Informe uma próxima data e hora válidas.')
+      return
+    }
 
     setIsSaving(true)
     setSaveError('')
@@ -56,9 +73,10 @@ export function CareRecordForm({ assignment, dog, item, onCancel, onSave, progra
         assignmentId: assignment.id,
         dose: dose.trim(),
         lot: isApplication ? lot.trim() : '',
-        nextDueOn: showsNextDue ? nextDueOn : '',
+        nextDueAt: showsNextDue && nextDueDate ? nextDueDate.toISOString() : '',
         notes: notes.trim(),
         occurredAt: occurredDate.toISOString(),
+        stockQuantityUsed: parsedStockQuantityUsed,
         type,
       })
     } catch (error) {
@@ -123,19 +141,36 @@ export function CareRecordForm({ assignment, dog, item, onCancel, onSave, progra
             />
           </label>
         )}
+        {isApplication && (
+          <label htmlFor={`${formId}-stock-used`} className="block font-medium">
+            Quantidade consumida*
+            <TextField
+              id={`${formId}-stock-used`}
+              type="number"
+              min={0.001}
+              max={item.stockQuantity}
+              step={0.001}
+              value={stockQuantityUsed}
+              onChange={(event) => setStockQuantityUsed(event.target.value)}
+              required
+              className={fieldClasses}
+            />
+            <span className="mt-1 block text-xs">Disponível: {item.stockQuantity}</span>
+          </label>
+        )}
         {showsNextDue && (
           <label htmlFor={`${formId}-next-due`} className="block font-medium sm:col-span-2">
-            Próxima data
+            Próxima data e hora
             <TextField
               id={`${formId}-next-due`}
-              type="date"
-              value={nextDueOn}
-              onChange={(event) => setNextDueOn(event.target.value)}
+              type="datetime-local"
+              value={nextDueAt}
+              onChange={(event) => setNextDueAt(event.target.value)}
               className={`${fieldClasses} sm:max-w-56`}
             />
-            {isApplication && program.defaultIntervalDays && (
+            {isApplication && item.frequencyLabel && (
               <span className="mt-1 block text-xs">
-                Vazio calcula automaticamente pelo intervalo de {program.defaultIntervalDays} dias.
+                Vazio calcula automaticamente: {item.frequencyLabel.toLocaleLowerCase('pt-BR')}.
               </span>
             )}
           </label>

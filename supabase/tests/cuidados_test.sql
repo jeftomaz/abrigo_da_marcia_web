@@ -3,8 +3,9 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(74);
+select plan(108);
 
+delete from public.cuidado_estoque_movimentos;
 delete from public.cae_cuidado_registros;
 delete from public.cae_cuidados;
 delete from public.cuidado_programas;
@@ -15,32 +16,66 @@ select has_table('public', 'cuidado_itens', 'possui catálogo privado de itens d
 select has_table('public', 'cuidado_programas', 'possui programas de cuidado');
 select has_table('public', 'cae_cuidados', 'possui atribuições individuais por cão');
 select has_table('public', 'cae_cuidado_registros', 'possui histórico realizado por atribuição');
+select has_table('public', 'cuidado_categorias', 'possui categorias editáveis de itens');
+select has_table('public', 'cuidado_frequencias', 'possui frequências editáveis de administração');
+select has_column('public', 'cuidado_frequencias', 'predefined', 'distingue frequências preestabelecidas');
+select has_table('public', 'cuidado_estoque_movimentos', 'possui histórico de movimentos de estoque');
 select has_type('public', 'cuidado_abrangencia', 'possui abrangência de programa');
 select has_type('public', 'cuidado_situacao', 'possui situações individuais de cuidado');
 select has_type('public', 'cuidado_registro_tipo', 'possui tipos de registro realizado');
+select has_type('public', 'cuidado_intervalo_unidade', 'possui unidades calculáveis de frequência');
+select has_type('public', 'cuidado_estoque_origem', 'possui origens de movimento de estoque');
+select is(
+  (select count(*) from public.cuidado_frequencias where predefined and active),
+  5::bigint, 'mantém as cinco frequências preestabelecidas ativas'
+);
+select throws_ok(
+  $$delete from public.cuidado_frequencias
+    where id = '71000000-0000-0000-0000-000000000002'$$,
+  '42501', 'Frequências preestabelecidas não podem ser alteradas.',
+  'trigger impede excluir frequência preestabelecida'
+);
 
 select throws_ok(
   $$insert into public.cuidado_itens (name, category) values ('   ', 'Vacina')$$,
   '23514', null, 'rejeita item com nome vazio'
 );
 
-insert into public.cuidado_itens (id, name, category, presentation)
+insert into public.cuidado_itens (
+  id, name, category, presentation, frequency_id, stock_quantity
+)
 values (
   '70000000-0000-0000-0000-000000000001',
   'Vacina V10',
   'Vacina',
-  '10 doses'
+  'Frasco legado',
+  '71000000-0000-0000-0000-000000000005',
+  10
 );
 select is(
   (select updated_by_name from public.cuidado_itens
     where id = '70000000-0000-0000-0000-000000000001'),
   'Sistema', 'catálogo recebe autoria automática'
 );
+select lives_ok(
+  $$select public.save_care_categories(jsonb_build_array(jsonb_build_object(
+    'id', (select id::text from public.cuidado_categorias where name = 'Vacina'),
+    'name', 'Vacinas',
+    'active', true
+  )))$$,
+  'permite renomear uma categoria em uso'
+);
+select is(
+  (select category from public.cuidado_itens
+    where id = '70000000-0000-0000-0000-000000000001'),
+  'Vacinas', 'renomear categoria atualiza os itens vinculados'
+);
+update public.cuidado_categorias set name = 'Vacina' where name = 'Vacinas';
 
 select throws_ok(
-  $$insert into public.cuidado_itens (name, category, presentation)
-    values ('vacina v10', 'VACINA', '10 DOSES')$$,
-  '23505', null, 'rejeita item duplicado sem diferenciar maiúsculas'
+  $$insert into public.cuidado_itens (name, category)
+    values ('vacina v10', 'Vacina')$$,
+  '23505', null, 'rejeita item duplicado sem diferenciar maiúsculas ou apresentação legada'
 );
 
 insert into public.caes (id, name, description, birth_year, gender, size, status)
@@ -50,12 +85,11 @@ values
 
 select lives_ok(
   $$insert into public.cuidado_programas (
-      id, item_id, name, scope, default_dose, default_frequency,
-      default_interval_days, start_date
+      id, item_id, name, scope, default_dose, start_date
     ) values (
       '70000000-0000-0000-0000-000000000201',
       '70000000-0000-0000-0000-000000000001',
-      'V10 anual', 'todos', '2 mL', 'Uma vez ao ano', 365, '2026-01-10'
+      'V10 anual', 'todos', '2 mL', '2026-01-10'
     )$$,
   'aceita programa global e materializa as atribuições'
 );
@@ -76,9 +110,11 @@ select is(
   '2 mL', 'atribuição herda a dose padrão'
 );
 select is(
-  (select frequency from public.cae_cuidados
-    where dog_id = '70000000-0000-0000-0000-000000000101'),
-  'Uma vez ao ano', 'atribuição herda a frequência padrão'
+  (select frequency_id::text
+    from public.cuidado_itens
+    where id = '70000000-0000-0000-0000-000000000001'),
+  '71000000-0000-0000-0000-000000000005',
+  'item guarda a frequência definida pelo fabricante'
 );
 select is(
   (select start_date from public.cae_cuidados
@@ -86,9 +122,9 @@ select is(
   '2026-01-10'::date, 'atribuição herda a data inicial'
 );
 select is(
-  (select next_due_on from public.cae_cuidados
+  (select next_due_at at time zone 'America/Sao_Paulo' from public.cae_cuidados
     where dog_id = '70000000-0000-0000-0000-000000000101'),
-  '2026-01-10'::date, 'data inicial vira a primeira pendência'
+  '2026-01-10 00:00:00'::timestamp, 'data inicial vira a primeira pendência'
 );
 select is(
   (select status from public.cae_cuidados
@@ -212,6 +248,11 @@ select lives_ok(
 
 insert into public.cuidado_itens (id, name, category)
 values ('70000000-0000-0000-0000-000000000002', 'Vermífugo', 'Medicamento');
+select is(
+  (select stock_quantity from public.cuidado_itens
+    where id = '70000000-0000-0000-0000-000000000002'),
+  0::numeric, 'item inicia com estoque automático zerado'
+);
 select lives_ok(
   $$select public.save_care_program(
     p_item_id => '70000000-0000-0000-0000-000000000002',
@@ -223,7 +264,6 @@ select lives_ok(
       '70000000-0000-0000-0000-000000000103'::uuid
     ],
     p_default_dose => '1 comprimido',
-    p_default_frequency => 'Dose única',
     p_start_date => '2026-02-01'
   )$$,
   'salva programa e seleção de cães em uma transação'
@@ -325,7 +365,6 @@ select lives_ok(
     p_active => true,
     p_dog_ids => array['70000000-0000-0000-0000-000000000101'::uuid],
     p_default_dose => '1 comprimido',
-    p_default_frequency => 'Dose única',
     p_start_date => '2026-02-01'
   )$$,
   'atualiza a seleção do programa na mesma transação'
@@ -351,17 +390,49 @@ select lives_ok(
   'registra uma aplicação realizada'
 );
 select is(
-  (select concat_ws('|', item_name, item_category, item_presentation, dose, next_due_on::text)
+  (select concat_ws(
+      '|', item_name, item_category, item_frequency, dose,
+      stock_quantity_used::text,
+      to_char(next_due_at at time zone 'America/Sao_Paulo', 'YYYY-MM-DD HH24:MI')
+    )
     from public.cae_cuidado_registros
     where id = '70000000-0000-0000-0000-000000000301'),
-  'Vacina V10|Vacina|10 doses|2 mL|2027-01-10',
-  'aplicação guarda snapshots e calcula a próxima data sugerida'
+  'Vacina V10|Vacina|A cada 1 ano|2 mL|1.000|2027-01-10 09:00',
+  'aplicação guarda snapshots, consumo e calcula o próximo horário'
 );
 select is(
-  (select next_due_on from public.cae_cuidados
+  (select next_due_at at time zone 'America/Sao_Paulo' from public.cae_cuidados
     where dog_id = '70000000-0000-0000-0000-000000000101'
       and program_id = '70000000-0000-0000-0000-000000000201'),
-  '2027-01-10'::date, 'aplicação atualiza a próxima pendência do cão'
+  '2027-01-10 09:00:00'::timestamp, 'aplicação atualiza a próxima pendência do cão'
+);
+select is(
+  (select stock_quantity from public.cuidado_itens
+    where id = '70000000-0000-0000-0000-000000000001'),
+  9.000::numeric, 'aplicação baixa uma unidade do estoque por padrão'
+);
+select is(
+  (select count(*) from public.cuidado_estoque_movimentos
+    where record_id = '70000000-0000-0000-0000-000000000301'
+      and previous_quantity = 10 and new_quantity = 9),
+  1::bigint, 'baixa automática fica registrada no histórico de estoque'
+);
+select throws_ok(
+  $$insert into public.cae_cuidado_registros (
+      assignment_id, type, occurred_at, stock_quantity_used
+    ) values (
+      (select id from public.cae_cuidados
+        where dog_id = '70000000-0000-0000-0000-000000000101'
+          and program_id = '70000000-0000-0000-0000-000000000201'),
+      'aplicacao', '2026-01-10 13:00:00+00', 10
+    )$$,
+  '23514', 'Estoque insuficiente para registrar a aplicação.',
+  'rejeita aplicação acima do estoque disponível'
+);
+select is(
+  (select stock_quantity from public.cuidado_itens
+    where id = '70000000-0000-0000-0000-000000000001'),
+  9.000::numeric, 'falha de estoque reverte registro e saldo juntos'
 );
 select is(
   (select status from public.cae_cuidados
@@ -469,10 +540,10 @@ select is(
   'concluido'::public.cuidado_situacao, 'conclusão encerra a atribuição'
 );
 select is(
-  (select next_due_on from public.cae_cuidados
+  (select next_due_at from public.cae_cuidados
     where dog_id = '70000000-0000-0000-0000-000000000101'
       and program_id = '70000000-0000-0000-0000-000000000201'),
-  null::date, 'conclusão limpa a próxima pendência'
+  null::timestamptz, 'conclusão limpa a próxima pendência'
 );
 
 select lives_ok(
@@ -511,6 +582,10 @@ select throws_ok(
 
 set local role anon;
 select throws_ok(
+  $$select 1 from public.cuidado_categorias$$,
+  '42501', null, 'nega leitura anônima das categorias de cuidados'
+);
+select throws_ok(
   $$select 1 from public.cuidado_itens$$,
   '42501', null, 'nega leitura anônima do catálogo de cuidados'
 );
@@ -525,6 +600,10 @@ select is(
   (select count(*) from public.cuidado_itens),
   0::bigint, 'nega cuidados a admin sem aal2'
 );
+select is(
+  (select count(*) from public.cuidado_categorias),
+  0::bigint, 'nega categorias a admin sem aal2'
+);
 
 select set_config('request.jwt.claims', '{"app_metadata":{"role":"reader"},"aal":"aal2"}', true);
 select is(
@@ -537,9 +616,101 @@ select ok(
   (select count(*) from public.cuidado_itens) > 0,
   'autoriza leitura a admin com aal2'
 );
+select ok(
+  (select count(*) from public.cuidado_categorias) > 0,
+  'autoriza leitura das categorias a admin com aal2'
+);
 select lives_ok(
+  $$select public.save_care_frequencies(
+    '[{"id":"","intervalCount":10,"intervalUnit":"dia","active":true}]'::jsonb
+  )$$,
+  'admin com MFA acrescenta frequência personalizada'
+);
+select is(
+  (select concat(interval_count, '|', interval_unit, '|', predefined)
+    from public.cuidado_frequencias where interval_count = 10 and interval_unit = 'dia'),
+  '10|dia|f', 'frequência personalizada guarda intervalo e unidade'
+);
+select throws_ok(
+  $$select public.save_care_frequencies(jsonb_build_array(jsonb_build_object(
+    'id', '71000000-0000-0000-0000-000000000002',
+    'intervalCount', 2,
+    'intervalUnit', 'dia',
+    'active', true
+  )))$$,
+  '42501', 'Frequências preestabelecidas não podem ser alteradas.',
+  'RPC rejeita alteração de frequência preestabelecida'
+);
+select throws_ok(
+  $$update public.cuidado_frequencias set active = false
+    where id = '71000000-0000-0000-0000-000000000002'$$,
+  '42501', 'Frequências preestabelecidas não podem ser alteradas.',
+  'trigger impede contornar a regra por escrita direta'
+);
+select lives_ok(
+  $$select public.save_care_categories(
+    '[{"id":"","name":"Categoria pgTAP","active":true}]'::jsonb
+  )$$,
+  'admin com MFA acrescenta categoria pela lista editável'
+);
+select is(
+  (select count(*) from public.cuidado_categorias where name = 'Categoria pgTAP'),
+  1::bigint, 'nova categoria fica disponível no catálogo'
+);
+update public.cuidado_categorias set active = false where name = 'Categoria pgTAP';
+select throws_ok(
+  $$select public.save_care_item(
+    p_name => 'Item com categoria inativa',
+    p_category => 'Categoria pgTAP',
+    p_active => true,
+    p_stock_quantity => 0
+  )$$,
+  '23514', 'Selecione uma categoria de cuidado ativa.',
+  'rejeita categoria inativa em novo item'
+);
+select throws_ok(
   $$insert into public.cuidado_itens (name, category) values ('Novo cuidado', 'Outro')$$,
-  'autoriza criação a admin com aal2'
+  '42501', null, 'bloqueia escrita direta que contornaria o controle de estoque'
+);
+select lives_ok(
+  $$select public.save_care_item(
+    p_name => 'Novo cuidado',
+    p_category => 'Outro',
+    p_active => true,
+    p_stock_quantity => 4
+  )$$,
+  'admin com MFA cadastra item pela operação protegida'
+);
+select throws_ok(
+  $$select public.save_care_item(
+    p_item_id => (select id from public.cuidado_itens where name = 'Novo cuidado'),
+    p_name => 'Novo cuidado',
+    p_category => 'Outro',
+    p_active => true,
+    p_stock_quantity => 3,
+    p_expected_updated_at => (select updated_at from public.cuidado_itens where name = 'Novo cuidado')
+  )$$,
+  '23514', 'Informe o motivo do ajuste manual de estoque.',
+  'ajuste manual de estoque exige motivo'
+);
+select lives_ok(
+  $$select public.save_care_item(
+    p_item_id => (select id from public.cuidado_itens where name = 'Novo cuidado'),
+    p_name => 'Novo cuidado',
+    p_category => 'Outro',
+    p_active => true,
+    p_stock_quantity => 3,
+    p_expected_updated_at => (select updated_at from public.cuidado_itens where name = 'Novo cuidado'),
+    p_stock_adjustment_reason => 'Perda de uma unidade'
+  )$$,
+  'admin corrige estoque com motivo'
+);
+select is(
+  (select concat(new_quantity, '|', reason)
+    from public.cuidado_estoque_movimentos movement
+    join public.cuidado_itens item on item.id = movement.item_id
+    where item.name = 'Novo cuidado' and source = 'ajuste_manual'),
+  '3.000|Perda de uma unidade', 'correção manual fica auditada'
 );
 select throws_ok(
   $$delete from public.cae_cuidado_registros
@@ -548,12 +719,13 @@ select throws_ok(
 );
 
 set local role postgres;
+select hasnt_view('public', 'cuidado_categorias_public', 'não cria categorias públicas de cuidados');
 select hasnt_view('public', 'cuidado_itens_public', 'não cria catálogo público de cuidados');
 select hasnt_view('public', 'cuidado_programas_public', 'não cria programas públicos de cuidados');
 select ok(
   not has_function_privilege(
     'anon',
-    'public.save_care_program(uuid,text,public.cuidado_abrangencia,boolean,uuid[],uuid,text,text,integer,text,date,date)',
+    'public.save_care_program(uuid,text,public.cuidado_abrangencia,boolean,uuid[],uuid,text,text,date,date)',
     'execute'
   ),
   'nega a RPC de programas ao papel anônimo'
@@ -561,10 +733,42 @@ select ok(
 select ok(
   has_function_privilege(
     'authenticated',
-    'public.save_care_program(uuid,text,public.cuidado_abrangencia,boolean,uuid[],uuid,text,text,integer,text,date,date)',
+    'public.save_care_program(uuid,text,public.cuidado_abrangencia,boolean,uuid[],uuid,text,text,date,date)',
     'execute'
   ),
   'concede a RPC de programas somente ao papel autenticado protegido por RLS'
+);
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.save_care_categories(jsonb)',
+    'execute'
+  ),
+  'nega a operação de categorias ao papel anônimo'
+);
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.save_care_categories(jsonb)',
+    'execute'
+  ),
+  'concede a operação de categorias somente ao admin autenticado com MFA'
+);
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.save_care_item(text,text,boolean,uuid,numeric,text,uuid,timestamptz,text)',
+    'execute'
+  ),
+  'nega a operação de item ao papel anônimo'
+);
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.save_care_item(text,text,boolean,uuid,numeric,text,uuid,timestamptz,text)',
+    'execute'
+  ),
+  'concede a operação de item somente ao admin autenticado com MFA'
 );
 
 select * from finish();

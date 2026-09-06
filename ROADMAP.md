@@ -20,13 +20,27 @@ Status por fase e pendências abertas. O histórico do que foi feito vive em `PR
 Executar antes da carga real dos cães para que o painel seja a fonte única dos dados desde o início.
 
 - `done` **Bloco 1 — fundação privada.** Catálogo flexível de itens, programas para todos/cães selecionados, atribuições individuais, registros realizados, automação para cães atuais/futuros, autoria, RLS + MFA e pgTAP.
-- `done` **Bloco 2 — aba Cuidados.** Nova rota administrativa com Agenda, Programas, Itens e busca por cão; seleção restrita aos cães disponíveis e baixa rápida confirmada na visão por cão. Cadastro de itens no fluxo do programa ou na gestão dedicada, sem listas fechadas no client. Gravações de programas e ocorrências são serializadas no banco.
+- `done` **Bloco 2 — aba Cuidados.** Agenda, Programas, Itens e visão por cão sempre expandida, com a mesma ordem de programas e indicação de cuidados não recebidos; categorias e frequências personalizadas são gerenciadas em Configurações, enquanto hora/dia/semana/mês/ano permanecem fixas. Todo item mantém estoque automático, com baixa por aplicação e ajuste manual motivado; gravações concorrentes são serializadas no banco.
 - `todo` **Bloco 3 — integração com Cães.** Abrir o prontuário a partir da gestão atual e registrar adoções, devoluções e demais mudanças de status em transação, sem alterar `caes_public`. A serialização do resumo ao registrar ocorrências foi antecipada no Bloco 2.
 - `todo` **Bloco 4 — impressão.** Carteirinha A4 sem notas internas e prontuário administrativo completo, com cobertura E2E mobile/desktop.
+- `todo` **Branch posterior — tags de cães.** Agrupamento flexível (`#canil9`, `#doente`, `#idoso`) na gestão e busca de cães; fora do escopo da aba Cuidados.
+
+### P0 — Backend de aplicação e redução da superfície do frontend
+
+Objetivo: manter o Supabase como infraestrutura de dados, mas retirar do navegador o acesso direto às operações administrativas e expor somente contratos HTTP próprios. O repositório privado reduz exposição do fonte/histórico; não substitui autorização server-side, pois todo bundle entregue ao navegador é inspecionável.
+
+- `todo` Confirmar a arquitetura recomendada: Supabase Edge Functions como API/BFF e Cloudflare Pages como host do frontend ligado a repositório privado. Cloudflare Workers fica como alternativa se for necessário gateway/WAF próprio na frente da API.
+- `doing` Inventariar queries, RPCs, uploads e autenticação atuais; a busca inicial encontrou 103 chamadas diretas, concentradas em Eventos (46) e Auth (30). Falta classificar cada operação como pública, administrativa ou interna e definir contratos versionados `/api/v1` sem nomes de tabelas no client.
+- `todo` Criar fundação compartilhada da API: validação/limpeza de input, verificação de JWT, papel admin + AAL2, CORS estrito, rate limiting, erros com `requestId`, logs sem dados sensíveis e limites de payload.
+- `todo` Migrar primeiro as mutações administrativas e operações com segredo; depois leituras privadas e uploads por URL assinada. Preservar RLS/trancas/transações como defesa em profundidade.
+- `todo` Migrar endpoints públicos suscetíveis a abuso (reservas, disponibilidade e Pix) e aplicar limites por IP/sessão no backend.
+- `todo` Após cada grupo ter paridade e testes, revogar grants diretos correspondentes de `anon`/`authenticated`; ao final, limitar ou desabilitar o Data API não utilizado. Nunca usar secret key no navegador.
+- `todo` Adaptar CI/deploy, variáveis e domínios; manter preview sem dados reais, separar local/produção e bloquear artefatos locais no build.
+- `todo` Validar contrato, RLS, tentativa de acesso direto, IDOR, concorrência, CORS, quotas, backup/restauração e smoke antes de trocar DNS e tornar o repositório privado.
 
 ### P0 — Publicação e produção
 
-- `doing` Configurar `abrigodamarcia.com.br`: build adaptativo e runbook prontos; faltam DNS avançado, domínio no Pages, URLs de Auth, HTTPS e smoke após a propagação.
+- `todo` Configurar `abrigodamarcia.com.br` no host escolhido: build adaptativo e runbook do GitHub Pages estão prontos, mas DNS, URLs de Auth, HTTPS e smoke aguardam a decisão Cloudflare Pages × permanência no Pages.
 - `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
 - `done` Aplicar no hospedado as migrations de `20260809120000` a `20260810214700`, que atualizam reservas/rifas, restauram o fluxo encerrado → arquivado → exclusão auditada e restringem a confirmação da exportação ao backend.
 - `done` Definir `ADMIN_ALLOWED_ORIGINS`, publicar `activate-event` e `delete-archived-event` e validar CORS permitido/negado no hospedado.

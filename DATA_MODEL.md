@@ -53,12 +53,25 @@ erDiagram
   CUIDADO_ITENS {
     uuid id PK
     text name
-    text category
-    text presentation "nullable"
+    text category FK
+    uuid frequency_id FK "nullable"
+    numeric stock_quantity
     text notes "nullable"
     boolean active
     timestamptz created_at
     timestamptz updated_at
+  }
+  CUIDADO_CATEGORIAS {
+    uuid id PK
+    text name UK
+    boolean active
+  }
+  CUIDADO_FREQUENCIAS {
+    uuid id PK
+    integer interval_count
+    cuidado_intervalo_unidade interval_unit
+    boolean predefined
+    boolean active
   }
   CUIDADO_PROGRAMAS {
     uuid id PK
@@ -66,8 +79,6 @@ erDiagram
     text name
     cuidado_abrangencia scope
     text default_dose "nullable"
-    text default_frequency "nullable"
-    integer default_interval_days "nullable"
     text instructions "nullable"
     date start_date "nullable"
     date end_date "nullable"
@@ -79,10 +90,9 @@ erDiagram
     uuid program_id FK
     cuidado_situacao status
     text dose "nullable; override"
-    text frequency "nullable; override"
     date start_date "nullable"
     date end_date "nullable"
-    date next_due_on "nullable"
+    timestamptz next_due_at "nullable"
     text exception_reason "nullable"
   }
   CAE_CUIDADO_REGISTROS {
@@ -92,11 +102,21 @@ erDiagram
     timestamptz occurred_at
     text item_name "snapshot"
     text item_category "snapshot"
-    text item_presentation "snapshot nullable"
+    text item_frequency "snapshot nullable"
     text dose "snapshot nullable"
+    numeric stock_quantity_used "nullable"
     text lot "nullable"
     text notes "nullable"
-    date next_due_on "nullable"
+    timestamptz next_due_at "nullable"
+  }
+  CUIDADO_ESTOQUE_MOVIMENTOS {
+    uuid id PK
+    uuid item_id FK
+    uuid record_id FK "nullable"
+    cuidado_estoque_origem source
+    numeric previous_quantity "nullable"
+    numeric new_quantity "nullable"
+    text reason "nullable"
   }
   HISTORIAS {
     uuid id PK
@@ -251,16 +271,20 @@ erDiagram
   RESERVAS ||--o{ RESERVA_NUMEROS : "contém"
   RIFAS ||--o{ RESERVA_NUMEROS : "aloca"
   CUIDADO_ITENS ||--o{ CUIDADO_PROGRAMAS : "origina"
+  CUIDADO_CATEGORIAS ||--o{ CUIDADO_ITENS : "classifica"
+  CUIDADO_FREQUENCIAS ||--o{ CUIDADO_ITENS : "define recorrência"
   CUIDADO_PROGRAMAS ||--o{ CAE_CUIDADOS : "atribui"
   CAES ||--o{ CAE_CUIDADOS : "recebe"
   CAE_CUIDADOS ||--o{ CAE_CUIDADO_REGISTROS : "registra"
+  CUIDADO_ITENS ||--o{ CUIDADO_ESTOQUE_MOVIMENTOS : "movimenta"
+  CAE_CUIDADO_REGISTROS ||--o{ CUIDADO_ESTOQUE_MOVIMENTOS : "baixa"
 ```
 
 ## Rastreabilidade administrativa
 
 `admin_profiles` mantém a identidade privada exibida na auditoria: `user_id uuid` é PK/FK para `auth.users` com cascade, `display_name text` exige 2–60 caracteres sem espaços nas pontas e os timestamps são automáticos. Admin com `aal2` lê os perfis; cada admin insere ou altera somente o próprio. Não há exposição pública.
 
-Os agregados `caes`, `historias`, `eventos`, `reservas`, configurações, redes sociais e as quatro tabelas de cuidados compartilham `updated_at`, `updated_by uuid` (FK nullable para `auth.users`, `ON DELETE SET NULL`) e `updated_by_name text` (snapshot obrigatório). Trigger de banco sobrescreve qualquer autoria enviada pelo client: admin recebe seu perfil, escrita pública recebe “Visitante” e cron/RPC interna recebe “Sistema”. Registros anteriores à migration começam como “Sistema”; renomear ou excluir o perfil não altera snapshots. Sorteio atualiza o evento, ativação/exclusão recebe o admin validado pela Edge Function e expiração automática permanece atribuída ao sistema. As views públicas omitem os três metadados de autoria.
+Os agregados `caes`, `historias`, `eventos`, `reservas`, configurações, redes sociais e as tabelas operacionais de cuidados compartilham `updated_at`, `updated_by uuid` (FK nullable para `auth.users`, `ON DELETE SET NULL`) e `updated_by_name text` (snapshot obrigatório). Movimentos de estoque são imutáveis e guardam apenas `created_at` com a mesma autoria. Trigger de banco sobrescreve qualquer autoria enviada pelo client: admin recebe seu perfil, escrita pública recebe “Visitante” e cron/RPC interna recebe “Sistema”. Registros anteriores à migration começam como “Sistema”; renomear ou excluir o perfil não altera snapshots. Sorteio atualiza o evento, ativação/exclusão recebe o admin validado pela Edge Function e expiração automática permanece atribuída ao sistema. As views públicas omitem os três metadados de autoria.
 
 ## `site_settings`
 
@@ -334,22 +358,33 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 
 Domínio exclusivamente administrativo. Separa o item reutilizável, a regra de aplicação, a situação individual e os fatos realizados; nenhuma tabela ou view é exposta ao público.
 
+### `cuidado_categorias`
+
+Lista administrativa usada no cadastro dos itens. Começa com Vacina, Medicamento, Exame, Suplemento, Procedimento e Outro; o admin pode adicionar, renomear ou desativar opções em Configurações. A renomeação atualiza os itens vinculados, enquanto categorias desativadas permanecem no histórico e deixam de aceitar novos itens.
+
+### `cuidado_frequencias`
+
+Lista administrativa usada no cadastro dos itens. As cinco opções preestabelecidas — 1 hora, 1 dia, 1 semana, 1 mês e 1 ano — têm `predefined = true`, permanecem ativas e não aceitam alteração nem pela RPC nem por escrita direta. O admin pode acrescentar, editar e desativar intervalos personalizados, como 10 dias ou 3 meses; pares `interval_count + interval_unit` não se repetem. Mês e ano usam calendário local de São Paulo, não aproximações em dias. Opções personalizadas desativadas permanecem nos itens existentes e deixam de aparecer para novos usos.
+
 ### `cuidado_itens`
 
-Catálogo livre criado pelos admins. `name`, `category` e `presentation` identificam o item sem diferenciar maiúsculas; duplicatas são rejeitadas. Categoria é texto controlado pelo próprio conteúdo, não enum fechado no client. Itens com programa ativo não podem ser desativados e itens referenciados nunca são excluídos por cascade. Ao ativar um programa, a validação adquire `FOR SHARE` no item; a atualização que o desativa disputa a mesma linha, serializando as duas operações antes de confirmar o estado.
+Catálogo criado pelos admins. Nome + categoria identificam o item sem diferenciar maiúsculas, inclusive quando um registro antigo ainda possui apresentação. A categoria é escolhida da lista configurável e `frequency_id` aponta opcionalmente para um intervalo completo de `cuidado_frequencias`. Todo item inicia com estoque automático zero ou com o saldo informado; cada aplicação baixa a quantidade registrada. Itens com programa ativo não podem ser desativados e itens referenciados nunca são excluídos por cascade. Gravações passam por `save_care_item`, exigem admin + AAL2 e usam o `updated_at` esperado para recusar sobrescrita concorrente de saldo.
 
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `id` | `uuid` | PK; default `gen_random_uuid()` |
 | `name` | `text` | not null; 1–80 caracteres |
-| `category` | `text` | not null; 1–40 caracteres |
-| `presentation` | `text` | nullable; 1–80 caracteres quando preenchido |
+| `category` | `text` | FK not null → `cuidado_categorias.name`; atualização em cascade, exclusão restrita |
+| `frequency_id` | `uuid` | FK nullable → `cuidado_frequencias`; intervalo completo entre administrações |
+| `stock_quantity` | `numeric(12,3)` | not null; default `0`; saldo automático `>= 0` |
 | `notes` | `text` | nullable; até 1000 caracteres |
 | `active` | `boolean` | not null; default `true`; desativação preserva o histórico |
 
+`presentation` permanece fisicamente nullable apenas para conservar dados criados antes desta mudança; não é lido nem escrito pela interface nova e não integra o modelo funcional.
+
 ### `cuidado_programas`
 
-Define o uso do item. `scope = todos` materializa uma atribuição para cada cão disponível atual; novos cães disponíveis e cães que retornam ao abrigo recebem os programas globais ativos sem duplicação. `scope = selecionados` só cria as atribuições escolhidas pelo admin. Dose, frequência, intervalo e datas são padrões copiados na criação da atribuição e não reescrevem personalizações existentes.
+Define o uso do item. `scope = todos` materializa uma atribuição para cada cão disponível atual; novos cães disponíveis e cães que retornam ao abrigo recebem os programas globais ativos sem duplicação. `scope = selecionados` só cria as atribuições escolhidas pelo admin. Dose e datas são padrões copiados na criação da atribuição e não reescrevem personalizações existentes.
 
 `save_care_program` grava programa e seleção em uma transação com os privilégios do chamador: IDs inexistentes ou qualquer falha revertem tudo. Novas atribuições aceitam somente cães disponíveis e a abrangência selecionada exige ao menos um cão. Ao retirar um cão, a atribuição sem histórico é removida; com histórico, é preservada como `dispensado`. Reedições e desativações não retomam cuidados suspensos individualmente.
 
@@ -360,25 +395,29 @@ Define o uso do item. `scope = todos` materializa uma atribuição para cada cã
 | `name` | `text` | not null; 1–80 caracteres; unique por item sem diferenciar maiúsculas |
 | `scope` | `cuidado_abrangencia` | `todos \| selecionados` |
 | `default_dose` | `text` | nullable; até 120 caracteres |
-| `default_frequency` | `text` | nullable; até 160 caracteres |
-| `default_interval_days` | `integer` | nullable; 1–3650; sugere a próxima data após aplicação |
 | `instructions` | `text` | nullable; até 1000 caracteres |
 | `start_date`, `end_date` | `date` | nullable; fim não pode anteceder início |
 | `active` | `boolean` | not null; default `true` |
 
+`default_frequency` e `default_interval_days` permanecem nullable somente para compatibilidade com dados anteriores. O formulário novo não os escreve; aplicações antigas sem frequência no item ainda usam `default_interval_days` para preservar o agendamento existente.
+
 ### `cae_cuidados`
 
-Atribuição individual, unique por cão/programa. Pode sobrescrever dose, frequência e datas. `suspenso` e `dispensado` exigem `exception_reason`; atribuição global ativa não pode ser apagada individualmente. Relações com cão/programa usam `ON DELETE RESTRICT`, então um cão com prontuário não pode ser removido definitivamente.
+Atribuição individual, unique por cão/programa. Pode sobrescrever dose e datas. `next_due_at timestamptz` preserva hora para recorrências em horas. `suspenso` e `dispensado` exigem `exception_reason`; atribuição global ativa não pode ser apagada individualmente. Relações com cão/programa usam `ON DELETE RESTRICT`, então um cão com prontuário não pode ser removido definitivamente. A coluna legada `frequency` permanece apenas para conservar dados anteriores e não é usada pelo fluxo novo.
 
-Situações: `pendente | em_andamento | concluido | suspenso | dispensado`. O índice parcial de agenda cobre `next_due_on` apenas para pendentes/em andamento.
+Situações: `pendente | em_andamento | concluido | suspenso | dispensado`. O índice parcial de agenda cobre `next_due_at` apenas para pendentes/em andamento.
 
 ### `cae_cuidado_registros`
 
-Linha do tempo de `aplicacao | inicio | observacao | conclusao`. Cada registro guarda snapshots do nome, categoria e apresentação do item, além de dose, lote, nota e próxima data. Uma aplicação usa `default_interval_days` para sugerir `next_due_on`; início, aplicação e conclusão sincronizam a situação individual, enquanto observações não alteram o ciclo. Novos registros trancam a atribuição, recusam data futura e exigem cão disponível, item/programa ativos e situação não suspensa/dispensada; aplicação e conclusão também exigem ciclo não concluído. O admin pode corrigir registros, mas não apagá-los nem movê-los para outra atribuição.
+Linha do tempo de `aplicacao | inicio | observacao | conclusao`. Cada registro guarda snapshots do nome, categoria e frequência do item, além de dose, lote, nota e próximo horário. Uma aplicação calcula `next_due_at` pela frequência atual do item e grava `stock_quantity_used` (1 por padrão). Início, aplicação e conclusão sincronizam a situação individual, enquanto observações não alteram o ciclo. Novos registros trancam atribuição e item, recusam data futura, saldo insuficiente e exigem cão disponível, item/programa ativos e situação não suspensa/dispensada; aplicação e conclusão também exigem ciclo não concluído. O admin pode corrigir registros, mas não apagá-los nem movê-los para outra atribuição.
+
+### `cuidado_estoque_movimentos`
+
+Histórico imutável de cada transição de saldo, com quantidade anterior/nova, origem `cadastro | ajuste_manual | aplicacao`, registro relacionado quando automático e motivo obrigatório quando manual. A baixa e o registro realizado compartilham a mesma transação e a mesma tranca do item: falta de saldo reverte ambos. Ajustes manuais definem o saldo exato, exigem motivo e recusam um `updated_at` desatualizado.
 
 ### Exposição e acesso
 
-- As quatro tabelas têm RLS e grants apenas para `authenticated`; policy permissiva exige `is_admin()` e policy restritiva exige `aal2`.
+- As sete tabelas têm RLS e leitura apenas para `authenticated`; policy permissiva exige `is_admin()` e policy restritiva exige `aal2`. Itens só são escritos pelas operações protegidas; movimentos de estoque não aceitam escrita direta.
 - `anon` não lê, escreve nem recebe views do domínio; `caes_public` permanece inalterada.
 - Triggers de sincronização global são `security definer`, têm `search_path` vazio e não são executáveis diretamente.
 

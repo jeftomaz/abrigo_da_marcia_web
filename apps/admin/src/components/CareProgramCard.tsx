@@ -32,8 +32,7 @@ export function CareProgramCard({ assignedDogs, isPending, item, onEdit, onToggl
         </p>
         <div className="mt-1 flex flex-wrap gap-x-4 text-sm">
           {program.defaultDose && <span>Dose: {program.defaultDose}</span>}
-          {program.defaultFrequency && <span>Frequência: {program.defaultFrequency}</span>}
-          {program.defaultIntervalDays && <span>Intervalo: {program.defaultIntervalDays} dias</span>}
+          {item.frequencyLabel && <span>Frequência: {item.frequencyLabel}</span>}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">

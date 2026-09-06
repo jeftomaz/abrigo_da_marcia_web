@@ -2,14 +2,15 @@ import { createHmac } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { executarSql } from './banco'
 
-// A conta administrativa de teste é criada e destruída pela suíte. As chaves saem de
-// `supabase status`, nunca do repositório: nenhuma credencial fica versionada.
+// As contas descartáveis são provisionadas somente no Supabase local. As chaves saem
+// de `supabase status`, nunca do repositório: nenhuma credencial fica versionada.
 export const ADMIN_EMAIL = 'e2e-admin@abrigo.local'
 export const ADMIN_SENHA = 'Senha-E2E-nao-reaproveitavel-9f2c'
 export const INVITED_ADMIN_EMAIL = 'e2e-invited-admin@abrigo.local'
 export const ADMIN_NOME = 'Admin E2E'
 
 type Ambiente = { apiUrl: string; publishableKey: string; serviceRoleKey: string }
+type AdminOptions = { email?: string; password?: string; displayName?: string }
 
 let ambiente: Ambiente | null = null
 
@@ -17,8 +18,12 @@ function lerAmbienteLocal(): Ambiente {
   if (ambiente) return ambiente
   const bruto = execFileSync('supabase', ['status', '-o', 'json'], { encoding: 'utf8' })
   const status = JSON.parse(bruto.slice(bruto.indexOf('{')))
+  const apiUrl = new URL(status.API_URL)
+  if (apiUrl.protocol !== 'http:' || !['127.0.0.1', 'localhost', '::1'].includes(apiUrl.hostname)) {
+    throw new Error('O provisionamento automatizado aceita somente o Supabase local.')
+  }
   ambiente = {
-    apiUrl: status.API_URL,
+    apiUrl: apiUrl.toString().replace(/\/$/, ''),
     publishableKey: status.PUBLISHABLE_KEY ?? status.ANON_KEY,
     serviceRoleKey: status.SERVICE_ROLE_KEY,
   }
@@ -108,32 +113,43 @@ export async function definirSenhaAdminDeTeste(password: string) {
   })
 }
 
-export async function provisionarAdmin() {
-  removerAdminDeTeste()
+function sqlLiteral(value: string) {
+  return `'${value.replaceAll("'", "''")}'`
+}
+
+export async function provisionarAdmin(options: AdminOptions = {}) {
+  const email = options.email ?? ADMIN_EMAIL
+  const password = options.password ?? ADMIN_SENHA
+  const displayName = options.displayName ?? ADMIN_NOME
+  if (!/^[a-z0-9._+-]+@abrigo\.local$/i.test(email)) throw new Error('Use uma conta reservada ao ambiente local.')
+  if (password.length < 12) throw new Error('A senha local deve ter ao menos 12 caracteres.')
+  if (displayName.trim().length < 2 || displayName.trim().length > 60) throw new Error('Nome local inválido.')
+
+  executarSql(`delete from auth.users where email = ${sqlLiteral(email)}`)
 
   const user = await chamar('/admin/users', {
     method: 'POST',
     body: JSON.stringify({
-      email: ADMIN_EMAIL,
-      password: ADMIN_SENHA,
+      email,
+      password,
       email_confirm: true,
       app_metadata: { role: 'admin', admin_onboarding_completed: true },
     }),
   })
   const userId = user.id as string
-  if (!/^[0-9a-f-]{36}$/.test(userId)) throw new Error('Identificador do admin E2E inválido.')
-  executarSql(`insert into public.admin_profiles (user_id, display_name) values ('${userId}', '${ADMIN_NOME}')`)
+  if (!/^[0-9a-f-]{36}$/.test(userId)) throw new Error('Identificador do admin local inválido.')
+  executarSql(`insert into public.admin_profiles (user_id, display_name) values ('${userId}', ${sqlLiteral(displayName.trim())})`)
 
   const sessao = await chamar('/token?grant_type=password', {
     method: 'POST',
-    body: JSON.stringify({ email: ADMIN_EMAIL, password: ADMIN_SENHA }),
+    body: JSON.stringify({ email, password }),
   })
   const token = sessao.access_token as string
 
   const fator = await chamar('/factors', {
     method: 'POST',
     token,
-    body: JSON.stringify({ factor_type: 'totp', friendly_name: 'E2E' }),
+    body: JSON.stringify({ factor_type: 'totp', friendly_name: email === ADMIN_EMAIL ? 'E2E' : 'Ambiente local' }),
   })
   const segredo = fator.totp.secret as string
 
@@ -144,5 +160,5 @@ export async function provisionarAdmin() {
     body: JSON.stringify({ challenge_id: desafio.id, code: await codigoTotpComJanelaFolgada(segredo) }),
   })
 
-  return { accessToken: verificacao.access_token as string, email: ADMIN_EMAIL, senha: ADMIN_SENHA, segredo }
+  return { accessToken: verificacao.access_token as string, email, senha: password, segredo }
 }

@@ -1,29 +1,47 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { mapAuditMetadata } from '../admin/audit'
 import type { AuditMetadata } from '../admin/audit'
-import type { Tables, TablesInsert } from '../database.types'
+import type { Json, Tables, TablesInsert } from '../database.types'
 import { supabase } from '../supabase/client'
 
 export type CareScope = 'todos' | 'selecionados'
 export type CareStatus = 'pendente' | 'em_andamento' | 'concluido' | 'suspenso' | 'dispensado'
 export type CareRecordType = 'aplicacao' | 'inicio' | 'observacao' | 'conclusao'
+export type CareIntervalUnit = 'hora' | 'dia' | 'semana' | 'mes' | 'ano'
+
+export type CareCategory = {
+  active: boolean
+  audit: AuditMetadata | null
+  id: string
+  name: string
+}
+
+export type CareFrequency = {
+  active: boolean
+  audit: AuditMetadata | null
+  id: string
+  intervalCount: number
+  intervalUnit: CareIntervalUnit
+  label: string
+  predefined: boolean
+}
 
 export type CareItem = {
   active: boolean
   audit: AuditMetadata | null
   category: string
+  frequencyId: string
+  frequencyLabel: string
   id: string
   name: string
   notes: string
-  presentation: string
+  stockQuantity: number
 }
 
 export type CareProgram = {
   active: boolean
   audit: AuditMetadata | null
   defaultDose: string
-  defaultFrequency: string
-  defaultIntervalDays: number | null
   endDate: string
   id: string
   instructions: string
@@ -39,9 +57,8 @@ export type DogCare = {
   dose: string
   endDate: string
   exceptionReason: string
-  frequency: string
   id: string
-  nextDueOn: string
+  nextDueAt: string
   programId: string
   startDate: string
   status: CareStatus
@@ -53,16 +70,23 @@ export type CareRecord = {
   dose: string
   id: string
   itemCategory: string
+  itemFrequency: string
   itemName: string
-  itemPresentation: string
   lot: string
-  nextDueOn: string
+  nextDueAt: string
   notes: string
   occurredAt: string
+  stockQuantityUsed: number | null
   type: CareRecordType
 }
 
-export type CareItemDraft = Omit<CareItem, 'audit' | 'id'> & { id?: string }
+export type CareItemDraft = Omit<CareItem, 'audit' | 'frequencyLabel' | 'id'> & {
+  expectedUpdatedAt: string
+  id?: string
+  stockAdjustmentReason: string
+}
+export type CareCategoryDraft = Omit<CareCategory, 'audit' | 'id'> & { id?: string }
+export type CareFrequencyDraft = Omit<CareFrequency, 'audit' | 'id' | 'label' | 'predefined'> & { id?: string }
 export type CareProgramDraft = Omit<CareProgram, 'audit' | 'id'> & {
   dogIds: string[]
   id?: string
@@ -71,14 +95,17 @@ export type CareRecordDraft = {
   assignmentId: string
   dose: string
   lot: string
-  nextDueOn: string
+  nextDueAt: string
   notes: string
   occurredAt: string
+  stockQuantityUsed: number | null
   type: CareRecordType
 }
 
 export type AdminCareData = {
   assignments: DogCare[]
+  categories: CareCategory[]
+  frequencies: CareFrequency[]
   items: CareItem[]
   programs: CareProgram[]
 }
@@ -105,16 +132,73 @@ export function currentLocalDateTime() {
 }
 
 const adminCareKey = ['care', 'admin'] as const
+const careCategoriesKey = ['care', 'categories'] as const
+const careFrequenciesKey = ['care', 'frequencies'] as const
+const careIntervalOrder: Record<CareIntervalUnit, number> = {
+  hora: 0,
+  dia: 1,
+  semana: 2,
+  mes: 3,
+  ano: 4,
+}
 
-function mapCareItem(row: Tables<'cuidado_itens'>): CareItem {
+const careIntervalLabels: Record<CareIntervalUnit, [string, string]> = {
+  ano: ['ano', 'anos'],
+  dia: ['dia', 'dias'],
+  hora: ['hora', 'horas'],
+  mes: ['mês', 'meses'],
+  semana: ['semana', 'semanas'],
+}
+
+function sortCareFrequencies(frequencies: CareFrequency[]) {
+  return frequencies.sort((left, right) => (
+    careIntervalOrder[left.intervalUnit] - careIntervalOrder[right.intervalUnit]
+    || left.intervalCount - right.intervalCount
+  ))
+}
+
+export function formatCareFrequency(frequency: Pick<CareFrequency, 'intervalCount' | 'intervalUnit'> | undefined) {
+  if (!frequency) return ''
+  const labels = careIntervalLabels[frequency.intervalUnit]
+  const label = frequency.intervalCount === 1 ? labels[0] : labels[1]
+  return `A cada ${frequency.intervalCount} ${label}`
+}
+
+function mapCareFrequency(row: Tables<'cuidado_frequencias'>): CareFrequency {
+  return {
+    active: row.active,
+    audit: mapAuditMetadata(row),
+    id: row.id,
+    intervalCount: row.interval_count,
+    intervalUnit: row.interval_unit,
+    label: formatCareFrequency({ intervalCount: row.interval_count, intervalUnit: row.interval_unit }),
+    predefined: row.predefined,
+  }
+}
+
+function mapCareCategory(row: Tables<'cuidado_categorias'>): CareCategory {
+  return {
+    active: row.active,
+    audit: mapAuditMetadata(row),
+    id: row.id,
+    name: row.name,
+  }
+}
+
+function mapCareItem(
+  row: Tables<'cuidado_itens'>,
+  frequencyById: Map<string, CareFrequency>,
+): CareItem {
   return {
     active: row.active,
     audit: mapAuditMetadata(row),
     category: row.category,
+    frequencyId: row.frequency_id ?? '',
+    frequencyLabel: formatCareFrequency(row.frequency_id ? frequencyById.get(row.frequency_id) : undefined),
     id: row.id,
     name: row.name,
     notes: row.notes ?? '',
-    presentation: row.presentation ?? '',
+    stockQuantity: row.stock_quantity,
   }
 }
 
@@ -123,8 +207,6 @@ function mapCareProgram(row: Tables<'cuidado_programas'>): CareProgram {
     active: row.active,
     audit: mapAuditMetadata(row),
     defaultDose: row.default_dose ?? '',
-    defaultFrequency: row.default_frequency ?? '',
-    defaultIntervalDays: row.default_interval_days,
     endDate: row.end_date ?? '',
     id: row.id,
     instructions: row.instructions ?? '',
@@ -142,9 +224,8 @@ function mapDogCare(row: Tables<'cae_cuidados'>): DogCare {
     dose: row.dose ?? '',
     endDate: row.end_date ?? '',
     exceptionReason: row.exception_reason ?? '',
-    frequency: row.frequency ?? '',
     id: row.id,
-    nextDueOn: row.next_due_on ?? '',
+    nextDueAt: row.next_due_at ?? '',
     programId: row.program_id,
     startDate: row.start_date ?? '',
     status: row.status,
@@ -158,29 +239,38 @@ function mapCareRecord(row: Tables<'cae_cuidado_registros'>): CareRecord {
     dose: row.dose ?? '',
     id: row.id,
     itemCategory: row.item_category,
+    itemFrequency: row.item_frequency ?? '',
     itemName: row.item_name,
-    itemPresentation: row.item_presentation ?? '',
     lot: row.lot ?? '',
-    nextDueOn: row.next_due_on ?? '',
+    nextDueAt: row.next_due_at ?? '',
     notes: row.notes ?? '',
     occurredAt: row.occurred_at,
+    stockQuantityUsed: row.stock_quantity_used,
     type: row.type,
   }
 }
 
 async function listAdminCare(): Promise<AdminCareData> {
-  const [itemsResult, programsResult, assignmentsResult] = await Promise.all([
+  const [categoriesResult, frequenciesResult, itemsResult, programsResult, assignmentsResult] = await Promise.all([
+    supabase.from('cuidado_categorias').select('*').order('name'),
+    supabase.from('cuidado_frequencias').select('*'),
     supabase.from('cuidado_itens').select('*').order('category').order('name'),
     supabase.from('cuidado_programas').select('*').order('active', { ascending: false }).order('name'),
-    supabase.from('cae_cuidados').select('*').order('next_due_on', { ascending: true, nullsFirst: false }),
+    supabase.from('cae_cuidados').select('*').order('next_due_at', { ascending: true, nullsFirst: false }),
   ])
 
-  const error = itemsResult.error ?? programsResult.error ?? assignmentsResult.error
+  const error = categoriesResult.error ?? frequenciesResult.error ?? itemsResult.error
+    ?? programsResult.error ?? assignmentsResult.error
   if (error) throw error
+
+  const frequencies = sortCareFrequencies((frequenciesResult.data ?? []).map(mapCareFrequency))
+  const frequencyById = new Map(frequencies.map((frequency) => [frequency.id, frequency]))
 
   return {
     assignments: (assignmentsResult.data ?? []).map(mapDogCare),
-    items: (itemsResult.data ?? []).map(mapCareItem),
+    categories: (categoriesResult.data ?? []).map(mapCareCategory),
+    frequencies,
+    items: (itemsResult.data ?? []).map((item) => mapCareItem(item, frequencyById)),
     programs: (programsResult.data ?? []).map(mapCareProgram),
   }
 }
@@ -202,35 +292,35 @@ function nullable(value: string) {
 }
 
 async function saveCareItem(draft: CareItemDraft) {
-  const values: TablesInsert<'cuidado_itens'> = {
-    active: draft.active,
-    category: draft.category.trim(),
-    name: draft.name.trim(),
-    notes: nullable(draft.notes),
-    presentation: nullable(draft.presentation),
-  }
-  const request = draft.id
-    ? supabase.from('cuidado_itens').update(values).eq('id', draft.id).select().single()
-    : supabase.from('cuidado_itens').insert(values).select().single()
-  const { data, error } = await request
+  const { data, error } = await supabase.rpc('save_care_item', {
+    p_active: draft.active,
+    p_category: draft.category.trim(),
+    p_name: draft.name.trim(),
+    ...(draft.frequencyId ? { p_frequency_id: draft.frequencyId } : {}),
+    ...(draft.id ? { p_item_id: draft.id } : {}),
+    ...(draft.id ? { p_expected_updated_at: draft.expectedUpdatedAt } : {}),
+    ...(draft.notes.trim() ? { p_notes: draft.notes.trim() } : {}),
+    ...(draft.stockAdjustmentReason.trim()
+      ? { p_stock_adjustment_reason: draft.stockAdjustmentReason.trim() }
+      : {}),
+    p_stock_quantity: draft.stockQuantity,
+  })
   if (error) throw error
-  return mapCareItem(data)
+  return data
 }
 
-async function setCareItemActive({ id, active }: Pick<CareItem, 'active' | 'id'>) {
-  const { data, error } = await supabase
-    .from('cuidado_itens')
-    .update({ active })
-    .eq('id', id)
-    .select()
-    .single()
+async function setCareItemActive(item: Pick<CareItem, 'active' | 'audit' | 'id'>) {
+  if (!item.audit) throw new Error('Os dados do item estão desatualizados.')
+  const { error } = await supabase.rpc('set_care_item_active', {
+    p_active: item.active,
+    p_expected_updated_at: item.audit.updatedAt,
+    p_item_id: item.id,
+  })
   if (error) throw error
-  return mapCareItem(data)
 }
 
 async function saveCareProgram(draft: CareProgramDraft) {
   const defaultDose = draft.defaultDose.trim()
-  const defaultFrequency = draft.defaultFrequency.trim()
   const instructions = draft.instructions.trim()
   const { data, error } = await supabase.rpc('save_care_program', {
     p_active: draft.active,
@@ -239,8 +329,6 @@ async function saveCareProgram(draft: CareProgramDraft) {
     p_name: draft.name.trim(),
     p_scope: draft.scope,
     ...(defaultDose ? { p_default_dose: defaultDose } : {}),
-    ...(defaultFrequency ? { p_default_frequency: defaultFrequency } : {}),
-    ...(draft.defaultIntervalDays ? { p_default_interval_days: draft.defaultIntervalDays } : {}),
     ...(draft.endDate ? { p_end_date: draft.endDate } : {}),
     ...(instructions ? { p_instructions: instructions } : {}),
     ...(draft.id ? { p_program_id: draft.id } : {}),
@@ -255,9 +343,10 @@ async function saveCareRecord(draft: CareRecordDraft) {
     assignment_id: draft.assignmentId,
     dose: nullable(draft.dose),
     lot: nullable(draft.lot),
-    next_due_on: nullable(draft.nextDueOn),
+    next_due_at: nullable(draft.nextDueAt),
     notes: nullable(draft.notes),
     occurred_at: draft.occurredAt,
+    stock_quantity_used: draft.stockQuantityUsed,
     type: draft.type,
   }
   const { data, error } = await supabase
@@ -267,6 +356,44 @@ async function saveCareRecord(draft: CareRecordDraft) {
     .single()
   if (error) throw error
   return mapCareRecord(data)
+}
+
+async function listCareFrequencies() {
+  const { data, error } = await supabase
+    .from('cuidado_frequencias')
+    .select('*')
+  if (error) throw error
+  return sortCareFrequencies((data ?? []).map(mapCareFrequency))
+}
+
+async function listCareCategories() {
+  const { data, error } = await supabase
+    .from('cuidado_categorias')
+    .select('*')
+    .order('name')
+  if (error) throw error
+  return (data ?? []).map(mapCareCategory)
+}
+
+async function saveCareCategories(categories: CareCategoryDraft[]) {
+  const payload: Json = categories.map((category) => ({
+    active: category.active,
+    id: category.id ?? '',
+    name: category.name.trim(),
+  }))
+  const { error } = await supabase.rpc('save_care_categories', { p_categories: payload })
+  if (error) throw error
+}
+
+async function saveCareFrequencies(frequencies: CareFrequencyDraft[]) {
+  const payload: Json = frequencies.map((frequency) => ({
+    active: frequency.active,
+    id: frequency.id ?? '',
+    intervalCount: frequency.intervalCount,
+    intervalUnit: frequency.intervalUnit,
+  }))
+  const { error } = await supabase.rpc('save_care_frequencies', { p_frequencies: payload })
+  if (error) throw error
 }
 
 function useInvalidateAdminCare() {
@@ -279,6 +406,14 @@ function useInvalidateAdminCare() {
 
 export function useAdminCare() {
   return useQuery({ queryKey: adminCareKey, queryFn: listAdminCare })
+}
+
+export function useCareCategories() {
+  return useQuery({ queryKey: careCategoriesKey, queryFn: listCareCategories })
+}
+
+export function useCareFrequencies() {
+  return useQuery({ queryKey: careFrequenciesKey, queryFn: listCareFrequencies })
 }
 
 export function useCareRecords(assignmentIds: string[]) {
@@ -308,4 +443,26 @@ export function useSaveCareProgram() {
 export function useSaveCareRecord() {
   const invalidate = useInvalidateAdminCare()
   return useMutation({ mutationFn: saveCareRecord, onSuccess: invalidate })
+}
+
+export function useSaveCareFrequencies() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: saveCareFrequencies,
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminCareKey }),
+      queryClient.invalidateQueries({ queryKey: careFrequenciesKey }),
+    ]),
+  })
+}
+
+export function useSaveCareCategories() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: saveCareCategories,
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminCareKey }),
+      queryClient.invalidateQueries({ queryKey: careCategoriesKey }),
+    ]),
+  })
 }
