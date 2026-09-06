@@ -46,6 +46,7 @@ Não reabrir sem motivo novo. Vivem aqui, e não no log do `PROGRESS.md`, para n
 - **Débito de contraste AA do coral `#f15a55`** é decisão aceita (identidade aprovada pelo Abrigo) e está travada pela suíte E2E nos tokens da marca.
 - **Componente compartilhado com `lg:` só é renderizado no público.** Se algum for para o admin, revise o breakpoint antes: o admin vira em `desk` (85rem), não em `lg` (64rem).
 - **“Por cão” permanece sempre expandida.** Todos os cães exibem os programas na mesma ordem, sem etapa de seleção; ausência de atribuição preserva a posição e aparece como “Não recebe”. Busca e filtro por tag apenas reduzem o conjunto de cães visíveis, sem recolher seus prontuários.
+- **Editor aberto por outra tela retorna à origem.** Links de gestão que atravessam páginas enviam `location.state.returnTo`; cancelar ou salvar retorna à tela/aba de origem. Editor aberto dentro da própria página apenas fecha localmente.
 - **Suíte vermelha bloqueia entrega.** Nenhum teste falhando é tolerado como pendência — vermelho tolerado deixa de ser lido.
 
 ## Ao mexer em card ou grade

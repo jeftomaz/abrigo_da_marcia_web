@@ -610,6 +610,15 @@ test.describe('admin', () => {
 
       await page.goto(`${ADMIN_URL}/#/cuidados`)
       await expect(page.getByRole('heading', { name: 'Cuidados', exact: true })).toBeVisible()
+      await page.getByRole('tab', { name: 'Itens' }).click()
+      await page.getByRole('button', { name: 'Novo item' }).click()
+      await page.getByRole('dialog', { name: 'Novo item de cuidado' }).getByRole('link', { name: 'Gerenciar' }).first().click()
+      const linkedCategoryForm = page.locator('form').filter({ has: page.getByRole('heading', { name: 'Editar Categorias' }) })
+      await expect(linkedCategoryForm).toBeVisible()
+      await linkedCategoryForm.getByRole('button', { name: 'Cancelar' }).click()
+      await expect(page).toHaveURL(/#\/cuidados\?view=itens$/)
+      await expect(page.getByRole('heading', { name: 'Itens do catálogo' })).toBeVisible()
+
       const agendaTab = page.getByRole('tab', { name: 'Agenda' })
       const programsTab = page.getByRole('tab', { name: 'Programas' })
       expect(await programsTab.evaluate((element) => getComputedStyle(element).backgroundColor)).toBe('rgb(255, 255, 255)')
@@ -773,6 +782,25 @@ test.describe('admin', () => {
     } finally {
       limparCuidadosE2E()
       executarSql("update public.caes set tags = '{}'")
+    }
+  })
+
+  test('exibe todos os cães em Cuidados mesmo sem programas', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'O estado vazio é coberto uma vez.')
+    limparCuidadosE2E()
+    try {
+      await entrar(page)
+      await page.goto(`${ADMIN_URL}/#/cuidados`)
+      await page.getByRole('tab', { name: 'Por cão' }).click()
+
+      const dogs = ['Negão', 'Dentinho', 'Doguinho', 'Mel', 'Bidu', 'Fumaça']
+      for (const dog of dogs) {
+        const dogCare = page.getByRole('region', { name: `Cuidados de ${dog}`, exact: true })
+        await expect(dogCare).toBeVisible()
+        await expect(dogCare.getByText('Nenhum programa de cuidado cadastrado.')).toBeVisible()
+      }
+    } finally {
+      limparCuidadosE2E()
     }
   })
 

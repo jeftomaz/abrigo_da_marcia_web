@@ -112,6 +112,7 @@ export function CareItemForm({ categories, frequencies, item, onCancel, onSave }
             </TextField>
             <Action
               to="/configuracoes?editor=care-categories"
+              state={{ returnTo: '/cuidados?view=itens' }}
               size="admin-inline"
               variant="neutral-adaptive"
             >
@@ -147,6 +148,7 @@ export function CareItemForm({ categories, frequencies, item, onCancel, onSave }
           </label>
           <Action
             to="/configuracoes?editor=care-frequencies"
+            state={{ returnTo: '/cuidados?view=itens' }}
             size="admin-inline"
             variant="neutral-adaptive"
           >

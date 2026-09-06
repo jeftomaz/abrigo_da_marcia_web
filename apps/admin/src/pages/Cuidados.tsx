@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Action,
   Dialog,
@@ -50,13 +51,16 @@ function normalizeSearch(value: string) {
 }
 
 export function Cuidados() {
+  const [searchParams] = useSearchParams()
   const { data: care = EMPTY_CARE, isLoading: isCareLoading, error: careError } = useAdminCare()
   const { data: dogs = EMPTY_DOGS, isLoading: isDogsLoading, error: dogsError } = useAdminDogs()
   const saveItem = useSaveCareItem()
   const setItemActive = useSetCareItemActive()
   const saveProgram = useSaveCareProgram()
   const saveRecord = useSaveCareRecord()
-  const [view, setView] = useState<CareView>('agenda')
+  const [view, setView] = useState<CareView>(() => (
+    searchParams.get('view') === 'itens' ? 'itens' : 'agenda'
+  ))
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState('')
   const [programTarget, setProgramTarget] = useState<CareProgram | null | undefined>(undefined)
@@ -472,8 +476,6 @@ export function Cuidados() {
             <div className="mt-4 flex min-w-0 flex-col gap-8">
               {filteredDogs.length === 0 ? (
                 <p className="text-center">Nenhum cão encontrado.</p>
-              ) : dogViewPrograms.length === 0 ? (
-                <p className="text-center">Nenhum programa de cuidado cadastrado.</p>
               ) : filteredDogs.map((dog) => {
                 const dogAssignments = assignmentsByDog.get(dog.id) ?? []
                 const assignedCareCount = dogAssignments.filter((assignment) => assignment.status !== 'dispensado').length
@@ -488,7 +490,11 @@ export function Cuidados() {
                       </p>
                     </div>
                     <div className="grid min-w-0 items-stretch gap-3 desk:grid-cols-2">
-                      {dogViewPrograms.map((program) => {
+                      {dogViewPrograms.length === 0 ? (
+                        <AdminListRow isEditing={false} className="rounded-2xl p-4">
+                          <p className="text-sm">Nenhum programa de cuidado cadastrado.</p>
+                        </AdminListRow>
+                      ) : dogViewPrograms.map((program) => {
                         const item = itemById.get(program.itemId)
                         const assignment = assignmentByDogAndProgram.get(`${dog.id}:${program.id}`)
                         if (!item) return null
