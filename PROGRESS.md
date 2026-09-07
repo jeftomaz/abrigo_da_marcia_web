@@ -1,5 +1,7 @@
 # PROGRESS.md
 
+- Controles das listagens simplificados (2026-09-07): ordenação direta com dez opções, sem diálogo, e controles alinhados às buscas conforme o contrato de cada tela; `SelectField` reutilizado com variante administrativa. Validação: lint/builds, 347 pgTAP e 164 E2E aprovados; 19 casos ignorados pela matriz.
+
 - Ordenação administrativa de cães (2026-09-07): botão “Ordem” em Cães e Cuidados > Por cão, com cinco critérios nos dois sentidos e lógica comum. Datas usam metadados já consultados; nenhuma alteração de banco, permissões ou catálogo público. Listagem de Cães ampliada no desktop. Validação completa: lint/builds, 347 pgTAP e 164 E2E aprovados; 19 casos ignorados pela matriz.
 
 - Busca administrativa de cães ampliada (2026-09-07): nome e tags agora compartilham porte e idade calculada como termos pesquisáveis nas abas Cães e Cuidados > Por cão. Validação: lint e builds; E2E afetado atualizado, mas não executado sem Docker local.

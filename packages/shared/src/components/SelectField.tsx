@@ -9,7 +9,7 @@ type SelectFieldProps = {
   label: string
   onChange: (value: string) => void
   value: string
-  variant: 'filter' | 'product'
+  variant: 'filter' | 'product' | 'toolbar'
 }
 
 const WRAPPER_CLASSES = {
@@ -49,6 +49,26 @@ export function SelectField({
   value,
   variant,
 }: SelectFieldProps) {
+  if (variant === 'toolbar') {
+    return (
+      <div className={`relative min-w-0 rounded-full bg-surface-raised text-on-surface-raised focus-within:ring-2 focus-within:ring-marca ${className}`}>
+        <label htmlFor={id} className="flex min-h-11 items-center justify-center pr-6 pl-2 text-xs font-medium linha:text-sm">
+          {label}
+        </label>
+        <select
+          id={id}
+          aria-label={accessibleLabel}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0 scheme-light dark:scheme-dark"
+        >
+          {children}
+        </select>
+        <Icon name="arrow-separate-vertical" className="pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2" />
+      </div>
+    )
+  }
+
   return (
     <div className={`${WRAPPER_CLASSES[variant]} ${className}`}>
       <label htmlFor={id} className={LABEL_CLASSES[variant]}>

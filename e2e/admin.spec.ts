@@ -491,28 +491,40 @@ test.describe('admin', () => {
       const rows = care ? page.getByRole('region', { name: /^Cuidados de / }) : page.locator('article')
       await expect(rows).toHaveCount(3)
       await expect(rows.first()).toContainText('Zeca')
+      const orderSelect = page.getByRole('combobox', { name: 'Ordem', exact: true })
+      await expect(orderSelect.locator('option')).toHaveCount(10)
+      const originalViewport = page.viewportSize()!
+      for (const width of [320, 393, 1440]) {
+        await page.setViewportSize({ width, height: 900 })
+        const orderBox = (await orderSelect.boundingBox())!
+        const search = page.getByLabel(care ? 'Buscar em Cuidados' : 'Busca por nome, tag, porte ou idade')
+        const searchBox = (await search.boundingBox())!
+        if (care) {
+          expect(searchBox.y).toBeCloseTo(orderBox.y, 0)
+          await expectNoOverlap(search, orderSelect, 'Busca e Ordem em Cuidados')
+        } else {
+          const status = page.getByLabel('Filtrar por status')
+          const create = page.getByRole('button', { name: 'Novo Cão', exact: true })
+          expect((await status.boundingBox())!.y).toBeCloseTo(orderBox.y, 0)
+          expect((await create.boundingBox())!.y).toBeCloseTo(orderBox.y, 0)
+          expect(searchBox.y).toBeGreaterThanOrEqual(orderBox.y + orderBox.height)
+          await expectNoOverlap(status, orderSelect, 'Status e Ordem')
+          await expectNoOverlap(orderSelect, create, 'Ordem e Novo Cão')
+        }
+        await expectNoHorizontalOverflow(page, `Controles dos cães em ${width}px`)
+      }
+      await page.setViewportSize(originalViewport)
+      await orderSelect.click()
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      await page.keyboard.press('Escape')
       for (const [order, indices] of Object.entries(orders)) {
-        await page.getByRole('button', { name: 'Ordem', exact: true }).click()
-        const dialog = page.getByRole('dialog', { name: 'Ordem', exact: true })
-        await expect(dialog.getByLabel('Ordenar por')).toBeFocused()
-        await dialog.getByLabel('Ordenar por').selectOption(order.split('-')[0])
-        await dialog.getByLabel('Sentido').selectOption(order.split('-')[1])
-        await expectNoHorizontalOverflow(page, `Ordenação ${order}`)
-        await dialog.getByRole('button', { name: 'Aplicar', exact: true }).click()
+        await orderSelect.selectOption(order)
+        await expect(page.getByRole('dialog')).toHaveCount(0)
         for (const [position, index] of indices.entries()) {
           await expect(rows.nth(position)).toContainText(names[index])
         }
       }
-      await page.getByRole('button', { name: 'Ordem', exact: true }).click()
-      await page.getByLabel('Ordenar por').selectOption('name')
-      await page.getByLabel('Sentido').selectOption('desc')
-      await page.getByRole('button', { name: 'Cancelar', exact: true }).click()
-      await expect(rows.first()).toContainText('Bento')
-      await page.getByRole('button', { name: 'Ordem', exact: true }).click()
-      await expect(page.getByLabel('Ordenar por')).toHaveValue('updated')
-      await expect(page.getByLabel('Sentido')).toHaveValue('asc')
-      await page.keyboard.press('Escape')
-      await expect(page.getByRole('button', { name: 'Ordem', exact: true })).toBeFocused()
+      await expect(orderSelect).toHaveValue('updated-asc')
       if (care) await page.getByRole('button', { name: '#canil', exact: true }).click()
       else await page.getByLabel('Busca por nome, tag, porte ou idade').fill('canil')
       await expect(rows).toHaveCount(2)
