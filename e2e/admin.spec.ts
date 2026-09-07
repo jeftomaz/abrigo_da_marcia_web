@@ -462,6 +462,64 @@ test.describe('admin', () => {
     }
   })
 
+  test('ordena cães pelos cinco critérios nos dois sentidos nas listagens administrativas', async ({ page }) => {
+    const names = ['Ágata', 'Bento', 'Zeca']
+    const dogs = names.map((name, index) => ({
+      id: `00000000-0000-0000-0000-00000000000${index}`,
+      name, gender: 'macho', size: ['medio', 'grande', 'pequeno'][index],
+      birth_year: [2019, 2024, 2012][index], description: 'Cão de teste',
+      status: 'disponivel', featured: false, photos: [], tags: index === 1 ? [] : ['canil'],
+      adoption_form_url: null, updated_by_name: 'Teste',
+      created_at: `2026-01-0${[2, 1, 3][index]}T00:00:00Z`,
+      updated_at: `2026-02-0${[3, 1, 2][index]}T00:00:00Z`,
+    }))
+    const orders: Record<string, number[]> = {
+      'name-asc': [0, 1, 2], 'name-desc': [2, 1, 0],
+      'size-asc': [2, 0, 1], 'size-desc': [1, 0, 2],
+      'age-asc': [1, 0, 2], 'age-desc': [2, 0, 1],
+      'created-desc': [2, 0, 1], 'created-asc': [1, 0, 2],
+      'updated-desc': [0, 2, 1], 'updated-asc': [1, 2, 0],
+    }
+    await page.route('**/rest/v1/caes?*', (route) => route.fulfill({ json: dogs }))
+    await entrar(page)
+
+    for (const care of [false, true]) {
+      if (care) {
+        await page.getByRole('link', { name: 'Cuidados', exact: true }).click()
+        await page.getByRole('tab', { name: 'Por cão' }).click()
+      }
+      const rows = care ? page.getByRole('region', { name: /^Cuidados de / }) : page.locator('article')
+      await expect(rows).toHaveCount(3)
+      await expect(rows.first()).toContainText('Zeca')
+      for (const [order, indices] of Object.entries(orders)) {
+        await page.getByRole('button', { name: 'Ordem', exact: true }).click()
+        const dialog = page.getByRole('dialog', { name: 'Ordem', exact: true })
+        await expect(dialog.getByLabel('Ordenar por')).toBeFocused()
+        await dialog.getByLabel('Ordenar por').selectOption(order.split('-')[0])
+        await dialog.getByLabel('Sentido').selectOption(order.split('-')[1])
+        await expectNoHorizontalOverflow(page, `Ordenação ${order}`)
+        await dialog.getByRole('button', { name: 'Aplicar', exact: true }).click()
+        for (const [position, index] of indices.entries()) {
+          await expect(rows.nth(position)).toContainText(names[index])
+        }
+      }
+      await page.getByRole('button', { name: 'Ordem', exact: true }).click()
+      await page.getByLabel('Ordenar por').selectOption('name')
+      await page.getByLabel('Sentido').selectOption('desc')
+      await page.getByRole('button', { name: 'Cancelar', exact: true }).click()
+      await expect(rows.first()).toContainText('Bento')
+      await page.getByRole('button', { name: 'Ordem', exact: true }).click()
+      await expect(page.getByLabel('Ordenar por')).toHaveValue('updated')
+      await expect(page.getByLabel('Sentido')).toHaveValue('asc')
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('button', { name: 'Ordem', exact: true })).toBeFocused()
+      if (care) await page.getByRole('button', { name: '#canil', exact: true }).click()
+      else await page.getByLabel('Busca por nome, tag, porte ou idade').fill('canil')
+      await expect(rows).toHaveCount(2)
+      await expect(rows.first()).toContainText('Zeca')
+    }
+  })
+
   test('recusa código TOTP inválido', async ({ page }) => {
     await page.addInitScript(() => {
       Object.defineProperty(Navigator.prototype, 'clipboard', {

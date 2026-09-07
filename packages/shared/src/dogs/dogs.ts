@@ -17,6 +17,7 @@ export type DogStatus = 'disponivel' | 'adotado' | 'falecido'
 
 export type Dog = {
   audit: AuditMetadata | null
+  createdAt: string | null
   id: string
   name: string
   gender: DogGender
@@ -35,7 +36,7 @@ export type DogPatch = { featured?: boolean; status?: DogStatus }
 
 export type EditableDogPhoto = EditablePhoto
 
-export type DogDraft = Omit<Dog, 'audit' | 'id' | 'photos'> & {
+export type DogDraft = Omit<Dog, 'audit' | 'createdAt' | 'id' | 'photos'> & {
   id?: string
   photos: EditableDogPhoto[]
 }
@@ -50,6 +51,44 @@ export const DOG_SIZE_LABELS: Record<DogSize, string> = {
   pequeno: 'Pequeno',
   medio: 'Médio',
   grande: 'Grande',
+}
+
+export const DOG_SORT_OPTIONS = [
+  { value: 'name', label: 'Nome', asc: 'A → Z', desc: 'Z → A' },
+  { value: 'size', label: 'Porte', asc: 'Pequeno → grande', desc: 'Grande → pequeno' },
+  { value: 'age', label: 'Idade', asc: 'Mais novo → mais velho', desc: 'Mais velho → mais novo' },
+  { value: 'created', label: 'Data de inclusão', asc: 'Mais antigo → mais recente', desc: 'Mais recente → mais antigo' },
+  { value: 'updated', label: 'Data de alteração', asc: 'Mais antigo → mais recente', desc: 'Mais recente → mais antigo' },
+] as const
+
+export type DogSortOrder = `${typeof DOG_SORT_OPTIONS[number]['value']}-${'asc' | 'desc'}`
+
+const DOG_SIZE_ORDER: Record<DogSize, number> = { pequeno: 0, medio: 1, grande: 2 }
+const DOG_NAME_COLLATOR = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true })
+
+export function sortDogs(dogs: readonly Dog[], order: DogSortOrder): Dog[] {
+  return [...dogs].sort((left, right) => {
+    const byName = DOG_NAME_COLLATOR.compare(left.name, right.name)
+    let comparison = 0
+    switch (order) {
+      case 'name-asc': comparison = byName; break
+      case 'name-desc': comparison = -byName; break
+      case 'size-asc': comparison = DOG_SIZE_ORDER[left.size] - DOG_SIZE_ORDER[right.size]; break
+      case 'size-desc': comparison = DOG_SIZE_ORDER[right.size] - DOG_SIZE_ORDER[left.size]; break
+      case 'age-asc': comparison = right.birthYear - left.birthYear; break
+      case 'age-desc': comparison = left.birthYear - right.birthYear; break
+      default: {
+        const leftDate = order.startsWith('created-') ? left.createdAt : left.audit?.updatedAt
+        const rightDate = order.startsWith('created-') ? right.createdAt : right.audit?.updatedAt
+        if (!leftDate || !rightDate) {
+          comparison = Number(Boolean(rightDate)) - Number(Boolean(leftDate))
+        } else {
+          comparison = (Date.parse(leftDate) - Date.parse(rightDate)) * (order.endsWith('-asc') ? 1 : -1)
+        }
+      }
+    }
+    return comparison || byName || left.id.localeCompare(right.id)
+  })
 }
 
 export function getDogSearchText(dog: Dog, currentYear = new Date().getFullYear()) {
@@ -71,6 +110,7 @@ const publicDogsKey = ['dogs', 'public'] as const
 function mapDog(row: Tables<'caes'>): Dog {
   return {
     audit: mapAuditMetadata(row),
+    createdAt: row.created_at,
     id: row.id,
     name: row.name,
     gender: row.gender,
@@ -99,6 +139,7 @@ function mapPublicDog(row: Tables<'caes_public'>): Dog {
 
   return {
     audit: null,
+    createdAt: null,
     id: row.id,
     name: row.name,
     gender: row.gender,

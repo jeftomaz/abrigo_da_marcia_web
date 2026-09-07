@@ -25,6 +25,7 @@ Fonte dos tokens: `packages/shared/src/theme.css`. Componentes: `packages/shared
 | `FeatureSection` | Seção da landing com imagem | `tone`, `layout`: `default`/`compact`, `imagePosition`: `start`/`end`, `after`, `contentClassName` | Grade e `max-w` do container |
 | `TextField` | Campo de formulário | `as`: `input` (padrão), `select`, `textarea` — o resto são atributos nativos | Borda, foco e estado desabilitado |
 | `SelectField` | Select com rótulo | `variant`: `filter`, `product`. `label`, `accessibleLabel` | Aparência do controle |
+| `DogSortControl` (admin) | Ordenação de Cães e Cuidados > Por cão | Botão “Ordem”; reutiliza `Action`, `ConfirmationDialog` e `TextField`. Recebe `value`/`onChange`; critério e sentido em campos separados | Aplicar confirma; Cancelar/Escape preservam a ordem. Padrão: inclusão recente; empates usam nome pt-BR e ID. Filtros preservados; programas de Cuidados não são reordenados |
 | `Switch` | Alternância booleana | `variant`: `neutra`, `marca` | — |
 | `BlobImage` | Foto com máscara orgânica | `aspect`: `square`, `portrait`, `priority` | Máscara e proporção |
 | `ImagePlaceholder` | Vazio de foto | `label` (obrigatório, vira `aria-label`) | Fundo de marca e o ícone |
@@ -46,6 +47,7 @@ Não reabrir sem motivo novo. Vivem aqui, e não no log do `PROGRESS.md`, para n
 - **Débito de contraste AA do coral `#f15a55`** é decisão aceita (identidade aprovada pelo Abrigo) e está travada pela suíte E2E nos tokens da marca.
 - **Componente compartilhado com `lg:` só é renderizado no público.** Se algum for para o admin, revise o breakpoint antes: o admin vira em `desk` (85rem), não em `lg` (64rem).
 - **“Por cão” permanece sempre expandida.** Todos os cães exibem os programas na mesma ordem, sem etapa de seleção; ausência de atribuição preserva a posição e aparece como “Não recebe”. Busca e filtro por tag apenas reduzem o conjunto de cães visíveis, sem recolher seus prontuários.
+- **Listagem de Cães no desktop:** coluna de 34 rem; com o editor aberto, varia de 26 a 34 rem para acomodar os três painéis. Mobile mantém sua largura atual.
 - **Editor aberto por outra tela retorna à origem.** Links de gestão que atravessam páginas enviam `location.state.returnTo`; cancelar ou salvar retorna à tela/aba de origem. Editor aberto dentro da própria página apenas fecha localmente.
 - **Suíte vermelha bloqueia entrega.** Nenhum teste falhando é tolerado como pendência — vermelho tolerado deixa de ser lido.
 
