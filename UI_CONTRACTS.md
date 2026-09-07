@@ -25,6 +25,7 @@ Fonte dos tokens: `packages/shared/src/theme.css`. Componentes: `packages/shared
 | `FeatureSection` | Seção da landing com imagem | `tone`, `layout`: `default`/`compact`, `imagePosition`: `start`/`end`, `after`, `contentClassName` | Grade e `max-w` do container |
 | `TextField` | Campo de formulário | `as`: `input` (padrão), `select`, `textarea` — o resto são atributos nativos | Borda, foco e estado desabilitado |
 | `SelectField` | Select com rótulo | `variant`: `filter`, `product`. `label`, `accessibleLabel` | Aparência do controle |
+| `DogSortControl` (admin) | Ordenação de Cães e Cuidados > Por cão | Botão “Ordem”; reutiliza `Action`, `ConfirmationDialog` e `TextField`. Recebe `value`/`onChange`; critério e sentido em campos separados | Aplicar confirma; Cancelar/Escape preservam a ordem. Padrão: inclusão recente; empates usam nome pt-BR e ID. Filtros preservados; programas de Cuidados não são reordenados |
 | `Switch` | Alternância booleana | `variant`: `neutra`, `marca` | — |
 | `BlobImage` | Foto com máscara orgânica | `aspect`: `square`, `portrait`, `priority` | Máscara e proporção |
 | `ImagePlaceholder` | Vazio de foto | `label` (obrigatório, vira `aria-label`) | Fundo de marca e o ícone |

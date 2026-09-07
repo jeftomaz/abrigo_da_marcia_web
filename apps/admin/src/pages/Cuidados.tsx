@@ -8,6 +8,7 @@ import {
   TextField,
   currentLocalDateTime,
   getDogSearchText,
+  sortDogs,
   getAdminErrorMessage,
   useAdminCare,
   useAdminDogs,
@@ -17,7 +18,7 @@ import {
   useSaveCareRecord,
   useSetCareItemActive,
 } from '@abrigo/shared'
-import type { AdminCareData, CareItem, CareProgram, CareProgramDraft, CareRecord, Dog } from '@abrigo/shared'
+import type { AdminCareData, CareItem, CareProgram, CareProgramDraft, CareRecord, Dog, DogSortOrder } from '@abrigo/shared'
 import { AdminListRow } from '../components/AdminListRow'
 import { CareAssignmentCard } from '../components/CareAssignmentCard'
 import { CareItemForm } from '../components/CareItemForm'
@@ -25,6 +26,7 @@ import { CareProgramCard } from '../components/CareProgramCard'
 import { CareProgramForm } from '../components/CareProgramForm'
 import { CareRecordForm } from '../components/CareRecordForm'
 import { ConfirmationDialog } from '../components/ConfirmationDialog'
+import { DogSortControl } from '../components/DogSortControl'
 import { StatCards } from '../components/StatCards'
 import { StatusBadge } from '../components/StatusBadge'
 import { useSuccessMessage } from '../hooks/useSuccessMessage'
@@ -64,6 +66,7 @@ export function Cuidados() {
   ))
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState('')
+  const [sortOrder, setSortOrder] = useState<DogSortOrder>('created-desc')
   const [programTarget, setProgramTarget] = useState<CareProgram | null | undefined>(undefined)
   const [itemTarget, setItemTarget] = useState<CareItem | null | undefined>(undefined)
   const [itemReturnsToProgram, setItemReturnsToProgram] = useState(false)
@@ -115,11 +118,11 @@ export function Cuidados() {
     [items, query],
   )
   const filteredDogs = useMemo(
-    () => dogs.filter((dog) => (
+    () => sortDogs(dogs.filter((dog) => (
       (!tagFilter || dog.tags.includes(tagFilter))
       && (!query || normalizeSearch(`${getDogSearchText(dog)} ${STATUS_LABELS[dog.status]}`).includes(query))
-    )),
-    [dogs, query, tagFilter],
+    )), sortOrder),
+    [dogs, query, tagFilter, sortOrder],
   )
   const dogViewPrograms = useMemo(() => {
     const assignedProgramIds = new Set(assignments.map((assignment) => assignment.programId))
@@ -450,6 +453,9 @@ export function Cuidados() {
 
         {!isLoading && !loadError && view === 'caes' && (
           <section aria-label="Cuidados por cão" className="mt-6 min-w-0">
+            <div className="mb-3 flex justify-end">
+              <DogSortControl value={sortOrder} onChange={setSortOrder} />
+            </div>
             <p className="text-sm">Todos os cães aparecem abertos. Os programas seguem a mesma ordem; “Não recebe” identifica os cuidados não atribuídos.</p>
             {availableTags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Agrupar cães por tag">

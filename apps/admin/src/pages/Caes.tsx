@@ -4,15 +4,17 @@ import {
   Dialog,
   Icon,
   getDogSearchText,
+  sortDogs,
   getAdminErrorMessage,
   useAdminDogs,
   useDeleteDog,
   useSaveDog,
   useUpdateDog,
 } from '@abrigo/shared'
-import type { Dog, DogDraft, DogStatus } from '@abrigo/shared'
+import type { Dog, DogDraft, DogSortOrder, DogStatus } from '@abrigo/shared'
 import { DogForm } from '../components/DogForm'
 import { DogRow } from '../components/DogRow'
+import { DogSortControl } from '../components/DogSortControl'
 import { StatCards } from '../components/StatCards'
 import { useIsDesktop } from '../hooks/useIsDesktop'
 import { useSuccessMessage } from '../hooks/useSuccessMessage'
@@ -25,6 +27,7 @@ export function Caes() {
   const deleteDog = useDeleteDog()
   const updateDog = useUpdateDog()
   const [search, setSearch] = useState('')
+  const [sortOrder, setSortOrder] = useState<DogSortOrder>('created-desc')
   const [statusFilter, setStatusFilter] = useState<DogStatus | ''>('')
   const [editingTarget, setEditingTarget] = useState<Dog | null | undefined>(undefined)
   const [statusConfirmation, setStatusConfirmation] = useState<StatusConfirmation | null>(null)
@@ -36,14 +39,14 @@ export function Caes() {
 
   const filteredDogs = useMemo(
     () =>
-      dogs.filter(
+      sortDogs(dogs.filter(
         (dog) =>
           (!search || getDogSearchText(dog)
             .toLocaleLowerCase('pt-BR')
             .includes(search.replace(/^#/, '').toLocaleLowerCase('pt-BR'))) &&
           (!statusFilter || dog.status === statusFilter),
-      ),
-    [dogs, search, statusFilter],
+      ), sortOrder),
+    [dogs, search, statusFilter, sortOrder],
   )
 
   const stats = useMemo(
@@ -182,6 +185,10 @@ export function Caes() {
                 className="h-10 w-full rounded-full bg-white pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
               />
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <DogSortControl value={sortOrder} onChange={setSortOrder} />
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 desk:gap-3">

@@ -24,8 +24,10 @@ export { supabase } from './supabase/client'
 export type { Database, Tables, TablesInsert, TablesUpdate } from './database.types'
 export {
   DOG_SIZE_LABELS,
+  DOG_SORT_OPTIONS,
   STATUS_LABELS,
   getDogSearchText,
+  sortDogs,
   getDogPhotoUrl,
   toEditableDogPhotos,
   useAdminDogs,
@@ -40,6 +42,7 @@ export type {
   DogGender,
   DogPatch,
   DogSize,
+  DogSortOrder,
   DogStatus,
   EditableDogPhoto,
 } from './dogs/dogs'
