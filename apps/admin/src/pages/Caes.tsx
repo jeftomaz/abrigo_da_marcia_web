@@ -127,8 +127,8 @@ export function Caes() {
       <div
         className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-6 desk:items-start ${
           isEditing
-            ? 'desk:max-w-[1920px] desk:grid-cols-[minmax(17rem,29rem)_minmax(26rem,29rem)_minmax(32rem,45rem)] desk:justify-between'
-            : 'desk:max-w-[64rem] desk:grid-cols-[29rem_29rem] desk:justify-between'
+            ? 'desk:max-w-[1920px] desk:grid-cols-[minmax(17rem,29rem)_minmax(26rem,34rem)_minmax(32rem,45rem)] desk:justify-between'
+            : 'desk:max-w-[69rem] desk:grid-cols-[29rem_34rem] desk:justify-between'
         }`}
       >
         <StatCards
