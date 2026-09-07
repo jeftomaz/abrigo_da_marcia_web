@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Nada é publicado sem lint, build, pgTAP e E2E verdes: `build` depende deste
-  # job, e `deploy` depende de `build`.
+  # Nada é publicado sem pgTAP e E2E verdes: `build` depende deste job e faz
+  # as verificações rápidas antes de montar o artefato.
   verify:
     uses: ./.github/workflows/verify.yml
 
@@ -38,6 +38,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
 
       - name: Configure Pages
         id: pages

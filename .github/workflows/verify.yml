@@ -1,7 +1,7 @@
 name: Verificação
 
-# `workflow_call` deixa o deploy reusar estes mesmos jobs como pré-requisito,
-# em vez de duplicar os passos: ver .github/workflows/deploy-pages.yml.
+# Branches e PRs recebem sinal rápido. O deploy chama este workflow após merge
+# na main para executar a suíte completa antes da publicação.
 on:
   pull_request:
   push:
@@ -16,10 +16,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Sem Docker: roda em ~1 min e pega a maior parte das quebras. Separado do
-  # `completo` para dar sinal rápido antes da suíte longa terminar.
+  # Sem Docker: roda em ~1 min e pega a maior parte das quebras nas branches.
   rapido:
     name: Lint e build
+    if: github.event_name != 'workflow_call'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -46,6 +46,7 @@ jobs:
 
   completo:
     name: pgTAP e E2E
+    if: github.event_name == 'workflow_call'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -62,7 +63,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: 2.116.0
 

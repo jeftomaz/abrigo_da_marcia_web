@@ -1,5 +1,7 @@
 # PROGRESS.md
 
+- CI econômico (2026-09-07): branches e PRs passaram a executar somente lint/build; pgTAP e E2E ficaram restritos ao merge na `main`, antes do deploy, e a verificação rápida duplicada nesse fluxo foi removida. `supabase/setup-cli` migrou de `v1` para `v3`, compatível com Node.js 24.
+
 - Busca administrativa de cães ampliada (2026-09-07): nome e tags agora compartilham porte e idade calculada como termos pesquisáveis nas abas Cães e Cuidados > Por cão. Validação: lint e builds; E2E afetado atualizado, mas não executado sem Docker local.
 
 - Cuidados e retorno de editores corrigidos (2026-09-06): “Por cão” exibe todos os cães mesmo sem programas, e editores de categorias/frequências abertos por Itens retornam à aba de origem ao cancelar ou salvar. Validação: lint, builds, 347 pgTAP e 161 E2E; 19 casos ignorados pela matriz.
