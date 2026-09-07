@@ -7,6 +7,7 @@ import {
   STATUS_LABELS,
   TextField,
   currentLocalDateTime,
+  getDogSearchText,
   getAdminErrorMessage,
   useAdminCare,
   useAdminDogs,
@@ -116,7 +117,7 @@ export function Cuidados() {
   const filteredDogs = useMemo(
     () => dogs.filter((dog) => (
       (!tagFilter || dog.tags.includes(tagFilter))
-      && (!query || normalizeSearch(`${dog.name} ${dog.tags.join(' ')} ${STATUS_LABELS[dog.status]}`).includes(query))
+      && (!query || normalizeSearch(`${getDogSearchText(dog)} ${STATUS_LABELS[dog.status]}`).includes(query))
     )),
     [dogs, query, tagFilter],
   )
@@ -257,7 +258,7 @@ export function Cuidados() {
       ? 'Buscar programa...'
       : view === 'itens'
         ? 'Buscar item...'
-        : 'Buscar cão...'
+        : 'Buscar cão por nome, tag, porte ou idade...'
 
   return (
     <main className="flex-1 overflow-x-hidden bg-cinza-claro px-3 py-4 text-cinza-escuro sm:px-6 dark:bg-cinza-escuro dark:text-cinza-claro">

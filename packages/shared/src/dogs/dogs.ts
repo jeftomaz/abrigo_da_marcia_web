@@ -46,6 +46,25 @@ export const STATUS_LABELS: Record<DogStatus, string> = {
   falecido: 'Falecido',
 }
 
+export const DOG_SIZE_LABELS: Record<DogSize, string> = {
+  pequeno: 'Pequeno',
+  medio: 'Médio',
+  grande: 'Grande',
+}
+
+export function getDogSearchText(dog: Dog, currentYear = new Date().getFullYear()) {
+  const age = currentYear - dog.birthYear
+  return [
+    dog.name,
+    ...dog.tags,
+    dog.size,
+    DOG_SIZE_LABELS[dog.size],
+    age,
+    `${age} ano`,
+    `${age} anos`,
+  ].join(' ')
+}
+
 const adminDogsKey = ['dogs', 'admin'] as const
 const publicDogsKey = ['dogs', 'public'] as const
 

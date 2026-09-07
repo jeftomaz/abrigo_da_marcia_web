@@ -1,5 +1,7 @@
 # PROGRESS.md
 
+- Busca administrativa de cães ampliada (2026-09-07): nome e tags agora compartilham porte e idade calculada como termos pesquisáveis nas abas Cães e Cuidados > Por cão. Validação: lint e builds; E2E afetado atualizado, mas não executado sem Docker local.
+
 - Cuidados e retorno de editores corrigidos (2026-09-06): “Por cão” exibe todos os cães mesmo sem programas, e editores de categorias/frequências abertos por Itens retornam à aba de origem ao cancelar ou salvar. Validação: lint, builds, 347 pgTAP e 161 E2E; 19 casos ignorados pela matriz.
 
 - CI de Cuidados corrigido (2026-09-06): o Playwright agora fixa `America/Sao_Paulo`, evitando que campos locais de data/hora sejam interpretados em UTC no runner; pgTAP permanece verde com 347 testes.
