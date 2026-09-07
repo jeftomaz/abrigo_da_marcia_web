@@ -23,7 +23,9 @@ export { DataProvider } from './data/DataProvider'
 export { supabase } from './supabase/client'
 export type { Database, Tables, TablesInsert, TablesUpdate } from './database.types'
 export {
+  DOG_SIZE_LABELS,
   STATUS_LABELS,
+  getDogSearchText,
   getDogPhotoUrl,
   toEditableDogPhotos,
   useAdminDogs,

@@ -431,7 +431,7 @@ test.describe('admin', () => {
     await expect(page.getByRole('button', { name: 'Sair' })).toBeVisible()
   })
 
-  test('vincula tags ao cão e permite encontrá-lo pela tag', async ({ page }, testInfo) => {
+  test('busca cães por tag, porte e idade', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'A persistência é coberta uma vez.')
     try {
       await entrar(page)
@@ -447,9 +447,16 @@ test.describe('admin', () => {
 
       await expect(page.getByText('Cão atualizado.')).toBeVisible()
       await expect(dogCard.getByText('#canil 9')).toBeVisible()
-      await page.getByLabel('Busca por nome ou tag').fill('#doença renal')
+      const search = page.getByLabel('Busca por nome, tag, porte ou idade')
+      await search.fill('#doença renal')
       await expect(dogCard).toBeVisible()
       await expect(page.locator('article').filter({ hasText: 'Doguinho' })).toHaveCount(0)
+      await search.fill('Médio')
+      await expect(dogCard).toBeVisible()
+      await expect(page.locator('article').filter({ hasText: 'Negão' })).toHaveCount(0)
+      await search.fill(`${new Date().getFullYear() - 2021} anos`)
+      await expect(dogCard).toBeVisible()
+      await expect(page.locator('article').filter({ hasText: 'Mel' })).toHaveCount(0)
     } finally {
       executarSql("update public.caes set tags = '{}' where name = 'Dentinho'")
     }
@@ -739,6 +746,13 @@ test.describe('admin', () => {
       await expect(page.getByRole('region', { name: 'Cuidados de Doguinho', exact: true })).toHaveCount(0)
       await page.getByLabel('Buscar em Cuidados').fill('Negão')
       await expect(unassignedDogCare).toHaveCount(0)
+      await page.getByLabel('Buscar em Cuidados').fill('Médio')
+      await expect(unassignedDogCare).toBeVisible()
+      await expect(selectedDogCare).toHaveCount(0)
+      await page.getByLabel('Buscar em Cuidados').fill(`${new Date().getFullYear() - 2021} anos`)
+      await expect(unassignedDogCare).toBeVisible()
+      await expect(page.getByRole('region', { name: 'Cuidados de Mel', exact: true })).toHaveCount(0)
+      await page.getByLabel('Buscar em Cuidados').fill('Negão')
       const dogCareCard = selectedDogCare.locator('article').filter({ hasText: CARE_PROGRAM_NAME })
       await dogCareCard.getByRole('checkbox', { name: 'Marcar como realizado' }).click()
       const quickConfirmation = page.getByRole('dialog', { name: 'Confirmar cuidado realizado' })
