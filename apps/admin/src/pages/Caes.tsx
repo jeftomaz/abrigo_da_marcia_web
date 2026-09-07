@@ -3,6 +3,8 @@ import {
   Action,
   Dialog,
   Icon,
+  SelectField,
+  STATUS_LABELS,
   getDogSearchText,
   sortDogs,
   getAdminErrorMessage,
@@ -142,37 +144,36 @@ export function Caes() {
         />
 
         <section className="flex min-w-0 flex-col gap-4">
-          <div className="grid min-w-0 grid-cols-2 items-center gap-2 desk:grid-cols-[minmax(0,1fr)_auto_auto] desk:gap-3">
-            <h1 className="col-span-2 text-2xl font-medium text-marca desk:col-span-3 desk:text-3xl">
+          <div className="grid min-w-0 grid-cols-3 items-center gap-2 desk:gap-3">
+            <h1 className="col-span-3 text-2xl font-medium text-marca desk:text-3xl">
               Cães Cadastrados
             </h1>
-            <div className="relative min-w-0 desk:col-start-2 desk:row-start-2">
-              <select
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value as DogStatus | '')}
-                aria-label="Filtrar por status"
-                className="h-10 w-full appearance-none rounded-full bg-white pr-8 pl-3 text-sm text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
-              >
-                <option value="">Todos os status</option>
-                <option value="disponivel">Disponível</option>
-                <option value="adotado">Adotado</option>
-                <option value="falecido">Falecido</option>
-              </select>
-              <Icon
-                name="arrow-separate-vertical"
-                className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
-              />
-            </div>
+            <SelectField
+              id="dog-status-filter"
+              label={statusFilter ? STATUS_LABELS[statusFilter] : 'Status'}
+              variant="toolbar"
+              value={statusFilter}
+              onChange={(value) => {
+                if (value === '' || value === 'disponivel' || value === 'adotado' || value === 'falecido') setStatusFilter(value)
+              }}
+              accessibleLabel="Filtrar por status"
+            >
+              <option value="">Todos os status</option>
+              <option value="disponivel">Disponível</option>
+              <option value="adotado">Adotado</option>
+              <option value="falecido">Falecido</option>
+            </SelectField>
+            <DogSortControl value={sortOrder} onChange={setSortOrder} />
             <Action
               onClick={() => setEditingTarget(null)}
               icon="keyframe-plus-in-solid"
-              size="small"
+              size="admin-row"
               variant="primary"
-              className="h-10 min-w-0 px-3 desk:col-start-3 desk:row-start-2 desk:px-4"
+              className="min-h-11 min-w-0"
             >
               Novo Cão
             </Action>
-            <div className="relative col-span-2 min-w-0 desk:col-span-1 desk:col-start-1 desk:row-start-2">
+            <div className="relative col-span-3 min-w-0">
               <Icon
                 name="search"
                 className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 opacity-60"
@@ -185,10 +186,6 @@ export function Caes() {
                 className="h-10 w-full rounded-full bg-white pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
               />
             </div>
-          </div>
-
-          <div className="flex justify-end">
-            <DogSortControl value={sortOrder} onChange={setSortOrder} />
           </div>
 
           <div className="flex min-w-0 flex-col gap-2 desk:gap-3">

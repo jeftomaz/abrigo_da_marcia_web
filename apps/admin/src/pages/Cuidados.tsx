@@ -293,7 +293,7 @@ export function Cuidados() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <div className={`mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center ${view === 'caes' ? 'grid-cols-[minmax(0,1fr)_auto] items-center' : ''}`}>
           <div className="relative min-w-0">
             <Icon name="search" className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 opacity-60" />
             <input
@@ -304,6 +304,7 @@ export function Cuidados() {
               className="h-11 w-full rounded-full bg-white pr-4 pl-12 text-cinza-escuro outline-none focus-visible:ring-2 focus-visible:ring-marca dark:bg-cinza-medio dark:text-cinza-claro"
             />
           </div>
+          {view === 'caes' && <DogSortControl value={sortOrder} onChange={setSortOrder} />}
           {(view === 'programas' || view === 'itens') && (
             <div>
               {view === 'itens' ? (
@@ -453,9 +454,6 @@ export function Cuidados() {
 
         {!isLoading && !loadError && view === 'caes' && (
           <section aria-label="Cuidados por cão" className="mt-6 min-w-0">
-            <div className="mb-3 flex justify-end">
-              <DogSortControl value={sortOrder} onChange={setSortOrder} />
-            </div>
             <p className="text-sm">Todos os cães aparecem abertos. Os programas seguem a mesma ordem; “Não recebe” identifica os cuidados não atribuídos.</p>
             {availableTags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Agrupar cães por tag">
