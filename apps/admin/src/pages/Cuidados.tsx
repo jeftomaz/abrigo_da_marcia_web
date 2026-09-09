@@ -4,10 +4,12 @@ import {
   Action,
   Dialog,
   Icon,
+  ImagePlaceholder,
   STATUS_LABELS,
   TextField,
   currentLocalDateTime,
   getDogSearchText,
+  getDogPhotoUrl,
   sortDogs,
   getAdminErrorMessage,
   useAdminCare,
@@ -66,6 +68,7 @@ export function Cuidados() {
   ))
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState('')
+  const [showAllDogs, setShowAllDogs] = useState(false)
   const [sortOrder, setSortOrder] = useState<DogSortOrder>('created-desc')
   const [programTarget, setProgramTarget] = useState<CareProgram | null | undefined>(undefined)
   const [itemTarget, setItemTarget] = useState<CareItem | null | undefined>(undefined)
@@ -101,7 +104,7 @@ export function Cuidados() {
       if (!dog || !program?.active || !item?.active || dog.status !== 'disponivel') return false
       if (!['pendente', 'em_andamento'].includes(assignment.status)) return false
       if (!query) return true
-      return normalizeSearch(`${dog.name} ${dog.tags.join(' ')} ${program.name} ${item.name} ${item.category}`).includes(query)
+      return normalizeSearch(`${getDogSearchText(dog)} ${program.name} ${item.name} ${item.category}`).includes(query)
     }),
     [assignments, dogById, itemById, programById, query],
   )
@@ -119,10 +122,11 @@ export function Cuidados() {
   )
   const filteredDogs = useMemo(
     () => sortDogs(dogs.filter((dog) => (
-      (!tagFilter || dog.tags.includes(tagFilter))
-      && (!query || normalizeSearch(`${getDogSearchText(dog)} ${STATUS_LABELS[dog.status]}`).includes(query))
+      (showAllDogs || dog.status === 'disponivel')
+      && (!tagFilter || dog.tags.includes(tagFilter))
+      && (!query || normalizeSearch(getDogSearchText(dog)).includes(query))
     )), sortOrder),
-    [dogs, query, tagFilter, sortOrder],
+    [dogs, query, tagFilter, sortOrder, showAllDogs],
   )
   const dogViewPrograms = useMemo(() => {
     const assignedProgramIds = new Set(assignments.map((assignment) => assignment.programId))
@@ -261,7 +265,7 @@ export function Cuidados() {
       ? 'Buscar programa...'
       : view === 'itens'
         ? 'Buscar item...'
-        : 'Buscar cão por nome, tag, porte ou idade...'
+        : 'Buscar cão por nome ou características...'
 
   return (
     <main className="flex-1 overflow-x-hidden bg-cinza-claro px-3 py-4 text-cinza-escuro sm:px-6 dark:bg-cinza-escuro dark:text-cinza-claro">
@@ -454,7 +458,16 @@ export function Cuidados() {
 
         {!isLoading && !loadError && view === 'caes' && (
           <section aria-label="Cuidados por cão" className="mt-6 min-w-0">
-            <p className="text-sm">Todos os cães aparecem abertos. Os programas seguem a mesma ordem; “Não recebe” identifica os cuidados não atribuídos.</p>
+            <Action
+              onClick={() => setShowAllDogs((current) => !current)}
+              aria-pressed={showAllDogs}
+              size="small"
+              variant={showAllDogs ? 'primary-adaptive' : 'surface-adaptive'}
+              className="mb-3 min-h-11"
+            >
+              Mostrar todos os cães
+            </Action>
+            <p className="text-sm">Ative para incluir adotados e falecidos. Os programas seguem a mesma ordem; “Não recebe” identifica os cuidados não atribuídos.</p>
             {availableTags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Agrupar cães por tag">
                 <button
@@ -487,12 +500,23 @@ export function Cuidados() {
                 return (
                   <section key={dog.id} aria-label={`Cuidados de ${dog.name}`} className="flex min-w-0 flex-col gap-3">
                     <div className="rounded-2xl bg-marca p-4 text-marca-clara">
-                      <h2 className="text-2xl font-medium">{dog.name}</h2>
-                      {dog.tags.length > 0 && <p className="mt-1 text-sm">{dog.tags.map((tag) => `#${tag}`).join(' · ')}</p>}
-                      <p className="text-sm">
-                        {STATUS_LABELS[dog.status]}
-                        {dogViewPrograms.length > 0 && ` · ${assignedCareCount} de ${dogViewPrograms.length} ${dogViewPrograms.length === 1 ? 'cuidado atribuído' : 'cuidados atribuídos'}`}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="size-16 shrink-0 overflow-hidden rounded-xl">
+                          {dog.photos[0] ? (
+                            <img src={getDogPhotoUrl(dog.photos[0])} alt={`Foto de ${dog.name}`} loading="lazy" className="h-full w-full object-cover" />
+                          ) : (
+                            <ImagePlaceholder label={`Sem foto de ${dog.name}`} className="h-full w-full" />
+                          )}
+                        </div>
+                        <div className="min-w-0 break-words">
+                          <h2 className="text-2xl font-medium">{dog.name}</h2>
+                          {dog.tags.length > 0 && <p className="mt-1 text-sm">{dog.tags.map((tag) => `#${tag}`).join(' · ')}</p>}
+                          <p className="text-sm">
+                            {STATUS_LABELS[dog.status]}
+                            {dogViewPrograms.length > 0 && ` · ${assignedCareCount} de ${dogViewPrograms.length} ${dogViewPrograms.length === 1 ? 'cuidado atribuído' : 'cuidados atribuídos'}`}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                     <div className="grid min-w-0 items-stretch gap-3 desk:grid-cols-2">
                       {dogViewPrograms.length === 0 ? (

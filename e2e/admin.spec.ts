@@ -431,7 +431,7 @@ test.describe('admin', () => {
     await expect(page.getByRole('button', { name: 'Sair' })).toBeVisible()
   })
 
-  test('busca cães por tag, porte e idade', async ({ page }, testInfo) => {
+  test('busca cães por tags e características do cadastro', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'A persistência é coberta uma vez.')
     try {
       await entrar(page)
@@ -447,7 +447,7 @@ test.describe('admin', () => {
 
       await expect(page.getByText('Cão atualizado.')).toBeVisible()
       await expect(dogCard.getByText('#canil 9')).toBeVisible()
-      const search = page.getByLabel('Busca por nome, tag, porte ou idade')
+      const search = page.getByLabel('Buscar cães por nome ou características')
       await search.fill('#doença renal')
       await expect(dogCard).toBeVisible()
       await expect(page.locator('article').filter({ hasText: 'Doguinho' })).toHaveCount(0)
@@ -457,6 +457,19 @@ test.describe('admin', () => {
       await search.fill(`${new Date().getFullYear() - 2021} anos`)
       await expect(dogCard).toBeVisible()
       await expect(page.locator('article').filter({ hasText: 'Mel' })).toHaveCount(0)
+      for (const [query, names] of [
+        ['2021', ['Dentinho']],
+        ['fêmea', ['Mel', 'Fumaça']],
+        ['femea', ['Mel', 'Fumaça']],
+        ['macho', ['Negão', 'Dentinho', 'Doguinho', 'Bidu']],
+        ['adotado', ['Bidu']],
+        ['falecido', ['Fumaça']],
+        ['energia', ['Doguinho']],
+      ] as const) {
+        await search.fill(query)
+        await expect(page.locator('article')).toHaveCount(names.length)
+        for (const name of names) await expect(page.locator('article').filter({ hasText: name })).toBeVisible()
+      }
     } finally {
       executarSql("update public.caes set tags = '{}' where name = 'Dentinho'")
     }
@@ -497,7 +510,7 @@ test.describe('admin', () => {
       for (const width of [320, 393, 1440]) {
         await page.setViewportSize({ width, height: 900 })
         const orderBox = (await orderSelect.boundingBox())!
-        const search = page.getByLabel(care ? 'Buscar em Cuidados' : 'Busca por nome, tag, porte ou idade')
+        const search = page.getByLabel(care ? 'Buscar em Cuidados' : 'Buscar cães por nome ou características')
         const searchBox = (await search.boundingBox())!
         if (care) {
           expect(searchBox.y).toBeCloseTo(orderBox.y, 0)
@@ -526,7 +539,7 @@ test.describe('admin', () => {
       }
       await expect(orderSelect).toHaveValue('updated-asc')
       if (care) await page.getByRole('button', { name: '#canil', exact: true }).click()
-      else await page.getByLabel('Busca por nome, tag, porte ou idade').fill('canil')
+      else await page.getByLabel('Buscar cães por nome ou características').fill('canil')
       await expect(rows).toHaveCount(2)
       await expect(rows.first()).toContainText('Zeca')
     }
@@ -800,11 +813,29 @@ test.describe('admin', () => {
       await page.getByRole('tab', { name: 'Agenda' }).click()
       const agendaCard = page.locator('article').filter({ hasText: CARE_PROGRAM_NAME })
       await expect(agendaCard).toContainText('Negão')
+      for (const query of ['2018', 'macho', 'Grande', 'dócil', 'Disponível', `${new Date().getFullYear() - 2018} anos`]) {
+        await page.getByLabel('Buscar em Cuidados').fill(query)
+        await expect(agendaCard).toBeVisible()
+      }
+      await page.getByLabel('Buscar em Cuidados').fill('2021')
+      await expect(agendaCard).toHaveCount(0)
 
       await page.getByRole('tab', { name: 'Por cão' }).click()
       const unassignedDogCare = page.getByRole('region', { name: 'Cuidados de Dentinho', exact: true })
       await expect(unassignedDogCare.locator('article').filter({ hasText: CARE_PROGRAM_NAME })).toContainText('Não recebe')
       const selectedDogCare = page.getByRole('region', { name: 'Cuidados de Negão', exact: true })
+      for (const query of ['2021', 'Brincalhão']) {
+        await page.getByLabel('Buscar em Cuidados').fill(query)
+        await expect(unassignedDogCare).toBeVisible()
+        await expect(selectedDogCare).toHaveCount(0)
+      }
+      await page.getByLabel('Buscar em Cuidados').fill('fêmea')
+      await expect(page.getByRole('region', { name: 'Cuidados de Mel', exact: true })).toBeVisible()
+      await expect(selectedDogCare).toHaveCount(0)
+      await page.getByRole('button', { name: 'Mostrar todos os cães', exact: true }).click()
+      await page.getByLabel('Buscar em Cuidados').fill('adotado')
+      await expect(page.getByRole('region', { name: 'Cuidados de Bidu', exact: true })).toBeVisible()
+      await page.getByRole('button', { name: 'Mostrar todos os cães', exact: true }).click()
       await page.getByLabel('Buscar em Cuidados').fill('#canil 9')
       await expect(unassignedDogCare).toBeVisible()
       await expect(selectedDogCare).toBeVisible()
@@ -869,7 +900,7 @@ test.describe('admin', () => {
     }
   })
 
-  test('exibe todos os cães em Cuidados mesmo sem programas', async ({ page }, testInfo) => {
+  test('mostra apenas cães disponíveis e permite consultar os demais em Cuidados sem programas', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'O estado vazio é coberto uma vez.')
     limparCuidadosE2E()
     try {
@@ -877,12 +908,25 @@ test.describe('admin', () => {
       await page.goto(`${ADMIN_URL}/#/cuidados`)
       await page.getByRole('tab', { name: 'Por cão' }).click()
 
-      const dogs = ['Negão', 'Dentinho', 'Doguinho', 'Mel', 'Bidu', 'Fumaça']
+      const showAll = page.getByRole('button', { name: 'Mostrar todos os cães', exact: true })
+      await expect(showAll).toHaveAttribute('aria-pressed', 'false')
+      const adoptedDog = page.getByRole('region', { name: 'Cuidados de Bidu', exact: true })
+      const deceasedDog = page.getByRole('region', { name: 'Cuidados de Fumaça', exact: true })
+      await expect(adoptedDog).toHaveCount(0)
+      await expect(deceasedDog).toHaveCount(0)
+      const dogs = ['Negão', 'Dentinho', 'Doguinho', 'Mel']
       for (const dog of dogs) {
         const dogCare = page.getByRole('region', { name: `Cuidados de ${dog}`, exact: true })
         await expect(dogCare).toBeVisible()
         await expect(dogCare.getByText('Nenhum programa de cuidado cadastrado.')).toBeVisible()
       }
+      await showAll.click()
+      await expect(showAll).toHaveAttribute('aria-pressed', 'true')
+      await expect(adoptedDog).toBeVisible()
+      await expect(deceasedDog).toBeVisible()
+      await showAll.click()
+      await expect(adoptedDog).toHaveCount(0)
+      await expect(deceasedDog).toHaveCount(0)
     } finally {
       limparCuidadosE2E()
     }

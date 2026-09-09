@@ -96,11 +96,17 @@ export function getDogSearchText(dog: Dog, currentYear = new Date().getFullYear(
   return [
     dog.name,
     ...dog.tags,
+    dog.gender,
+    dog.gender === 'femea' ? 'fêmea' : 'macho',
     dog.size,
     DOG_SIZE_LABELS[dog.size],
+    dog.birthYear,
     age,
     `${age} ano`,
     `${age} anos`,
+    dog.status,
+    STATUS_LABELS[dog.status],
+    dog.description,
   ].join(' ')
 }
 
