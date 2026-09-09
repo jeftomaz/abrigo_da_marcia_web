@@ -1,5 +1,7 @@
 # PROGRESS.md
 
+- Identificação visual em Cuidados > Por cão (2026-09-09): primeira foto do cadastro ao lado do nome, com `ImagePlaceholder` quando ausente e quebra de textos no mobile. Reutiliza dados e URL existentes, sem alterar banco ou permissões. Validação: lint e builds aprovados; E2E local não executado porque o Docker está desligado.
+
 - Controles das listagens simplificados (2026-09-07): ordenação direta com dez opções, sem diálogo, e controles alinhados às buscas conforme o contrato de cada tela; `SelectField` reutilizado com variante administrativa. Validação: lint/builds, 347 pgTAP e 164 E2E aprovados; 19 casos ignorados pela matriz.
 
 - Ordenação administrativa de cães (2026-09-07): botão “Ordem” em Cães e Cuidados > Por cão, com cinco critérios nos dois sentidos e lógica comum. Datas usam metadados já consultados; nenhuma alteração de banco, permissões ou catálogo público. Listagem de Cães ampliada no desktop. Validação completa: lint/builds, 347 pgTAP e 164 E2E aprovados; 19 casos ignorados pela matriz.
