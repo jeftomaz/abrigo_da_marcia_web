@@ -1,5 +1,9 @@
 # PROGRESS.md
 
+- Busca por características ampliada (2026-09-09): campos do cadastro centralizados na função compartilhada, agora usada também na Agenda; escopo em `UI_CONTRACTS.md`. Lint, builds e 12 E2E aprovados (6 ignorados pela matriz), em portas separadas para preservar o ambiente local aberto. Nenhuma alteração de banco/permissões.
+
+- Filtro de presença em Cuidados (2026-09-09): seleção padrão e botão de consulta implementados conforme `UI_CONTRACTS.md`, sem alterações de banco/permissões. Validação: lint, builds e 11 E2E aprovados (4 ignorados pela matriz). Busca acumulada aguarda definição do usuário: exigir todos os critérios ou aceitar qualquer um.
+
 - Identificação visual em Cuidados > Por cão (2026-09-09): primeira foto do cadastro ao lado do nome, com `ImagePlaceholder` quando ausente e quebra de textos no mobile. Reutiliza dados e URL existentes, sem alterar banco ou permissões. Validação: lint e builds aprovados; E2E local não executado porque o Docker está desligado.
 
 - Controles das listagens simplificados (2026-09-07): ordenação direta com dez opções, sem diálogo, e controles alinhados às buscas conforme o contrato de cada tela; `SelectField` reutilizado com variante administrativa. Validação: lint/builds, 347 pgTAP e 164 E2E aprovados; 19 casos ignorados pela matriz.
