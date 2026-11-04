@@ -68,7 +68,7 @@ export function Historias() {
   const formTitle = editingTarget ? 'Editar História' : 'Nova História'
 
   return (
-    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-4 py-8 text-cinza-escuro sm:px-6 desk:py-4 dark:bg-cinza-escuro dark:text-cinza-claro">
+    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-4 py-8 text-cinza-escuro sm:px-6 desk:overflow-x-clip desk:py-4 dark:bg-cinza-escuro dark:text-cinza-claro">
       <div
         className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-8 desk:items-start desk:gap-6 ${
           isEditing
@@ -147,7 +147,7 @@ export function Historias() {
         </section>
 
         {isEditing && isDesktop && (
-          <aside className="w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
+          <aside className="admin-sticky-panel w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
             <StoryForm
               key={editingTarget?.id ?? 'new'}
               story={editingTarget ?? null}

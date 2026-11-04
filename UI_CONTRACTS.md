@@ -50,6 +50,7 @@ Não reabrir sem motivo novo. Vivem aqui, e não no log do `PROGRESS.md`, para n
 - **Controles das listagens:** Cães mantém Status, Ordem e Novo Cão na mesma linha, com busca em linha própria. Em Cuidados > Por cão, Ordem acompanha a busca na mesma linha, inclusive no mobile.
 - **Busca administrativa de cães:** Cães e Cuidados (Agenda/Por cão) reutilizam `getDogSearchText`: nome, tags, sexo, porte, ano de nascimento, idade calculada, status e descrição. Filtros de status e tags continuam limitando os resultados; a Agenda também pesquisa cuidado e programa.
 - **Listagem de Cães no desktop:** coluna de 34 rem; com o editor aberto, varia de 26 a 34 rem para acomodar os três painéis. Mobile mantém sua largura atual.
+- **Painéis de gestão no desktop:** resumos e painéis laterais acompanham a rolagem abaixo do header; conteúdos maiores que a área visível têm rolagem própria. Resumos recebem foco para permitir rolagem por teclado.
 - **Editor aberto por outra tela retorna à origem.** Links de gestão que atravessam páginas enviam `location.state.returnTo`; cancelar ou salvar retorna à tela/aba de origem. Editor aberto dentro da própria página apenas fecha localmente.
 - **Suíte vermelha bloqueia entrega.** Nenhum teste falhando é tolerado como pendência — vermelho tolerado deixa de ser lido.
 

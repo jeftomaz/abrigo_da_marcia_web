@@ -151,9 +151,9 @@ export function Eventos() {
   }, [isDesktop, isEditing])
 
   return (
-    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-4 py-8 text-cinza-escuro sm:px-6 desk:py-4 dark:bg-cinza-escuro dark:text-cinza-claro">
+    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-4 py-8 text-cinza-escuro sm:px-6 desk:overflow-x-clip desk:py-4 dark:bg-cinza-escuro dark:text-cinza-claro">
       <div className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-8 desk:items-start desk:gap-6 ${hasDetail ? 'desk:max-w-[1920px] desk:grid-cols-[minmax(17rem,29rem)_minmax(26rem,29rem)_minmax(36rem,45rem)] desk:justify-between' : 'desk:max-w-[64rem] desk:grid-cols-[29rem_29rem] desk:justify-between'}`}>
-        <section aria-label="Resumo de eventos">
+        <section aria-label="Resumo de eventos" tabIndex={isDesktop ? 0 : undefined} className="admin-sticky-panel">
           <div className="grid grid-cols-[minmax(7rem,1fr)_minmax(0,2fr)] gap-3">
             <div className="rounded-2xl bg-surface-raised px-5 py-4 text-on-surface-raised"><strong className="block text-4xl font-medium">{events.length}</strong><span className="font-medium">Total de eventos</span></div>
             <div className="rounded-2xl bg-surface-raised px-5 py-4 text-on-surface-raised"><strong className="block truncate text-2xl font-medium text-marca">{activeEvent?.title ?? 'Nenhum evento'}</strong><span className="font-medium">{activeEvent ? 'Evento ativo' : 'Sem evento ativo'}</span></div>
@@ -191,7 +191,7 @@ export function Eventos() {
         </section>
 
         {hasDetail && isDesktop && (
-          <aside ref={editorCardRef} className="w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
+          <aside ref={editorCardRef} className="admin-sticky-panel w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
             {isEditing ? (
               <EventForm ref={eventFormRef} key={editingTarget?.id ?? 'new'} event={editingTarget ?? null} layout="panel" title={formTitle} onAutoSave={handleAutoSave} onCancel={() => setEditingTarget(undefined)} onSave={handleSave} />
             ) : managingEvent ? (

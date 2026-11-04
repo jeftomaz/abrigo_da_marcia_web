@@ -304,7 +304,7 @@ export function Configuracoes() {
         </section>
 
         {editorContent && isDesktop && (
-          <aside className="sticky top-20 max-h-[calc(100dvh-6rem)] w-full overflow-y-auto rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
+          <aside className="admin-sticky-panel w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
             {editorContent}
           </aside>
         )}

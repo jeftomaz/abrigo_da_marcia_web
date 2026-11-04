@@ -287,6 +287,101 @@ function expectEventoComStatus(status: 'ativo' | 'rascunho') {
 }
 
 test.describe('admin', () => {
+  for (const screen of [
+    { path: '/', summary: 'Total de cães', heading: 'Cães Cadastrados', button: 'Novo Cão', editor: 'Novo Cão' },
+    { path: '/historias', summary: 'Total de histórias', heading: 'Histórias Contadas', button: 'Nova História', editor: 'Nova História' },
+    { path: '/eventos', summary: '', heading: 'Eventos', button: 'Novo Evento', editor: 'Novo Evento' },
+    { path: '/cuidados', summary: 'Cuidados pendentes', heading: '', button: '', editor: '' },
+  ]) {
+    test(`mantém os painéis visíveis ao rolar ${screen.path}`, async ({ page }, testInfo) => {
+      test.skip(testInfo.project.name !== 'desktop', 'O comportamento é exclusivo do desktop.')
+      await page.setViewportSize({ width: 1440, height: 600 })
+      await entrar(page)
+      await page.goto(`${ADMIN_URL}/#${screen.path}`)
+
+      const summary = screen.summary
+        ? page.getByText(screen.summary, { exact: true }).locator('xpath=../..')
+        : page.getByLabel('Resumo de eventos')
+      const list = screen.heading
+        ? page.getByRole('heading', { name: screen.heading, exact: true }).locator('xpath=ancestor::section[1]')
+        : page.getByLabel('Agenda de cuidados')
+      await expect(summary).toBeVisible()
+      await list.evaluate((element: HTMLElement) => { element.style.minHeight = '1800px' })
+
+      let editor: Locator | undefined
+      if (screen.button) {
+        await page.getByRole('button', { name: screen.button, exact: true }).click()
+        editor = page.getByRole('heading', { name: screen.editor, exact: true }).locator('xpath=ancestor::aside[1]')
+        await expect(editor).toBeVisible()
+      }
+
+      await page.evaluate(() => window.scrollTo(0, 600))
+      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(400)
+      const headerBottom = await page.locator('header').first().evaluate((element) => element.getBoundingClientRect().bottom)
+      for (const panel of editor ? [summary, editor] : [summary]) {
+        const box = await panel.boundingBox()
+        expect(box).not.toBeNull()
+        expect(box!.y).toBeGreaterThanOrEqual(headerBottom - 1)
+        expect(box!.y).toBeLessThanOrEqual(headerBottom + 2)
+        expect(box!.y + box!.height).toBeLessThanOrEqual(600)
+      }
+
+      if (editor) {
+        const cancel = editor.getByRole('button', { name: 'Cancelar', exact: true })
+        await cancel.focus()
+        await expect(cancel).toBeFocused()
+        const cancelBox = await cancel.boundingBox()
+        expect(cancelBox).not.toBeNull()
+        expect(cancelBox!.y).toBeGreaterThanOrEqual(headerBottom)
+        expect(cancelBox!.y + cancelBox!.height).toBeLessThanOrEqual(600)
+
+        if (screen.path === '/') {
+          await page.setViewportSize({ width: 1440, height: 360 })
+          await summary.focus()
+          await summary.press('End')
+          await expect.poll(() => summary.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+          const summaryBox = await summary.boundingBox()
+          expect(summaryBox).not.toBeNull()
+          expect(summaryBox!.y).toBeGreaterThanOrEqual(headerBottom - 1)
+          expect(summaryBox!.y + summaryBox!.height).toBeLessThanOrEqual(360)
+        }
+
+        if (screen.path === '/eventos') {
+          await cancel.click()
+          await page.locator('article').filter({ hasText: 'Bazar de Inverno' }).getByRole('button', { name: 'Reservas' }).click()
+          const management = page.getByRole('heading', { name: 'Reservas', exact: true }).locator('xpath=ancestor::aside[1]')
+          await expect(management).toBeVisible()
+          await page.evaluate(() => window.scrollTo(0, 600))
+          await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(400)
+          const managementBox = await management.boundingBox()
+          expect(managementBox).not.toBeNull()
+          expect(managementBox!.y).toBeGreaterThanOrEqual(headerBottom - 1)
+          expect(managementBox!.y).toBeLessThanOrEqual(headerBottom + 2)
+          expect(managementBox!.y + managementBox!.height).toBeLessThanOrEqual(600)
+        }
+      }
+    })
+  }
+
+  test('mantém o editor de configurações visível ao rolar no desktop', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'O comportamento é exclusivo do desktop.')
+    await page.setViewportSize({ width: 1440, height: 600 })
+    await entrar(page)
+    await page.goto(`${ADMIN_URL}/#/configuracoes`)
+    await page.getByLabel('Gestão de Eventos', { exact: true }).getByRole('button', { name: 'Editar' }).click()
+    const editor = page.locator('main aside')
+    await expect(editor).toBeVisible()
+    await page.locator('main > div > section').evaluate((element: HTMLElement) => { element.style.minHeight = '1800px' })
+    await page.evaluate(() => window.scrollTo(0, 600))
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(400)
+    const headerBottom = await page.locator('header').first().evaluate((element) => element.getBoundingClientRect().bottom)
+    const box = await editor.boundingBox()
+    expect(box).not.toBeNull()
+    expect(box!.y).toBeGreaterThanOrEqual(headerBottom - 1)
+    expect(box!.y).toBeLessThanOrEqual(headerBottom + 2)
+    expect(box!.y + box!.height).toBeLessThanOrEqual(600)
+  })
+
   test('Edge Functions aceitam os cabeçalhos do SDK e devolvem erros estruturados', async ({ request }) => {
     const { apiUrl, publishableKey } = ambientePublicoLocal()
     const functionUrl = `${apiUrl}/functions/v1/activate-event`

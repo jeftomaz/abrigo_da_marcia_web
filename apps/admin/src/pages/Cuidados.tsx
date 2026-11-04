@@ -268,7 +268,7 @@ export function Cuidados() {
         : 'Buscar cão por nome ou características...'
 
   return (
-    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-3 py-4 text-cinza-escuro sm:px-6 dark:bg-cinza-escuro dark:text-cinza-claro">
+    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-3 py-4 text-cinza-escuro sm:px-6 desk:overflow-x-clip dark:bg-cinza-escuro dark:text-cinza-claro">
       <div className="mx-auto w-full max-w-[75rem]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
