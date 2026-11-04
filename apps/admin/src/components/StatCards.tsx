@@ -1,3 +1,5 @@
+import { useIsDesktop } from '../hooks/useIsDesktop'
+
 type StatCardsProps = {
   label: string
   total: number
@@ -9,8 +11,10 @@ type StatCardsProps = {
 }
 
 export function StatCards({ label, total, items = [] }: StatCardsProps) {
+  const isDesktop = useIsDesktop()
+
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <div role="region" aria-label={label} tabIndex={isDesktop ? 0 : undefined} className="admin-sticky-panel flex min-w-0 flex-col gap-4">
       <div className="flex min-h-20 items-center justify-between rounded-xl bg-marca px-5 py-4 text-marca-clara desk:min-h-24 desk:rounded-2xl desk:px-6 desk:py-5">
         <span className="text-lg font-medium">{label}</span>
         {/* Mesmo tamanho dos subcards: o fundo de marca já destaca o total, e o degrau

@@ -75,6 +75,7 @@ Quatro pontos onde o padrão do projeto não chegou e a duplicação é medida, 
 
 ### P0 — Correções operacionais e mobile
 
+- `done` Manter resumos e painéis laterais de edição e gestão visíveis durante a rolagem no desktop, com rolagem interna quando necessário.
 - `done` Incluir ordenação nas listagens administrativas de cães por nome, porte, idade, inclusão e alteração, nos dois sentidos.
 - `done` Manter o painel de edição de Configurações junto ao header no desktop, com rolagem própria quando exceder a altura visível.
 - `done` Alinhar tamanho e grade dos cards de Histórias na landing ao padrão dos cards de Adoção.

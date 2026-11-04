@@ -3,6 +3,10 @@
 
 @source "../../../packages/shared/src";
 
+@utility admin-sticky-panel {
+  @apply desk:sticky desk:top-24 desk:max-h-[calc(100dvh-7rem)] desk:overflow-y-auto;
+}
+
 @theme {
   --color-surface-inverted: #000;
   --color-on-surface-inverted: var(--color-cinza-claro);

@@ -125,7 +125,7 @@ export function Caes() {
   const formTitle = editingTarget ? 'Editar Cão' : 'Novo Cão'
 
   return (
-    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-3 py-4 text-cinza-escuro sm:px-6 dark:bg-cinza-escuro dark:text-cinza-claro">
+    <main className="flex-1 overflow-x-hidden bg-cinza-claro px-3 py-4 text-cinza-escuro sm:px-6 desk:overflow-x-clip dark:bg-cinza-escuro dark:text-cinza-claro">
       <div
         className={`mx-auto grid w-full min-w-0 max-w-[640px] gap-6 desk:items-start ${
           isEditing
@@ -211,7 +211,7 @@ export function Caes() {
         </section>
 
         {isEditing && isDesktop && (
-          <aside className="w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
+          <aside className="admin-sticky-panel w-full rounded-3xl bg-surface-raised p-6 text-on-surface-raised">
             <DogForm
               key={editingTarget?.id ?? 'new'}
               dog={editingTarget ?? null}
