@@ -283,9 +283,9 @@ erDiagram
 
 ## Rastreabilidade administrativa
 
-`admin_profiles` mantém a identidade privada exibida na auditoria: `user_id uuid` é PK/FK para `auth.users` com cascade, `display_name text` exige 2–60 caracteres sem espaços nas pontas e os timestamps são automáticos. Admin com `aal2` lê os perfis; cada admin insere ou altera somente o próprio. Não há exposição pública.
+`admin_profiles` mantém a identidade privada exibida na auditoria: `user_id uuid` é PK/FK para `auth.users` com cascade, `display_name text` exige 2–60 caracteres sem espaços nas pontas e os timestamps são automáticos. O perfil próprio pode ser lido e criado por admin com `aal2` durante o onboarding; depois de criado, `is_profiled_admin()` libera a gestão e a leitura dos demais perfis. Não há exposição pública.
 
-Os agregados `caes`, `historias`, `eventos`, `reservas`, configurações, redes sociais e as tabelas operacionais de cuidados compartilham `updated_at`, `updated_by uuid` (FK nullable para `auth.users`, `ON DELETE SET NULL`) e `updated_by_name text` (snapshot obrigatório). Movimentos de estoque são imutáveis e guardam apenas `created_at` com a mesma autoria. Trigger de banco sobrescreve qualquer autoria enviada pelo client: admin recebe seu perfil, escrita pública recebe “Visitante” e cron/RPC interna recebe “Sistema”. Registros anteriores à migration começam como “Sistema”; renomear ou excluir o perfil não altera snapshots. Sorteio atualiza o evento, ativação/exclusão recebe o admin validado pela Edge Function e expiração automática permanece atribuída ao sistema. As views públicas omitem os três metadados de autoria.
+Os agregados `caes`, `historias`, `eventos`, `reservas`, configurações, redes sociais e as tabelas operacionais de cuidados compartilham `updated_at`, `updated_by uuid` (FK nullable para `auth.users`, `ON DELETE SET NULL`) e `updated_by_name text` (snapshot obrigatório). Movimentos de estoque são imutáveis e guardam apenas `created_at` com a mesma autoria. Trigger de banco sobrescreve qualquer autoria enviada pelo client: escrita pública anônima recebe “Visitante”, cron/RPC interna recebe “Sistema” e sessão autenticada sem perfil é rejeitada. Registros anteriores à migration começam como “Sistema”; renomear ou excluir o perfil não altera snapshots. Sorteio atualiza o evento, ativação/exclusão recebe o admin validado pela Edge Function e expiração automática permanece atribuída ao sistema. As views públicas omitem os três metadados de autoria.
 
 ## `site_settings`
 
@@ -321,7 +321,7 @@ Dados iniciais: `facebook` (ordem 1) e `instagram` (ordem 2), ambos sem URL até
 
 - RLS habilitada na tabela; `anon` não acessa a tabela diretamente.
 - View `social_links_public`: expõe `network`, `url` e `display_order`, somente quando `url` não for nula, ordenada por `display_order`.
-- Admin com `app_metadata.role = admin` e sessão `aal2` pode consultar e atualizar as linhas.
+- Admin com `app_metadata.role = admin`, sessão `aal2` e perfil concluído pode consultar e atualizar as linhas.
 - Inserção e exclusão não fazem parte deste escopo inicial.
 
 ## `caes`
@@ -354,7 +354,7 @@ Cães cadastrados pelo admin. Fonte única do catálogo de Adoção e do preview
 
 - RLS habilitada na tabela; as migrations não concedem acesso direto a `anon`.
 - View `caes_public`: expõe `id`, `name`, `description`, `birth_year`, `gender`, `size`, `photos`, `featured` e `adoption_form_url`, somente quando `status = 'disponivel'`, ordenada por `featured` desc e `created_at` desc. Não expõe `status` nem `tags` administrativas.
-- CRUD e Storage exigem admin autenticado com `aal2`; `anon` não possui acesso direto.
+- CRUD e Storage exigem admin autenticado com `aal2` e perfil concluído; `anon` não possui acesso direto.
 
 ## Cuidados dos cães
 
@@ -370,7 +370,7 @@ Lista administrativa usada no cadastro dos itens. As cinco opções preestabelec
 
 ### `cuidado_itens`
 
-Catálogo criado pelos admins. Nome + categoria identificam o item sem diferenciar maiúsculas, inclusive quando um registro antigo ainda possui apresentação. A categoria é escolhida da lista configurável e `frequency_id` aponta opcionalmente para um intervalo completo de `cuidado_frequencias`. Todo item inicia com estoque automático zero ou com o saldo informado; cada aplicação baixa a quantidade registrada. Itens com programa ativo não podem ser desativados e itens referenciados nunca são excluídos por cascade. Gravações passam por `save_care_item`, exigem admin + AAL2 e usam o `updated_at` esperado para recusar sobrescrita concorrente de saldo.
+Catálogo criado pelos admins. Nome + categoria identificam o item sem diferenciar maiúsculas, inclusive quando um registro antigo ainda possui apresentação. A categoria é escolhida da lista configurável e `frequency_id` aponta opcionalmente para um intervalo completo de `cuidado_frequencias`. Todo item inicia com estoque automático zero ou com o saldo informado; cada aplicação baixa a quantidade registrada. Itens com programa ativo não podem ser desativados e itens referenciados nunca são excluídos por cascade. Gravações passam por `save_care_item`, exigem admin + AAL2 + perfil concluído e usam o `updated_at` esperado para recusar sobrescrita concorrente de saldo.
 
 | Coluna | Tipo | Regra |
 |---|---|---|
@@ -419,7 +419,7 @@ Histórico imutável de cada transição de saldo, com quantidade anterior/nova,
 
 ### Exposição e acesso
 
-- As sete tabelas têm RLS e leitura apenas para `authenticated`; policy permissiva exige `is_admin()` e policy restritiva exige `aal2`. Itens só são escritos pelas operações protegidas; movimentos de estoque não aceitam escrita direta.
+- As sete tabelas têm RLS e leitura apenas para `authenticated`; policy permissiva exige `is_profiled_admin()` e policy restritiva exige `aal2`. Itens só são escritos pelas operações protegidas; movimentos de estoque não aceitam escrita direta.
 - `anon` não lê, escreve nem recebe views do domínio; `caes_public` permanece inalterada.
 - Triggers de sincronização global são `security definer`, têm `search_path` vazio e não são executáveis diretamente.
 
@@ -441,7 +441,7 @@ Histórias de adoção exibidas na página dedicada e no preview da landing. Sã
 
 - RLS habilitada na tabela; `anon` não acessa a tabela diretamente.
 - View `historias_public`: expõe `id`, `name`, `description` e `photos` apenas quando `published = true`, ordenada por `created_at` desc. A página de Histórias e o preview da landing usam exclusivamente essa view.
-- Inserção, consulta, atualização e exclusão exigem admin autenticado com `aal2`.
+- Inserção, consulta, atualização e exclusão exigem admin autenticado com `aal2` e perfil concluído.
 
 ## Eventos e reservas
 
@@ -645,7 +645,7 @@ Reversões de estados marcados por engano (todas renovam o `expires_at` com um T
 
 Qualquer outra transição é rejeitada. Não há estado terminal: cancelada e entregue podem ser revertidas, mas voltar de `paga → pendente` fica indisponível assim que a reserva é sorteada.
 
-`update_event_reservation` (`security invoker`, somente `authenticated`) edita uma reserva `pendente|paga` em uma única transação. A função valida e normaliza os dados pessoais, substitui números ou unidades/opções, rejeita conflitos e alterações de números já sorteados, recalcula preços/descontos pelo catálogo atual e respeita as transições de status existentes. RLS continua exigindo admin com AAL2.
+`update_event_reservation` (`security invoker`, somente `authenticated`) edita uma reserva `pendente|paga` em uma única transação. A função valida e normaliza os dados pessoais, substitui números ou unidades/opções, rejeita conflitos e alterações de números já sorteados, recalcula preços/descontos pelo catálogo atual e respeita as transições de status existentes. RLS continua exigindo admin com AAL2 e perfil concluído.
 
 ### `reserva_produtos` e `reserva_produto_opcoes`
 
@@ -673,7 +673,7 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 - As onze views `*_public` usam `security definer` de forma intencional, pois `security_invoker` exigiria conceder leitura das tabelas-base ao público e quebraria esse limite arquitetural. Todas usam `security_barrier`; o pgTAP trava quantidade, colunas e privilégios.
 - `anon` cria a sessão e a reserva apenas por funções `security definer` com `search_path` fixo. As funções validam status/tipo do evento, intervalo da sessão, limites, opções, disponibilidade, preços, descontos e prazo no servidor.
 - Alterações de preço ou configuração não afetam reservas existentes porque totais, preços unitários e seleções são snapshots.
-- Admin autenticado com `aal2` gerencia catálogo, confirma pagamento, cancela reserva e marca a entrega ao ganhador.
+- Admin autenticado com `aal2` e perfil concluído gerencia catálogo, confirma pagamento, cancela reserva e marca a entrega ao ganhador.
 - `pg_cron` encerra eventos fora do período, cancela reservas pendentes vencidas, libera seus números e limpa sessões antigas. Após 90 dias do encerramento, remove `customer_name` e `customer_contact`, preservando snapshots e totais.
 - No caminho de reserva, `reserve_raffle_numbers`/`reserve_product_items` chamam `expire_reservations_for_event(uuid)`, que libera apenas as reservas vencidas do próprio evento antes de checar disponibilidade; a varredura global e a limpeza de sessões/tentativas de IP ficam no cron `expire_event_reservations()`.
 - Cada reserva paga pode ganhar no máximo um prêmio por rifa; a RPC serializa os sorteios do evento e exclui todos os números das reservas já vencedoras. O índice também impede repetir exatamente o mesmo número.
@@ -685,9 +685,9 @@ Cada linha de `reserva_produtos` representa uma unidade. `product_name` e `unit_
 - Admin legado sem perfil informa o nome/apelido uma única vez após chegar a `aal2`; a inserção é feita sob as policies do próprio usuário.
 - Em logins posteriores, uma sessão `aal1` com TOTP verificado exige novo desafio. Fatores incompletos são descartados antes de gerar outro QR Code.
 - No plano gratuito, o admin encerra no client a sessão após sete dias sem atividade; `auth.sessions.inactivity_timeout` exige plano Pro e permanece desabilitado no serviço hospedado.
-- `site_settings`, `social_links`, `caes`, `historias`, cuidados, `event_settings`, `eventos`, `rifas`, `rifa_premios`, `produtos`, variações/opções e reservas usam uma policy permissiva para `is_admin()` e outra policy restritiva exigindo `aal2`, em leitura e escrita; registros realizados de cuidados não concedem exclusão.
-- `admin_profiles` permite leitura a admins, mas inserção/alteração somente do próprio perfil; todas as operações também exigem `aal2`.
-- `event_deletion_audit` permite somente `select` e `insert` a admin `aal2`; atualizações e exclusões não são concedidas.
-- `storage.objects` do bucket `dog-photos` permite `select`, `insert` e `delete` somente a admin `aal2`; leitura pública das imagens continua pelo bucket público.
-- `draw_raffle_prize` é `security invoker`, concedida apenas a `authenticated`, portanto respeita RLS e grants. `activate_event` e `delete_archived_event` são `security definer` com `search_path` fixo e execução exclusiva de `service_role`: as Edge Functions validam admin + `aal2`, registram o usuário e usam essas RPCs internas para confirmar o envio antes de excluir; a ativação também usa advisory lock.
+- `site_settings`, `social_links`, `caes`, `historias`, cuidados, `event_settings`, `eventos`, `rifas`, `rifa_premios`, `produtos`, variações/opções e reservas usam uma policy permissiva para `is_profiled_admin()` e outra policy restritiva exigindo `aal2`, em leitura e escrita; registros realizados de cuidados não concedem exclusão.
+- `admin_profiles` permite que admin com MFA leia/crie o próprio perfil durante o onboarding; depois do perfil concluído, permite ler os demais e alterar somente o próprio.
+- `event_deletion_audit` permite somente `select` e `insert` a admin com perfil e `aal2`; atualizações e exclusões não são concedidas.
+- `storage.objects` do bucket `dog-photos` permite `select`, `insert` e `delete` somente a admin com perfil e `aal2`; leitura pública das imagens continua pelo bucket público.
+- `draw_raffle_prize` é `security invoker`, concedida apenas a `authenticated`, portanto respeita RLS e grants. `activate_event` e `delete_archived_event` são `security definer` com `search_path` fixo e execução exclusiva de `service_role`: as Edge Functions validam papel admin + `aal2` + perfil, registram o usuário e usam essas RPCs internas para confirmar o envio antes de excluir; a ativação também usa advisory lock.
 - `anon` lê apenas views públicas e executa as RPCs públicas de criação de sessão/reserva. Não há mais policies locais de CRUD anônimo no `seed.sql`.

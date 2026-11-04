@@ -29,6 +29,17 @@ export async function authorizeAdmin(request: Request) {
   ) {
     throw new AdminFunctionError('MFA_REQUIRED', 'Confirme novamente o código do autenticador para continuar.', 401)
   }
+  const { data: profile, error: profileError } = await supabase
+    .from('admin_profiles')
+    .select('user_id')
+    .eq('user_id', claims.claims.sub)
+    .maybeSingle()
+  if (profileError) {
+    throw new AdminFunctionError('DATABASE_ERROR', 'Não foi possível verificar o perfil administrativo.', 500, { cause: profileError })
+  }
+  if (!profile) {
+    throw new AdminFunctionError('ADMIN_PROFILE_REQUIRED', 'Conclua seu perfil administrativo antes de continuar.', 403)
+  }
   return { supabase, userId: claims.claims.sub }
 }
 

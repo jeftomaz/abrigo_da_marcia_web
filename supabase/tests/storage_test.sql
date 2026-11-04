@@ -5,6 +5,16 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(15);
 
+insert into auth.users (
+  id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at
+) values (
+  '82000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000',
+  'authenticated', 'authenticated', 'storage-test@example.com', '{"role":"admin"}', '{}', now(), now()
+);
+insert into public.admin_profiles (user_id, display_name)
+values ('82000000-0000-0000-0000-000000000001', 'Admin Storage');
+
 -- O trigger de proteção do Storage recusa DELETE direto; liberá-lo aqui permite
 -- exercitar a policy de exclusão sem passar pela API.
 set local storage.allow_delete_query = 'true';
@@ -42,7 +52,7 @@ select throws_ok(
 
 -- Acesso administrativo sem os dois requisitos
 set local role authenticated;
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"admin"},"aal":"aal1"}', true);
+select set_config('request.jwt.claims', '{"sub":"82000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"admin"},"aal":"aal1"}', true);
 select throws_ok(
   $$insert into storage.objects (bucket_id, name) values ('dog-photos', 'aal1/foto.webp')$$,
   '42501', null, 'nega envio a admin sem aal2'
@@ -53,7 +63,7 @@ select is(
   'nega leitura de objetos a admin sem aal2'
 );
 
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"reader"},"aal":"aal2"}', true);
+select set_config('request.jwt.claims', '{"sub":"82000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"reader"},"aal":"aal2"}', true);
 select throws_ok(
   $$insert into storage.objects (bucket_id, name) values ('dog-photos', 'reader/foto.webp')$$,
   '42501', null, 'nega envio a conta sem papel admin'
@@ -65,7 +75,7 @@ select is(
 );
 
 -- Admin com aal2
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"admin"},"aal":"aal2"}', true);
+select set_config('request.jwt.claims', '{"sub":"82000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"admin"},"aal":"aal2"}', true);
 select lives_ok(
   $$insert into storage.objects (bucket_id, name) values ('dog-photos', 'caes/teste.webp')$$,
   'permite ao admin com aal2 enviar fotos ao bucket'

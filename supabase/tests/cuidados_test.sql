@@ -5,6 +5,16 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(108);
 
+insert into auth.users (
+  id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at
+) values (
+  '81000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000',
+  'authenticated', 'authenticated', 'cuidados-test@example.com', '{"role":"admin"}', '{}', now(), now()
+);
+insert into public.admin_profiles (user_id, display_name)
+values ('81000000-0000-0000-0000-000000000001', 'Admin Cuidados');
+
 delete from public.cuidado_estoque_movimentos;
 delete from public.cae_cuidado_registros;
 delete from public.cae_cuidados;
@@ -595,7 +605,7 @@ select throws_ok(
 );
 
 set local role authenticated;
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"admin"},"aal":"aal1"}', true);
+select set_config('request.jwt.claims', '{"sub":"81000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"admin"},"aal":"aal1"}', true);
 select is(
   (select count(*) from public.cuidado_itens),
   0::bigint, 'nega cuidados a admin sem aal2'
@@ -605,13 +615,13 @@ select is(
   0::bigint, 'nega categorias a admin sem aal2'
 );
 
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"reader"},"aal":"aal2"}', true);
+select set_config('request.jwt.claims', '{"sub":"81000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"reader"},"aal":"aal2"}', true);
 select is(
   (select count(*) from public.cuidado_itens),
   0::bigint, 'nega cuidados a conta sem papel admin'
 );
 
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"admin"},"aal":"aal2"}', true);
+select set_config('request.jwt.claims', '{"sub":"81000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"admin"},"aal":"aal2"}', true);
 select ok(
   (select count(*) from public.cuidado_itens) > 0,
   'autoriza leitura a admin com aal2'

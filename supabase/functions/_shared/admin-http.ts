@@ -1,4 +1,5 @@
 export type AdminErrorCode =
+  | 'ADMIN_PROFILE_REQUIRED'
   | 'CONFIGURATION_ERROR'
   | 'CONFLICT'
   | 'CORS_ORIGIN_DENIED'

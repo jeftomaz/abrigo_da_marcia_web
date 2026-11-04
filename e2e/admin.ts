@@ -97,6 +97,12 @@ export function removerPerfilAdminDeTeste() {
   executarSql(`delete from public.admin_profiles where user_id = (select id from auth.users where email = '${ADMIN_EMAIL}')`)
 }
 
+export function restaurarPerfilAdminDeTeste() {
+  executarSql(`insert into public.admin_profiles (user_id, display_name)
+    select id, ${sqlLiteral(ADMIN_NOME)} from auth.users where email = '${ADMIN_EMAIL}'
+    on conflict (user_id) do update set display_name = excluded.display_name`)
+}
+
 export async function convidarAdminDeTeste() {
   await chamar('/invite', {
     method: 'POST',

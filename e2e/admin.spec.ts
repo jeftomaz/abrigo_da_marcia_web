@@ -12,6 +12,7 @@ import {
   provisionarAdmin,
   removerAdminDeTeste,
   removerPerfilAdminDeTeste,
+  restaurarPerfilAdminDeTeste,
 } from './admin'
 import { executarSql } from './banco'
 import { expect, test } from './fixtures'
@@ -333,6 +334,22 @@ test.describe('admin', () => {
     expect(error.message).toContain('autenticador')
     expect(error.requestId).toMatch(/^[a-zA-Z0-9-]{8,128}$/)
     expect(unauthenticated.headers()['x-request-id']).toBe(error.requestId)
+
+    removerPerfilAdminDeTeste()
+    try {
+      const missingProfile = await request.post(functionUrl, {
+        headers: {
+          apikey: publishableKey,
+          Authorization: `Bearer ${credenciais.accessToken}`,
+          Origin: ADMIN_URL,
+        },
+        data: { eventId: '00000000-0000-0000-0000-000000000000' },
+      })
+      expect(missingProfile.status()).toBe(403)
+      expect(await missingProfile.json()).toMatchObject({ code: 'ADMIN_PROFILE_REQUIRED' })
+    } finally {
+      restaurarPerfilAdminDeTeste()
+    }
 
     const invalid = await request.post(functionUrl, {
       headers: {

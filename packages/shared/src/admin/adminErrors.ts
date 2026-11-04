@@ -1,4 +1,5 @@
 export type AdminErrorCode =
+  | 'ADMIN_PROFILE_REQUIRED'
   | 'CONFIGURATION_ERROR'
   | 'CONFLICT'
   | 'CORS_ORIGIN_DENIED'
@@ -16,6 +17,7 @@ export type AdminErrorCode =
 type ErrorBody = { code?: unknown; message?: unknown; requestId?: unknown }
 
 const KNOWN_CODES = new Set<AdminErrorCode>([
+  'ADMIN_PROFILE_REQUIRED',
   'CONFIGURATION_ERROR',
   'CONFLICT',
   'CORS_ORIGIN_DENIED',

@@ -5,6 +5,16 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(47);
 
+insert into auth.users (
+  id, instance_id, aud, role, email, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at
+) values (
+  '51000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000',
+  'authenticated', 'authenticated', 'caes-test@example.com', '{"role":"admin"}', '{}', now(), now()
+);
+insert into public.admin_profiles (user_id, display_name)
+values ('51000000-0000-0000-0000-000000000001', 'Admin Cães');
+
 -- Isola o catálogo dos registros fictícios do seed; o rollback final os devolve.
 delete from public.historias;
 delete from public.caes;
@@ -210,15 +220,15 @@ select lives_ok($$select 1 from public.historias_public$$, 'permite ao anônimo 
 
 -- Acesso administrativo: exige papel admin e sessão aal2
 set local role authenticated;
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"admin"},"aal":"aal1"}', true);
+select set_config('request.jwt.claims', '{"sub":"51000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"admin"},"aal":"aal1"}', true);
 select is((select count(*) from public.caes), 0::bigint, 'nega cães a admin sem aal2');
 select is((select count(*) from public.historias), 0::bigint, 'nega histórias a admin sem aal2');
 
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"reader"},"aal":"aal2"}', true);
+select set_config('request.jwt.claims', '{"sub":"51000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"reader"},"aal":"aal2"}', true);
 select is((select count(*) from public.caes), 0::bigint, 'nega cães a conta sem papel admin');
 select is((select count(*) from public.historias), 0::bigint, 'nega histórias a conta sem papel admin');
 
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"admin"},"aal":"aal2"}', true);
+select set_config('request.jwt.claims', '{"sub":"51000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"admin"},"aal":"aal2"}', true);
 select is((select count(*) from public.caes), 4::bigint, 'autoriza o catálogo completo a admin com aal2');
 select is((select count(*) from public.historias), 2::bigint, 'autoriza as histórias a admin com aal2');
 select lives_ok(

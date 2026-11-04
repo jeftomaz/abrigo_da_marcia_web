@@ -3,7 +3,7 @@ begin;
 set local role postgres;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(39);
+select plan(42);
 
 select has_table('public', 'admin_profiles', 'materializa os perfis administrativos privados');
 select col_not_null('public', 'admin_profiles', 'display_name', 'exige nome ou apelido no perfil');
@@ -58,6 +58,30 @@ select set_config('request.jwt.claims', '{"sub":"71000000-0000-0000-0000-0000000
 select is((select count(*) from public.admin_profiles), 1::bigint, 'autoriza leitura dos perfis com papel admin e aal2');
 
 select set_config('request.jwt.claims', '{"sub":"71000000-0000-0000-0000-000000000002","role":"authenticated","app_metadata":{"role":"admin"},"aal":"aal2"}', true);
+select ok(
+  not public.is_profiled_admin(),
+  'não considera pronto o admin sem perfil'
+);
+select throws_ok(
+  $$insert into public.caes (
+      id, name, description, birth_year, gender, size
+    ) values (
+      '72000000-0000-0000-0000-000000000002', 'Sem perfil', 'Tentativa administrativa sem perfil', 2020, 'macho', 'medio'
+    )$$,
+  '42501', null,
+  'bloqueia escrita direta de admin sem perfil'
+);
+set local role postgres;
+select throws_ok(
+  $$insert into public.caes (
+      id, name, description, birth_year, gender, size
+    ) values (
+      '72000000-0000-0000-0000-000000000003', 'Auditoria', 'Tentativa sem perfil pela rotina auditada', 2020, 'macho', 'medio'
+    )$$,
+  '42501', 'Perfil administrativo obrigatório para registrar alterações.',
+  'a auditoria rejeita uma sessão autenticada sem perfil'
+);
+set local role authenticated;
 select lives_ok(
   $$insert into public.admin_profiles (user_id, display_name)
     values ('71000000-0000-0000-0000-000000000002', 'Equipe de apoio')$$,

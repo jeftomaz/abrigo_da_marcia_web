@@ -119,13 +119,13 @@ select is(
 );
 
 set local role authenticated;
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"admin"},"aal":"aal1"}', true);
+select set_config('request.jwt.claims', '{"sub":"70000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"admin"},"aal":"aal1"}', true);
 select is((select count(*) from public.site_settings), 0::bigint, 'nega dados administrativos sem aal2');
 
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"reader"},"aal":"aal2"}', true);
+select set_config('request.jwt.claims', '{"sub":"70000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"reader"},"aal":"aal2"}', true);
 select is((select count(*) from public.site_settings), 0::bigint, 'nega conta sem papel admin');
 
-select set_config('request.jwt.claims', '{"app_metadata":{"role":"admin"},"aal":"aal2"}', true);
+select set_config('request.jwt.claims', '{"sub":"70000000-0000-0000-0000-000000000001","role":"authenticated","app_metadata":{"role":"admin"},"aal":"aal2"}', true);
 select is((select count(*) from public.site_settings), 1::bigint, 'autoriza admin com aal2');
 
 set local role anon;
