@@ -63,7 +63,7 @@ async function entrar(page: Page) {
 
   await page.getByLabel('E-mail').fill(credenciais.email)
   await page.getByLabel('Senha', { exact: true }).fill(credenciais.senha)
-  await page.getByRole('button', { name: 'Entrar' }).click()
+  await page.getByRole('button', { name: 'Entrar', exact: true }).click()
 
   const campoCodigo = page.getByLabel('Código do autenticador')
   await expect(campoCodigo).toBeVisible()
@@ -321,8 +321,8 @@ test.describe('admin', () => {
       for (const panel of editor ? [summary, editor] : [summary]) {
         const box = await panel.boundingBox()
         expect(box).not.toBeNull()
-        expect(box!.y).toBeGreaterThanOrEqual(headerBottom - 1)
-        expect(box!.y).toBeLessThanOrEqual(headerBottom + 2)
+        expect(box!.y).toBeGreaterThanOrEqual(headerBottom + 15)
+        expect(box!.y).toBeLessThanOrEqual(headerBottom + 18)
         expect(box!.y + box!.height).toBeLessThanOrEqual(600)
       }
 
@@ -342,7 +342,7 @@ test.describe('admin', () => {
           await expect.poll(() => summary.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
           const summaryBox = await summary.boundingBox()
           expect(summaryBox).not.toBeNull()
-          expect(summaryBox!.y).toBeGreaterThanOrEqual(headerBottom - 1)
+          expect(summaryBox!.y).toBeGreaterThanOrEqual(headerBottom + 15)
           expect(summaryBox!.y + summaryBox!.height).toBeLessThanOrEqual(360)
         }
 
@@ -355,8 +355,8 @@ test.describe('admin', () => {
           await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(400)
           const managementBox = await management.boundingBox()
           expect(managementBox).not.toBeNull()
-          expect(managementBox!.y).toBeGreaterThanOrEqual(headerBottom - 1)
-          expect(managementBox!.y).toBeLessThanOrEqual(headerBottom + 2)
+          expect(managementBox!.y).toBeGreaterThanOrEqual(headerBottom + 15)
+          expect(managementBox!.y).toBeLessThanOrEqual(headerBottom + 18)
           expect(managementBox!.y + managementBox!.height).toBeLessThanOrEqual(600)
         }
       }
@@ -377,8 +377,8 @@ test.describe('admin', () => {
     const headerBottom = await page.locator('header').first().evaluate((element) => element.getBoundingClientRect().bottom)
     const box = await editor.boundingBox()
     expect(box).not.toBeNull()
-    expect(box!.y).toBeGreaterThanOrEqual(headerBottom - 1)
-    expect(box!.y).toBeLessThanOrEqual(headerBottom + 2)
+    expect(box!.y).toBeGreaterThanOrEqual(headerBottom + 15)
+    expect(box!.y).toBeLessThanOrEqual(headerBottom + 18)
     expect(box!.y + box!.height).toBeLessThanOrEqual(600)
   })
 

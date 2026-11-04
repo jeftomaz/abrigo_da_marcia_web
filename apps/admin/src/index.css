@@ -4,7 +4,7 @@
 @source "../../../packages/shared/src";
 
 @utility admin-sticky-panel {
-  @apply desk:sticky desk:top-20 desk:max-h-[calc(100dvh-6rem)] desk:overflow-y-auto;
+  @apply desk:sticky desk:top-24 desk:max-h-[calc(100dvh-7rem)] desk:overflow-y-auto;
 }
 
 @theme {

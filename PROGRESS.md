@@ -1,6 +1,6 @@
 # PROGRESS.md
 
-- Painéis de gestão acompanham a rolagem no desktop (2026-11-03): resumos e editores permanecem abaixo do header, com rolagem interna e acesso aos resumos pelo teclado. Lint/builds, 347 pgTAP em banco isolado e 169 E2E aprovados (29 ignorados).
+- Painéis de gestão acompanham a rolagem no desktop (2026-11-04): resumos e editores preservam a distância do header, com rolagem interna e acesso aos resumos pelo teclado. Espaçamento validado com lint/builds e 5 E2E; alteração anterior validada com 347 pgTAP e 169 E2E (29 ignorados).
 
 - Busca por características ampliada (2026-09-09): campos do cadastro centralizados na função compartilhada, agora usada também na Agenda; escopo em `UI_CONTRACTS.md`. Lint, builds e 12 E2E aprovados (6 ignorados pela matriz), em portas separadas para preservar o ambiente local aberto. Nenhuma alteração de banco/permissões.
 
