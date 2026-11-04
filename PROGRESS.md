@@ -1,6 +1,6 @@
 # PROGRESS.md
 
-- Autorização administrativa endurecida (2026-10-26): banco, Storage e Edge Functions agora exigem papel admin, `aal2` e `admin_profiles`; sessão autenticada sem perfil não grava auditoria como “Visitante”. Novos pgTAP/E2E cobrem a negativa direta. Lint e builds aprovados; reset/pgTAP/E2E aguardam Docker local.
+- Autorização administrativa endurecida (2026-10-26): banco, Storage e Edge Functions exigem papel admin, `aal2` e `admin_profiles`; leitura do próprio perfil também exige papel admin. Lint, builds, reset e 351 pgTAP aprovados; E2E e deploy permanecem pendentes.
 
 - Busca por características ampliada (2026-09-09): campos do cadastro centralizados na função compartilhada, agora usada também na Agenda; escopo em `UI_CONTRACTS.md`. Lint, builds e 12 E2E aprovados (6 ignorados pela matriz), em portas separadas para preservar o ambiente local aberto. Nenhuma alteração de banco/permissões.
 

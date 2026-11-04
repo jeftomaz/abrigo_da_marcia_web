@@ -43,7 +43,7 @@ Objetivo: manter o Supabase como infraestrutura de dados, mas retirar do navegad
 - `todo` Configurar `abrigodamarcia.com.br` no host escolhido: build adaptativo e runbook do GitHub Pages estão prontos, mas DNS, URLs de Auth, HTTPS e smoke aguardam a decisão Cloudflare Pages × permanência no Pages.
 - `done` Aplicar no hospedado as migrations de `20260726120000` a `20260805130000`, após backup completo do banco e Storage.
 - `done` Aplicar no hospedado as migrations de `20260809120000` a `20260810214700`, que atualizam reservas/rifas, restauram o fluxo encerrado → arquivado → exclusão auditada e restringem a confirmação da exportação ao backend.
-- `todo` Aplicar no hospedado `20260811120000_require_admin_profiles_for_management.sql` e publicar as duas Edge Functions: exige perfil administrativo além de papel/MFA. Como Cuidados permanece local, executar esta migration isoladamente (sem avançar as migrations de `202609*`), com backup e smoke de chamada direta sem perfil.
+- `todo` Aplicar no hospedado as migrations `20260811120000` e `20261026120000` e publicar as duas Edge Functions: exige perfil administrativo além de papel/MFA. As migrations de Cuidados já constam no histórico hospedado; fazer backup e smoke de chamada direta sem perfil.
 - `done` Definir `ADMIN_ALLOWED_ORIGINS`, publicar `activate-event` e `delete-archived-event` e validar CORS permitido/negado no hospedado.
 - `done` Republicar `delete-archived-event`, validar CORS e confirmar a rejeição de chamadas sem sessão no hospedado.
 - `done` Conferir `RESEND_API_KEY`/`RESEND_FROM_EMAIL` antes do smoke de exportação.

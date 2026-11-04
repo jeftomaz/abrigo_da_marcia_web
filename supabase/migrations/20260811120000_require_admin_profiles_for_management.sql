@@ -21,8 +21,8 @@ grant execute on function public.is_profiled_admin() to authenticated;
 alter policy "Admins read profiles"
   on public.admin_profiles
   using (
-    user_id = (select auth.uid())
-    or (select public.is_profiled_admin())
+    (select public.is_admin())
+    and (user_id = (select auth.uid()) or (select public.is_profiled_admin()))
   );
 
 do $$
